@@ -76,7 +76,7 @@ class ReservationController extends Controller
      */
     public function show(string $id)
     {
-        $reservation = Reservation::with(['user', 'venue', 'equipment'])->findOrFail($id);
+        $reservation = Reservation::with(['user', 'venue'])->findOrFail($id);
         
         return view('iosa.reservations.show', compact('reservation'));
     }

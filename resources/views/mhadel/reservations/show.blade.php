@@ -128,37 +128,7 @@
                 </div>
             </div>
 
-            <!-- Equipment Required -->
-            @if($reservation->equipment && $reservation->equipment->count() > 0)
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 animate-fadeIn">
-                    <div class="p-6 border-b border-gray-200">
-                        <h2 class="text-lg font-semibold text-gray-800 font-poppins flex items-center">
-                            <i class="fas fa-tools text-maroon mr-2"></i>
-                            Equipment Required
-                        </h2>
-                    </div>
-                    <div class="p-6">
-                        <div class="space-y-4">
-                            @foreach($reservation->equipment as $equipment)
-                                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                    <div class="flex items-center">
-                                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-                                            <i class="fas fa-tools text-blue-600"></i>
-                                        </div>
-                                        <div>
-                                            <h4 class="font-medium text-gray-800">{{ $equipment->name }}</h4>
-                                            <p class="text-sm text-gray-600">{{ $equipment->description }}</p>
-                                        </div>
-                                    </div>
-                                    <div class="text-right">
-                                        <span class="text-sm font-medium text-gray-700">Qty: {{ $equipment->pivot->quantity }}</span>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-            @endif
+
 
             <!-- Activity Grid -->
             @if($reservation->activity_grid)

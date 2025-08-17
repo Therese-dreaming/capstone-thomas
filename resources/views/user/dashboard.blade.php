@@ -76,15 +76,7 @@
                                 <p class="text-xs text-gray-500">
                                     {{ $reservation->start_date ? $reservation->start_date->format('M d, Y g:i A') : 'No date' }}
                                 </p>
-                                @if($reservation->equipment->count() > 0)
-                                    <div class="mt-1">
-                                        <p class="text-xs text-gray-600">Equipment: 
-                                            @foreach($reservation->equipment as $equipment)
-                                                <span class="text-blue-600">{{ $equipment->name }}({{ $equipment->pivot->quantity }})</span>{{ !$loop->last ? ', ' : '' }}
-                                            @endforeach
-                                        </p>
-                                    </div>
-                                @endif
+
                             </div>
                             <div class="flex items-center space-x-2">
                                 @switch($reservation->status)

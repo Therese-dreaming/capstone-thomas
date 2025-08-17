@@ -258,10 +258,27 @@
                                             <i class="fas fa-users mr-2 text-maroon"></i>
                                             <span>{{ $reservation->capacity }} attendees</span>
                                         </div>
+                                        @if($reservation->final_price)
+                                            <div class="flex items-center">
+                                                <i class="fas fa-tag mr-2 text-maroon"></i>
+                                                <span>₱{{ number_format($reservation->final_price, 2) }}</span>
+                                            </div>
+                                        @endif
                                     </div>
                                     @if($reservation->purpose)
                                         <div class="mt-2 text-sm text-gray-600">
                                             <strong>Purpose:</strong> {{ $reservation->purpose }}
+                                        </div>
+                                    @endif
+                                    
+                                    @if($reservation->equipment_details && count($reservation->equipment_details) > 0)
+                                        <div class="mt-2 text-sm text-gray-600">
+                                            <strong>Equipment:</strong> 
+                                            @foreach($reservation->equipment_details as $equipment)
+                                                <span class="inline-block bg-gray-100 px-2 py-1 rounded mr-2 mb-1">
+                                                    {{ $equipment['name'] }} ({{ $equipment['quantity'] }})
+                                                </span>
+                                            @endforeach
                                         </div>
                                     @endif
                                 </div>
@@ -707,6 +724,22 @@
     
     const reservationsData = @json($reservations);
     
+    // View toggle functionality
+    document.getElementById('listViewBtn').addEventListener('click', function() {
+        document.getElementById('listView').classList.remove('hidden');
+        document.getElementById('calendarView').classList.add('hidden');
+        this.classList.add('active');
+        document.getElementById('calendarViewBtn').classList.remove('active');
+    });
+    
+    document.getElementById('calendarViewBtn').addEventListener('click', function() {
+        document.getElementById('listView').classList.add('hidden');
+        document.getElementById('calendarView').classList.remove('hidden');
+        this.classList.add('active');
+        document.getElementById('listViewBtn').classList.remove('active');
+        renderCalendar();
+    });
+    
     function renderCalendar() {
         const calendar = document.getElementById('calendar');
         const firstDay = new Date(currentYear, currentMonth, 1);
@@ -860,6 +893,18 @@
                             <div class="flex items-start text-sm text-gray-600 mt-1">
                                 <i class="fas fa-align-left mr-2 text-maroon mt-0.5"></i>
                                 <span>${reservation.purpose}</span>
+                            </div>
+                            ` : ''}
+                            ${reservation.final_price ? `
+                            <div class="flex items-center text-sm text-gray-600 mt-1">
+                                <i class="fas fa-tag mr-2 text-maroon"></i>
+                                <span>₱${parseFloat(reservation.final_price).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                            </div>
+                            ` : ''}
+                            ${reservation.equipment_details && reservation.equipment_details.length > 0 ? `
+                            <div class="flex items-start text-sm text-gray-600 mt-1">
+                                <i class="fas fa-tools mr-2 text-maroon mt-0.5"></i>
+                                <span>${reservation.equipment_details.map(eq => eq.name + ' (' + eq.quantity + ')').join(', ')}</span>
                             </div>
                             ` : ''}
                         </div>

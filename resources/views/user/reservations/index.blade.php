@@ -175,20 +175,7 @@
                                     <p class="text-sm text-gray-600">{{ Str::limit($reservation->purpose, 100) }}</p>
                                 </div>
                                 
-                                @if($reservation->equipment->count() > 0)
-                                    <div class="mt-auto">
-                                        <p class="text-xs font-medium text-gray-700 mb-1">
-                                            <i class="fas fa-tools text-maroon mr-1"></i> Equipment:
-                                        </p>
-                                        <div class="flex flex-wrap gap-1">
-                                            @foreach($reservation->equipment as $equip)
-                                                <span class="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded-full border border-blue-100">
-                                                    {{ $equip->name }} ({{ $equip->pivot->quantity }})
-                                                </span>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                @endif
+
                                 
                                 <!-- Action Buttons -->
                                 <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end space-x-2">

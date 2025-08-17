@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Mhadel;
 
 use App\Http\Controllers\Controller;
 use App\Models\Venue;
@@ -14,7 +14,7 @@ class VenueController extends Controller
     public function index()
     {
         $venues = Venue::latest()->paginate(10);
-        return view('admin.venues.index', compact('venues'));
+        return view('mhadel.venues.index', compact('venues'));
     }
 
     /**
@@ -22,7 +22,7 @@ class VenueController extends Controller
      */
     public function create()
     {
-        return view('admin.venues.create');
+        return view('mhadel.venues.create');
     }
 
     /**
@@ -53,7 +53,7 @@ class VenueController extends Controller
             'available_equipment' => $request->available_equipment ?? []
         ]);
 
-        return redirect()->route('admin.venues.index')
+        return redirect()->route('mhadel.venues.index')
             ->with('success', 'Venue created successfully!');
     }
 
@@ -62,7 +62,7 @@ class VenueController extends Controller
      */
     public function show(Venue $venue)
     {
-        return view('admin.venues.show', compact('venue'));
+        return view('mhadel.venues.show', compact('venue'));
     }
 
     /**
@@ -70,7 +70,7 @@ class VenueController extends Controller
      */
     public function edit(Venue $venue)
     {
-        return view('admin.venues.edit', compact('venue'));
+        return view('mhadel.venues.edit', compact('venue'));
     }
 
     /**
@@ -101,7 +101,7 @@ class VenueController extends Controller
             'available_equipment' => $request->available_equipment ?? []
         ]);
 
-        return redirect()->route('admin.venues.index')
+        return redirect()->route('mhadel.venues.index')
             ->with('success', 'Venue updated successfully!');
     }
 
@@ -111,7 +111,7 @@ class VenueController extends Controller
     public function destroy(Venue $venue)
     {
         $venue->delete();
-        return redirect()->route('admin.venues.index')
+        return redirect()->route('mhadel.venues.index')
             ->with('success', 'Venue deleted successfully!');
     }
 }

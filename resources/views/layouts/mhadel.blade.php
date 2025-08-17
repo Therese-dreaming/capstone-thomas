@@ -66,6 +66,24 @@
                         </a>
                     </li>
 
+                    <!-- Venues -->
+                    <li>
+                        <a href="{{ route('mhadel.venues.index') }}"
+                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('mhadel.venues*') ? 'active-maroon' : 'text-gray-700' }}">
+                            <i class="fas fa-building w-5 h-5"></i>
+                            <span class="font-medium">Venues</span>
+                        </a>
+                    </li>
+
+                    <!-- Events -->
+                    <li>
+                        <a href="{{ route('mhadel.events.index') }}"
+                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('mhadel.events*') ? 'active-maroon' : 'text-gray-700' }}">
+                            <i class="fas fa-calendar-alt w-5 h-5"></i>
+                            <span class="font-medium">Events</span>
+                        </a>
+                    </li>
+
                     <!-- Reports -->
                     <li>
                         <a href="#" 

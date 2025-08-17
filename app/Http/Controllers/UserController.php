@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Venue;
-use App\Models\Equipment;
 use App\Models\Reservation;
 use Illuminate\Support\Facades\Auth;
 
@@ -25,17 +24,16 @@ class UserController extends Controller
     public function index()
     {
         $userReservations = Reservation::where('user_id', Auth::id())
-            ->with(['venue', 'equipment'])
+            ->with(['venue'])
             ->latest()
-            ->paginate(10); // Changed from get() to paginate()
+            ->paginate(10);
         return view('user.reservations.index', compact('userReservations'));
     }
 
     public function calendar()
     {
         $venues = Venue::where('is_available', true)->get();
-        $equipment = Equipment::all();
-        return view('user.reservations', compact('venues', 'equipment'));
+        return view('user.reservations', compact('venues'));
     }
 
     public function storeReservation(Request $request)
@@ -47,8 +45,13 @@ class UserController extends Controller
             'purpose' => 'required|string',
             'start_date' => 'required|date|after:now',
             'end_date' => 'required|date|after:start_date',
-            'equipment' => 'nullable|array',
             'activity_grid' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB
+            'equipment' => 'nullable|array',
+            'equipment.*' => 'string',
+            'equipment_quantity' => 'nullable|array',
+            'equipment_quantity.*' => 'integer|min:1',
+            'price_per_hour' => 'required|numeric|min:0',
+            'final_price' => 'required|numeric|min:0',
         ]);
 
         // Validate that a suitable venue was found
@@ -62,23 +65,10 @@ class UserController extends Controller
         if (strtotime($request->start_date) < strtotime($minDate)) {
             return back()->withErrors(['start_date' => 'Reservations must be made at least 3 days in advance.'])->withInput();
         }
-
-        // Validate equipment quantities
-        $equipmentInput = $request->input('equipment', []);
-        $equipmentErrors = [];
-        foreach ($equipmentInput as $id => $data) {
-            if (isset($data['checked'])) {
-                $equipmentItem = Equipment::find($id);
-                $qty = isset($data['quantity']) ? (int)$data['quantity'] : 0;
-                if ($qty < 1) {
-                    $equipmentErrors[] = "Quantity for {$equipmentItem->name} must be at least 1.";
-                } elseif ($qty > $equipmentItem->total_quantity) {
-                    $equipmentErrors[] = "Requested quantity for {$equipmentItem->name} exceeds available ({$equipmentItem->total_quantity}).";
-                }
-            }
-        }
-        if ($equipmentErrors) {
-            return back()->withErrors(['equipment' => implode(' ', $equipmentErrors)])->withInput();
+        
+        // Validate that end date is after start date
+        if (strtotime($request->end_date) <= strtotime($request->start_date)) {
+            return back()->withErrors(['end_date' => 'End date must be after start date.'])->withInput();
         }
 
         // Validate venue time conflict
@@ -93,9 +83,40 @@ class UserController extends Controller
             return back()->withErrors(['venue_id' => 'This venue is already reserved for the selected date and time.'])->withInput();
         }
 
-        $data = $request->except(['equipment']);
+        $data = $request->all();
         $data['user_id'] = Auth::id();
         $data['status'] = 'pending';
+
+        // Process equipment details
+        if ($request->has('equipment') && is_array($request->equipment)) {
+            $equipmentDetails = [];
+            foreach ($request->equipment as $equipment) {
+                if ($equipment !== 'none') {
+                    $quantity = $request->input("equipment_quantity.{$equipment}", 1);
+                    $equipmentDetails[] = [
+                        'name' => $equipment,
+                        'quantity' => $quantity
+                    ];
+                }
+            }
+            $data['equipment_details'] = $equipmentDetails;
+        }
+
+        // Calculate duration in hours
+        $startDate = \Carbon\Carbon::parse($request->start_date);
+        $endDate = \Carbon\Carbon::parse($request->end_date);
+        $durationHours = ceil($startDate->diffInSeconds($endDate) / 3600);
+        
+        // Log duration calculation for debugging
+        \Log::info('Duration calculation', [
+            'start_date' => $startDate->toDateTimeString(),
+            'end_date' => $endDate->toDateTimeString(),
+            'raw_duration_seconds' => $startDate->diffInSeconds($endDate),
+            'calculated_hours' => $durationHours,
+            'final_duration_hours' => max(1, $durationHours)
+        ]);
+        
+        $data['duration_hours'] = max(1, $durationHours); // Ensure minimum 1 hour
 
         // Handle file upload
         if ($request->hasFile('activity_grid')) {
@@ -105,18 +126,7 @@ class UserController extends Controller
             $data['activity_grid'] = $filePath;
         }
 
-        $reservation = Reservation::create($data);
-
-        // Attach equipment with quantities
-        $attach = [];
-        foreach ($equipmentInput as $id => $edata) {
-            if (isset($edata['checked']) && isset($edata['quantity']) && $edata['quantity'] > 0) {
-                $attach[$id] = ['quantity' => $edata['quantity']];
-            }
-        }
-        if ($attach) {
-            $reservation->equipment()->attach($attach);
-        }
+        Reservation::create($data);
 
         return redirect()->route('user.reservations.index')
             ->with('success', 'Reservation submitted successfully!');

@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.mhadel')
 
 @section('title', 'Add New Venue')
 @section('page-title', 'Add New Venue')
@@ -11,7 +11,7 @@
             <p class="text-gray-600 text-sm">Fill in the information for the new venue</p>
         </div>
 
-        <form action="{{ route('admin.venues.store') }}" method="POST" class="p-6">
+        <form action="{{ route('mhadel.venues.store') }}" method="POST" class="p-6">
             @csrf
 
             <div class="space-y-6">
@@ -148,7 +148,7 @@
             </div>
 
             <div class="flex justify-end space-x-4 mt-8">
-                <a href="{{ route('admin.venues.index') }}" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                <a href="{{ route('mhadel.venues.index') }}" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
                     Cancel
                 </a>
                 <button type="submit" class="px-4 py-2 bg-maroon text-white rounded-lg hover:bg-opacity-80 transition">

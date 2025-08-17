@@ -7,12 +7,14 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\VenueController;
 use App\Http\Controllers\IOSA\IOSAController;
 use App\Http\Controllers\IOSA\ReservationController as IOSAReservationController;
-use App\Http\Controllers\Admin\EquipmentController;
+
 use App\Http\Controllers\Admin\EventController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Mhadel\MhadelController;
 use App\Http\Controllers\Mhadel\ReservationController as MhadelReservationController;
+use App\Http\Controllers\Mhadel\VenueController as MhadelVenueController;
+use App\Http\Controllers\Mhadel\EventController as MhadelEventController;
 use App\Http\Controllers\DrJavier\DrJavierController;
 use App\Http\Controllers\DrJavier\ReservationController as DrJavierReservationController;
 
@@ -60,8 +62,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [AdminController::class, 'dashboard'])->name('admin.dashboard');
         Route::resource('venues', VenueController::class, ['as' => 'admin']);
 
-        // Equipment Routes
-        Route::resource('equipment', EquipmentController::class, ['as' => 'admin']);
+
 
         // Events Routes
         Route::resource('events', EventController::class, ['as' => 'admin']);
@@ -81,6 +82,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Mhadel Routes
     Route::group(['prefix' => 'mhadel', 'as' => 'mhadel.', 'middleware' => ['auth', 'mhadel.role']], function () {
         Route::get('/dashboard', [MhadelController::class, 'dashboard'])->name('dashboard');
+        
+        // Venues Routes
+        Route::resource('venues', MhadelVenueController::class);
+        
+        // Events Routes
+        Route::resource('events', MhadelEventController::class);
         
         // Reservations Routes
         Route::resource('reservations', MhadelReservationController::class);

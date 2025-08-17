@@ -76,7 +76,7 @@
                         <span class="text-sm font-medium text-gray-700">Venues</span>
                     </a>
                     
-                    <a href="{{ route('admin.equipment.index') }}" class="flex flex-col items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                    <a href="" class="flex flex-col items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
                         <i class="fas fa-tools text-green-500 text-2xl mb-2"></i>
                         <span class="text-sm font-medium text-gray-700">Equipment</span>
                     </a>

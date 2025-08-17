@@ -87,25 +87,25 @@
                     </div>
                 </a>
                 
-                <div class="bg-gray-50 p-6 rounded-xl border border-gray-200">
+                <a href="{{ route('mhadel.venues.index') }}" class="bg-blue-600 text-white p-6 rounded-xl hover:bg-blue-700 transition-all duration-300 shadow-lg">
                     <div class="flex items-center">
-                        <i class="fas fa-chart-line text-3xl text-gray-400 mr-4"></i>
+                        <i class="fas fa-building text-3xl mr-4"></i>
                         <div>
-                            <h3 class="text-lg font-bold text-gray-800">Analytics</h3>
-                            <p class="text-gray-600 text-sm">View approval statistics</p>
+                            <h3 class="text-lg font-bold">Manage Venues</h3>
+                            <p class="text-white text-opacity-80 text-sm">Create and manage venues</p>
                         </div>
                     </div>
-                </div>
+                </a>
                 
-                <div class="bg-gray-50 p-6 rounded-xl border border-gray-200">
+                <a href="{{ route('mhadel.events.index') }}" class="bg-green-600 text-white p-6 rounded-xl hover:bg-green-700 transition-all duration-300 shadow-lg">
                     <div class="flex items-center">
-                        <i class="fas fa-cog text-3xl text-gray-400 mr-4"></i>
+                        <i class="fas fa-calendar-alt text-3xl mr-4"></i>
                         <div>
-                            <h3 class="text-lg font-bold text-gray-800">Settings</h3>
-                            <p class="text-gray-600 text-sm">Manage your preferences</p>
+                            <h3 class="text-lg font-bold">Manage Events</h3>
+                            <p class="text-white text-opacity-80 text-sm">Create and manage events</p>
                         </div>
                     </div>
-                </div>
+                </a>
             </div>
         </div>
     </div>

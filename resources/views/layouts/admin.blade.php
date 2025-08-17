@@ -70,7 +70,7 @@
 
                     <!-- Equipment -->
                     <li>
-                        <a href="{{ route('admin.equipment.index') }}"
+                        <a href=""
                            class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('admin.equipment*') ? 'active-maroon' : 'text-gray-700' }}">
                             <i class="fas fa-tools w-5 h-5"></i>
                             <span class="font-medium">Equipment</span>

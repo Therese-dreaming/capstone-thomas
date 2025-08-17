@@ -59,7 +59,7 @@
     }
 </style>
 
-<div class="space-y-8 font-poppins">
+<div class="font-poppins">
     <!-- Calendar Section -->
     <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 transition-all duration-300 hover:shadow-xl">
         <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
@@ -207,42 +207,60 @@
                                 <input type="hidden" id="venue_id" name="venue_id" value="">
                                 <p class="text-xs text-gray-500 mt-1">Venue will be automatically selected based on your capacity requirement</p>
                             </div>
-    
-                            <!-- Equipment -->
+
+                            <!-- Price Rate (Auto-calculated) -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                    <i class="fas fa-tag text-maroon mr-2"></i>
+                                    Rate per Hour <span class="text-red-500">*</span>
+                                </label>
+                                <div id="price_display" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                                    <i class="fas fa-info-circle mr-2 text-blue-500"></i> Select capacity first
+                                </div>
+                                <input type="hidden" id="price_per_hour" name="price_per_hour" value="">
+                                <p class="text-xs text-gray-500 mt-1">Rate will be automatically calculated based on venue selection</p>
+                            </div>
+
+                            <!-- Equipment Selection -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
                                     <i class="fas fa-tools text-maroon mr-2"></i>
-                                    Equipment Needed
+                                    Equipment to Borrow
                                 </label>
-                                @error('equipment')
-                                    <div class="text-red-600 text-sm mb-2">{{ $message }}</div>
-                                @enderror
-                                <div class="border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto bg-gray-50">
-                                    @if($equipment->count() > 0)
-                                        <div class="space-y-3">
-                                            @foreach($equipment as $item)
-                                                @if($item && is_object($item) && isset($item->id))
-                                                <div class="flex items-center space-x-2 p-2 hover:bg-white rounded-lg transition-colors">
-                                                    <input type="checkbox" name="equipment[{{ $item->id }}][checked]" value="1" id="equipment_{{ $item->id }}" class="rounded border-gray-300 text-maroon focus:ring-maroon equipment-checkbox">
-                                                    <label for="equipment_{{ $item->id }}" class="text-sm text-gray-700 flex-1">{{ $item->name }} <span class="text-xs text-gray-500">(Available: {{ $item->total_quantity }})</span></label>
-                                                    <div class="relative">
-                                                        <input type="number" name="equipment[{{ $item->id }}][quantity]" min="1" max="{{ $item->total_quantity }}" placeholder="Qty" class="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-maroon focus:border-maroon equipment-qty" disabled>
-                                                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                                            <i class="fas fa-sort text-gray-400 text-xs"></i>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                @endif
-                                            @endforeach
-                                        </div>
-                                    @else
-                                        <div class="text-center py-4">
-                                            <i class="fas fa-tools text-gray-300 text-3xl mb-2"></i>
-                                            <p class="text-gray-500 text-sm">No equipment available.</p>
-                                        </div>
-                                    @endif
+                                <div id="equipment_container" class="space-y-4">
+                                    <!-- Equipment will be dynamically generated here -->
+                                </div>
+                                
+                                <!-- No Equipment Needed -->
+                                <div class="border border-gray-200 rounded-lg p-3 mt-4">
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="equipment_none" name="equipment[]" value="none" class="w-4 h-4 text-maroon border-gray-300 rounded focus:ring-maroon">
+                                        <label for="equipment_none" class="ml-2 text-sm font-medium text-gray-700">No Equipment Needed</label>
+                                    </div>
+                                </div>
+                                
+                                <p class="text-xs text-gray-500 mt-2">Select equipment and specify quantities. Quantities cannot exceed available amounts.</p>
+                            </div>
+
+                            <!-- Final Price Calculation -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                    <i class="fas fa-calculator text-maroon mr-2"></i>
+                                    Final Price <span class="text-red-500">*</span>
+                                </label>
+                                <div id="final_price_display" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                                    <i class="fas fa-info-circle mr-2 text-blue-500"></i> Select capacity and dates first
+                                </div>
+                                <input type="hidden" id="final_price" name="final_price" value="">
+                                <div id="price_breakdown" class="mt-2 text-xs text-gray-500 hidden">
+                                    <div class="space-y-1">
+                                        <div id="duration_info"></div>
+                                        <div id="rate_info"></div>
+                                        <div id="total_info"></div>
+                                    </div>
                                 </div>
                             </div>
+
                         </div>
                     </div>
     
@@ -302,15 +320,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Equipment checkboxes
-    document.querySelectorAll('.equipment-checkbox').forEach(function(checkbox) {
-        checkbox.addEventListener('change', function() {
-            const qtyInput = this.closest('div').querySelector('.equipment-qty');
-            qtyInput.disabled = !this.checked;
-            if (!this.checked) qtyInput.value = '';
-            else qtyInput.focus();
-        });
-    });
+    // Initial attachment of event listeners
+    attachEquipmentEventListeners();
+
+    // Add event listeners for date inputs to recalculate final price
+    document.getElementById('start_date').addEventListener('change', calculateFinalPrice);
+    document.getElementById('end_date').addEventListener('change', calculateFinalPrice);
+
 });
 
 function renderCalendar() {
@@ -499,7 +515,13 @@ function showToast(message, type = 'error') {
 const venuesData = [
     @foreach($venues as $venue)
         @if($venue && is_object($venue) && isset($venue->id))
-            {id: {{ $venue->id }}, name: "{{ addslashes($venue->name) }}", capacity: {{ $venue->capacity }}},
+            {
+                id: {{ $venue->id }}, 
+                name: "{{ addslashes($venue->name) }}", 
+                capacity: {{ $venue->capacity }}, 
+                price_per_hour: {{ $venue->price_per_hour ?? 0 }},
+                available_equipment: @json($venue->available_equipment ?? [])
+            },
         @endif
     @endforeach
 ];
@@ -508,10 +530,14 @@ document.getElementById('capacity').addEventListener('input', function() {
     const capacity = parseInt(this.value) || 0;
     const venueDisplay = document.getElementById('venue_display');
     const venueIdInput = document.getElementById('venue_id');
+    const priceDisplay = document.getElementById('price_display');
+    const priceInput = document.getElementById('price_per_hour');
     
     if (capacity <= 0) {
         venueDisplay.innerHTML = '<i class="fas fa-info-circle mr-2 text-blue-500"></i> Select capacity first';
+        priceDisplay.innerHTML = '<i class="fas fa-info-circle mr-2 text-blue-500"></i> Select capacity first';
         venueIdInput.value = '';
+        priceInput.value = '';
         return;
     }
     
@@ -520,7 +546,9 @@ document.getElementById('capacity').addEventListener('input', function() {
     
     if (suitableVenues.length === 0) {
         venueDisplay.innerHTML = '<i class="fas fa-exclamation-circle mr-2 text-red-500"></i> No venue available for this capacity';
+        priceDisplay.innerHTML = '<i class="fas fa-exclamation-circle mr-2 text-red-500"></i> No venue available for this capacity';
         venueIdInput.value = '';
+        priceInput.value = '';
         showToast('No venue available for the specified capacity. Please reduce the capacity or contact admin.', 'error');
         return;
     }
@@ -535,9 +563,164 @@ document.getElementById('capacity').addEventListener('input', function() {
     venueDisplay.innerHTML = `<i class="fas fa-check-circle mr-2 text-green-500"></i> ${selectedVenue.name} <span class="text-sm text-gray-500">(Capacity: ${selectedVenue.capacity})</span>`;
     venueIdInput.value = selectedVenue.id;
     
+    // Update price display
+    const price = selectedVenue.price_per_hour || 0;
+    priceDisplay.innerHTML = `<i class="fas fa-check-circle mr-2 text-green-500"></i> ₱${price.toLocaleString()} <span class="text-sm text-gray-500">per hour</span>`;
+    priceInput.value = price;
+    
     // Show success toast
-    showToast(`Venue "${selectedVenue.name}" automatically selected`, 'success');
+    showToast(`Venue "${selectedVenue.name}" automatically selected - Rate: ₱${price.toLocaleString()}/hour`, 'success');
+    
+    // Calculate final price after venue selection
+    calculateFinalPrice();
+    
+    // Generate equipment options for the selected venue
+    generateEquipmentOptions(selectedVenue);
 });
+
+// Function to attach event listeners to equipment checkboxes
+function attachEquipmentEventListeners() {
+    const equipmentCheckboxes = document.querySelectorAll('input[name="equipment[]"]');
+    equipmentCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                // If "No Equipment Needed" is selected, uncheck others and hide quantity containers
+                if (this.value === 'none') {
+                    equipmentCheckboxes.forEach(cb => {
+                        if (cb !== this) {
+                            cb.checked = false;
+                            // Hide quantity container for unchecked equipment
+                            const containerId = cb.value.toLowerCase().replace(/\s+/g, '_') + '_quantity_container';
+                            const container = document.getElementById(containerId);
+                            if (container) container.classList.add('hidden');
+                        }
+                    });
+                } else {
+                    // If other equipment is selected, uncheck "No Equipment Needed"
+                    const noEquipmentCheckbox = document.getElementById('equipment_none');
+                    if (noEquipmentCheckbox) noEquipmentCheckbox.checked = false;
+                    
+                    // Show quantity container for selected equipment
+                    const containerId = this.value.toLowerCase().replace(/\s+/g, '_') + '_quantity_container';
+                    const container = document.getElementById(containerId);
+                    if (container) container.classList.remove('hidden');
+                }
+            } else {
+                // If equipment is unchecked, hide its quantity container
+                const containerId = this.value.toLowerCase().replace(/\s+/g, '_') + '_quantity_container';
+                const container = document.getElementById(containerId);
+                if (container) container.classList.add('hidden');
+            }
+        });
+    });
+}
+
+// Equipment quantity validation
+function attachQuantityValidation() {
+    const quantityInputs = document.querySelectorAll('input[name^="equipment_quantity"]');
+    quantityInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            const max = parseInt(this.getAttribute('max'));
+            const value = parseInt(this.value);
+            
+            if (value > max) {
+                this.value = max;
+                showToast(`Maximum available quantity for this equipment is ${max}`, 'error');
+            } else if (value < 1) {
+                this.value = 1;
+            }
+        });
+    });
+}
+
+// Generate equipment options based on venue's available equipment
+function generateEquipmentOptions(venue) {
+    const equipmentContainer = document.getElementById('equipment_container');
+    const availableEquipment = venue.available_equipment || [];
+    
+    if (availableEquipment.length === 0) {
+        equipmentContainer.innerHTML = '<div class="text-center text-gray-500 py-4">No equipment available for this venue</div>';
+        return;
+    }
+    
+    let equipmentHTML = '';
+    
+    availableEquipment.forEach((equipment, index) => {
+        const equipmentId = equipment.name.toLowerCase().replace(/\s+/g, '_');
+        const maxQuantity = equipment.quantity || 1;
+        
+        equipmentHTML += `
+            <div class="border border-gray-200 rounded-lg p-3">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="equipment_${equipmentId}" name="equipment[]" value="${equipment.name}" class="w-4 h-4 text-maroon border-gray-300 rounded focus:ring-maroon">
+                        <label for="equipment_${equipmentId}" class="ml-2 text-sm font-medium text-gray-700">${equipment.name}</label>
+                    </div>
+                    <span class="text-xs text-gray-500">Available: <span id="available_${equipmentId}">${maxQuantity}</span></span>
+                </div>
+                <div id="${equipmentId}_quantity_container" class="hidden ml-6">
+                    <div class="flex items-center space-x-2">
+                        <label class="text-xs text-gray-600">Quantity:</label>
+                        <input type="number" id="${equipmentId}_quantity" name="equipment_quantity[${equipment.name}]" min="1" max="${maxQuantity}" value="1" class="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-maroon focus:border-maroon">
+                        <span class="text-xs text-gray-500">/ ${maxQuantity}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    equipmentContainer.innerHTML = equipmentHTML;
+    
+    // Re-attach event listeners for the new equipment checkboxes
+    attachEquipmentEventListeners();
+    
+    // Re-attach quantity validation for new inputs
+    attachQuantityValidation();
+}
+
+// Calculate final price based on duration and rate
+function calculateFinalPrice() {
+    const startDate = document.getElementById('start_date').value;
+    const endDate = document.getElementById('end_date').value;
+    const pricePerHour = parseFloat(document.getElementById('price_per_hour').value) || 0;
+    const finalPriceDisplay = document.getElementById('final_price_display');
+    const finalPriceInput = document.getElementById('final_price');
+    const priceBreakdown = document.getElementById('price_breakdown');
+    
+    if (!startDate || !endDate || pricePerHour <= 0) {
+        finalPriceDisplay.innerHTML = '<i class="fas fa-info-circle mr-2 text-blue-500"></i> Select capacity and dates first';
+        finalPriceInput.value = '';
+        priceBreakdown.classList.add('hidden');
+        return;
+    }
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (end <= start) {
+        finalPriceDisplay.innerHTML = '<i class="fas fa-exclamation-circle mr-2 text-red-500"></i> End time must be after start time';
+        finalPriceInput.value = '';
+        priceBreakdown.classList.add('hidden');
+        return;
+    }
+    
+    // Calculate duration in hours (rounded up to nearest hour)
+    const durationMs = end - start;
+    const durationHours = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60)));
+    
+    // Calculate final price
+    const finalPrice = durationHours * pricePerHour;
+    
+    // Update display
+    finalPriceDisplay.innerHTML = `<i class="fas fa-check-circle mr-2 text-green-500"></i> ₱${finalPrice.toLocaleString()} <span class="text-sm text-gray-500">(Total for ${durationHours} hour${durationHours > 1 ? 's' : ''})</span>`;
+    finalPriceInput.value = finalPrice;
+    
+    // Show price breakdown
+    priceBreakdown.classList.remove('hidden');
+    document.getElementById('duration_info').textContent = `Duration: ${durationHours} hour${durationHours > 1 ? 's' : ''}`;
+    document.getElementById('rate_info').textContent = `Rate: ₱${pricePerHour.toLocaleString()} per hour`;
+    document.getElementById('total_info').textContent = `Total: ₱${finalPrice.toLocaleString()}`;
+}
 
 // Form validation
 document.querySelector('form').addEventListener('submit', function(e) {
@@ -573,31 +756,34 @@ document.querySelector('form').addEventListener('submit', function(e) {
         return;
     }
     
-    // Equipment validation
-    let valid = true;
-    let equipmentChecked = false;
+    const finalPrice = document.getElementById('final_price').value;
+    if (!finalPrice || finalPrice <= 0) {
+        e.preventDefault();
+        showToast('Please ensure all dates and capacity are selected to calculate the final price.', 'error');
+        return;
+    }
     
-    document.querySelectorAll('.equipment-checkbox').forEach(function(checkbox) {
-        if (checkbox.checked) {
-            equipmentChecked = true;
-            const qtyInput = checkbox.closest('div').querySelector('.equipment-qty');
-            const min = parseInt(qtyInput.min);
-            const max = parseInt(qtyInput.max);
-            const val = parseInt(qtyInput.value);
-            
-            if (!val || val < min || val > max) {
-                valid = false;
-                qtyInput.classList.add('border-red-500', 'ring-1', 'ring-red-500');
-                showToast(`Please enter a valid quantity (${min}-${max}) for ${checkbox.nextElementSibling.textContent.trim().split('(')[0]}`, 'error');
-            } else {
-                qtyInput.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
+    // Equipment validation
+    const selectedEquipment = document.querySelectorAll('input[name="equipment[]"]:checked');
+    let hasEquipmentError = false;
+    
+    selectedEquipment.forEach(equipment => {
+        if (equipment.value !== 'none') {
+            const equipmentId = equipment.value.toLowerCase().replace(/\s+/g, '_');
+            const quantityInput = document.querySelector(`input[name="equipment_quantity[${equipment.value}]"]`);
+            if (quantityInput && (!quantityInput.value || parseInt(quantityInput.value) < 1)) {
+                hasEquipmentError = true;
+                showToast(`Please specify quantity for ${equipment.value}`, 'error');
             }
         }
     });
     
-    if (!valid) {
+    if (hasEquipmentError) {
         e.preventDefault();
+        return;
     }
+    
+
 });
 </script>
 @endpush

@@ -1,10 +1,10 @@
-@extends('layouts.admin')
+@extends('layouts.mhadel')
 
 @section('title', 'Venues Management')
 @section('page-title', 'Venues Management')
 
 @section('header-actions')
-    <a href="{{ route('admin.venues.create') }}" class="bg-maroon text-white px-4 py-2 rounded-lg hover:bg-opacity-80 transition">
+    <a href="{{ route('mhadel.venues.create') }}" class="bg-maroon text-white px-4 py-2 rounded-lg hover:bg-opacity-80 transition">
         <i class="fas fa-plus mr-2"></i>Add New Venue
     </a>
 @endsection
@@ -75,13 +75,13 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div class="flex space-x-2">
-                            <a href="{{ route('admin.venues.show', $venue) }}" class="text-blue-600 hover:text-blue-900">
+                            <a href="{{ route('mhadel.venues.show', $venue) }}" class="text-blue-600 hover:text-blue-900">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            <a href="{{ route('admin.venues.edit', $venue) }}" class="text-green-600 hover:text-green-900">
+                            <a href="{{ route('mhadel.venues.edit', $venue) }}" class="text-green-600 hover:text-green-900">
                                 <i class="fas fa-edit"></i>
                             </a>
-                            <form action="{{ route('admin.venues.destroy', $venue) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this venue?')">
+                            <form action="{{ route('mhadel.venues.destroy', $venue) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this venue?')">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="text-red-600 hover:text-red-900">
@@ -97,7 +97,7 @@
                         <div class="flex flex-col items-center">
                             <i class="fas fa-building text-4xl text-gray-300 mb-2"></i>
                             <p>No venues found</p>
-                            <a href="{{ route('admin.venues.create') }}" class="mt-2 text-maroon hover:underline">Add your first venue</a>
+                            <a href="{{ route('mhadel.venues.create') }}" class="mt-2 text-maroon hover:underline">Add your first venue</a>
                         </div>
                     </td>
                 </tr>

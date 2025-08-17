@@ -16,6 +16,10 @@ class Reservation extends Model
         'start_date',
         'end_date',
         'activity_grid',
+        'equipment_details',
+        'price_per_hour',
+        'final_price',
+        'duration_hours',
         'status',
         'notes'
     ];
@@ -24,6 +28,10 @@ class Reservation extends Model
         'start_date' => 'datetime',
         'end_date' => 'datetime',
         'activity_grid' => 'string',
+        'equipment_details' => 'array',
+        'price_per_hour' => 'decimal:2',
+        'final_price' => 'decimal:2',
+        'duration_hours' => 'integer',
     ];
 
     public function user(): BelongsTo
@@ -34,11 +42,5 @@ class Reservation extends Model
     public function venue(): BelongsTo
     {
         return $this->belongsTo(Venue::class);
-    }
-
-    public function equipment()
-    {
-        return $this->belongsToMany(Equipment::class, 'reservation_equipment')
-            ->withPivot('quantity');
     }
 }

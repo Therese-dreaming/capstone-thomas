@@ -115,8 +115,26 @@
                         @endif
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-                            <p class="text-gray-900">{{ $reservation->start_date->diffInHours($reservation->end_date) }} hours</p>
+                            <p class="text-gray-900">
+                                @if($reservation->duration_hours)
+                                    {{ $reservation->duration_hours }} hours
+                                @else
+                                    {{ $reservation->start_date->diffInHours($reservation->end_date) }} hours
+                                @endif
+                            </p>
                         </div>
+                        @if($reservation->price_per_hour)
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Rate per Hour</label>
+                                <p class="text-gray-900">₱{{ number_format($reservation->price_per_hour, 2) }}</p>
+                            </div>
+                        @endif
+                        @if($reservation->final_price)
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Total Cost</label>
+                                <p class="text-gray-900 font-semibold text-lg">₱{{ number_format($reservation->final_price, 2) }}</p>
+                            </div>
+                        @endif
                     </div>
                     
                     @if($reservation->purpose)
@@ -128,33 +146,64 @@
                 </div>
             </div>
 
-            <!-- Equipment Required -->
-            @if($reservation->equipment && $reservation->equipment->count() > 0)
+            <!-- Equipment Details -->
+            @if($reservation->equipment_details && count($reservation->equipment_details) > 0)
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 animate-fadeIn">
                     <div class="p-6 border-b border-gray-200">
                         <h2 class="text-lg font-semibold text-gray-800 font-poppins flex items-center">
                             <i class="fas fa-tools text-maroon mr-2"></i>
-                            Equipment Required
+                            Equipment Details
                         </h2>
                     </div>
                     <div class="p-6">
-                        <div class="space-y-4">
-                            @foreach($reservation->equipment as $equipment)
-                                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                    <div class="flex items-center">
-                                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-                                            <i class="fas fa-tools text-blue-600"></i>
-                                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            @foreach($reservation->equipment_details as $equipment)
+                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                    <div class="flex items-center justify-between">
                                         <div>
-                                            <h4 class="font-medium text-gray-800">{{ $equipment->name }}</h4>
-                                            <p class="text-sm text-gray-600">{{ $equipment->description }}</p>
+                                            <h4 class="font-medium text-gray-800">{{ $equipment['name'] }}</h4>
+                                            <p class="text-sm text-gray-600">Quantity: {{ $equipment['quantity'] }}</p>
                                         </div>
-                                    </div>
-                                    <div class="text-right">
-                                        <span class="text-sm font-medium text-gray-700">Qty: {{ $equipment->pivot->quantity }}</span>
+                                        <div class="text-maroon">
+                                            <i class="fas fa-check-circle text-lg"></i>
+                                        </div>
                                     </div>
                                 </div>
                             @endforeach
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Pricing Summary -->
+            @if($reservation->final_price || $reservation->price_per_hour)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 animate-fadeIn">
+                    <div class="p-6 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-800 font-poppins flex items-center">
+                            <i class="fas fa-calculator text-maroon mr-2"></i>
+                            Pricing Summary
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            @if($reservation->duration_hours)
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-maroon">{{ $reservation->duration_hours }}</div>
+                                    <div class="text-sm text-gray-600">Duration (Hours)</div>
+                                </div>
+                            @endif
+                            @if($reservation->price_per_hour)
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-maroon">₱{{ number_format($reservation->price_per_hour, 2) }}</div>
+                                    <div class="text-sm text-gray-600">Rate per Hour</div>
+                                </div>
+                            @endif
+                            @if($reservation->final_price)
+                                <div class="text-center">
+                                    <div class="text-3xl font-bold text-green-600">₱{{ number_format($reservation->final_price, 2) }}</div>
+                                    <div class="text-sm text-gray-600">Total Cost</div>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -231,6 +280,54 @@
                             <label class="block text-xs text-gray-500 mb-1">Last Updated</label>
                             <p class="text-sm text-gray-700">{{ $reservation->updated_at->format('M d, Y g:i A') }}</p>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reservation Summary -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 animate-fadeIn">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-800 font-poppins flex items-center">
+                        <i class="fas fa-info-circle text-maroon mr-2"></i>
+                        Reservation Summary
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Status:</span>
+                            <span class="px-2 py-1 rounded-full text-xs font-medium 
+                                @if($reservation->status === 'pending') bg-yellow-100 text-yellow-800
+                                @elseif($reservation->status === 'approved') bg-green-100 text-green-800
+                                @elseif($reservation->status === 'rejected') bg-red-100 text-red-800
+                                @else bg-gray-100 text-gray-800 @endif">
+                                {{ ucfirst(str_replace('_', ' ', $reservation->status)) }}
+                            </span>
+                        </div>
+                        @if($reservation->capacity)
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Capacity:</span>
+                                <span class="text-sm font-medium text-gray-800">{{ $reservation->capacity }} people</span>
+                            </div>
+                        @endif
+                        @if($reservation->duration_hours)
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Duration:</span>
+                                <span class="text-sm font-medium text-gray-800">{{ $reservation->duration_hours }} hours</span>
+                            </div>
+                        @endif
+                        @if($reservation->final_price)
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Total Cost:</span>
+                                <span class="text-sm font-medium text-green-600">₱{{ number_format($reservation->final_price, 2) }}</span>
+                            </div>
+                        @endif
+                        @if($reservation->equipment_details && count($reservation->equipment_details) > 0)
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Equipment:</span>
+                                <span class="text-sm font-medium text-gray-800">{{ count($reservation->equipment_details) }} items</span>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
