@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class DrJavierRoleMiddleware
+class OTPRoleMiddleware
 {
     /**
      * Handle an incoming request.
@@ -19,7 +19,7 @@ class DrJavierRoleMiddleware
             return redirect('/login');
         }
 
-        if (auth()->user()->role !== 'Dr. Javier' && auth()->user()->role !== 'Dr Javier') {
+        if (auth()->user()->role !== 'OTP') {
             return redirect('/')->with('error', 'Access denied. You do not have permission to access this area.');
         }
 

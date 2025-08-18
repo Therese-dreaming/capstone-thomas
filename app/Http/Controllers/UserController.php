@@ -6,135 +6,234 @@ use Illuminate\Http\Request;
 use App\Models\Venue;
 use App\Models\Reservation;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+use App\Models\Event;
 
 class UserController extends Controller
 {
-    public function dashboard()
-    {
-        $user = Auth::user();
-        $reservations = Reservation::where('user_id', $user->id)
-            ->with(['venue'])
-            ->latest()
-            ->take(5)
-            ->get();
+	public function dashboard()
+	{
+		$user = Auth::user();
+		$reservations = Reservation::where('user_id', $user->id)
+			->with(['venue'])
+			->latest()
+			->take(5)
+			->get();
 
-        return view('user.dashboard', compact('reservations'));
-    }
+		return view('user.dashboard', compact('reservations'));
+	}
 
-    public function index()
-    {
-        $userReservations = Reservation::where('user_id', Auth::id())
-            ->with(['venue'])
-            ->latest()
-            ->paginate(10);
-        return view('user.reservations.index', compact('userReservations'));
-    }
+	public function index()
+	{
+		$currentStatus = request()->query('status', 'all');
+		$query = Reservation::where('user_id', Auth::id())
+			->with(['venue'])
+			->latest();
 
-    public function calendar()
-    {
-        $venues = Venue::where('is_available', true)->get();
-        return view('user.reservations', compact('venues'));
-    }
+		switch ($currentStatus) {
+			case 'pending':
+				$query->whereIn('status', ['pending', 'approved_IOSA', 'approved_mhadel']);
+				break;
+			case 'approved':
+				$query->whereIn('status', ['approved', 'approved_OTP']);
+				break;
+			case 'rejected':
+				$query->whereIn('status', ['rejected', 'rejected_OTP']);
+				break;
+			case 'all':
+			default:
+				// no extra filter
+				break;
+		}
 
-    public function storeReservation(Request $request)
-    {
-        $request->validate([
-            'event_title' => 'required|string|max:255',
-            'capacity' => 'required|integer|min:1',
-            'venue_id' => 'required|exists:venues,id',
-            'purpose' => 'required|string',
-            'start_date' => 'required|date|after:now',
-            'end_date' => 'required|date|after:start_date',
-            'activity_grid' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB
-            'equipment' => 'nullable|array',
-            'equipment.*' => 'string',
-            'equipment_quantity' => 'nullable|array',
-            'equipment_quantity.*' => 'integer|min:1',
-            'price_per_hour' => 'required|numeric|min:0',
-            'final_price' => 'required|numeric|min:0',
-        ]);
+		$userReservations = $query->paginate(10)->withQueryString();
 
-        // Validate that a suitable venue was found
-        $venue = Venue::find($request->venue_id);
-        if (!$venue || $venue->capacity < $request->capacity) {
-            return back()->withErrors(['capacity' => 'No suitable venue found for the specified capacity.'])->withInput();
-        }
+		$counts = [
+			'all' => Reservation::where('user_id', Auth::id())->count(),
+			'pending' => Reservation::where('user_id', Auth::id())->whereIn('status', ['pending', 'approved_IOSA', 'approved_mhadel'])->count(),
+			'approved' => Reservation::where('user_id', Auth::id())->whereIn('status', ['approved', 'approved_OTP'])->count(),
+			'rejected' => Reservation::where('user_id', Auth::id())->whereIn('status', ['rejected', 'rejected_OTP'])->count(),
+		];
 
-        // Validate reservation is at least 3 days in advance
-        $minDate = now()->addDays(3);
-        if (strtotime($request->start_date) < strtotime($minDate)) {
-            return back()->withErrors(['start_date' => 'Reservations must be made at least 3 days in advance.'])->withInput();
-        }
-        
-        // Validate that end date is after start date
-        if (strtotime($request->end_date) <= strtotime($request->start_date)) {
-            return back()->withErrors(['end_date' => 'End date must be after start date.'])->withInput();
-        }
+		return view('user.reservations.index', compact('userReservations', 'currentStatus', 'counts'));
+	}
 
-        // Validate venue time conflict
-        $conflict = Reservation::where('venue_id', $request->venue_id)
-            ->where(function($q) use ($request) {
-                $q->where('start_date', '<', $request->end_date)
-                  ->where('end_date', '>', $request->start_date);
-            })
-            ->whereIn('status', ['pending', 'approved'])
-            ->exists();
-        if ($conflict) {
-            return back()->withErrors(['venue_id' => 'This venue is already reserved for the selected date and time.'])->withInput();
-        }
+	public function show($id)
+	{
+		$reservation = Reservation::where('id', $id)
+			->where('user_id', Auth::id())
+			->with(['venue'])
+			->firstOrFail();
 
-        $data = $request->all();
-        $data['user_id'] = Auth::id();
-        $data['status'] = 'pending';
+		return view('user.reservations.show', compact('reservation'));
+	}
 
-        // Process equipment details
-        if ($request->has('equipment') && is_array($request->equipment)) {
-            $equipmentDetails = [];
-            foreach ($request->equipment as $equipment) {
-                if ($equipment !== 'none') {
-                    $quantity = $request->input("equipment_quantity.{$equipment}", 1);
-                    $equipmentDetails[] = [
-                        'name' => $equipment,
-                        'quantity' => $quantity
-                    ];
-                }
-            }
-            $data['equipment_details'] = $equipmentDetails;
-        }
+	public function calendar()
+	{
+		$venues = Venue::where('is_available', true)->get();
+		return view('user.reservations', compact('venues'));
+	}
 
-        // Calculate duration in hours
-        $startDate = \Carbon\Carbon::parse($request->start_date);
-        $endDate = \Carbon\Carbon::parse($request->end_date);
-        $durationHours = ceil($startDate->diffInSeconds($endDate) / 3600);
-        
-        // Log duration calculation for debugging
-        \Log::info('Duration calculation', [
-            'start_date' => $startDate->toDateTimeString(),
-            'end_date' => $endDate->toDateTimeString(),
-            'raw_duration_seconds' => $startDate->diffInSeconds($endDate),
-            'calculated_hours' => $durationHours,
-            'final_duration_hours' => max(1, $durationHours)
-        ]);
-        
-        $data['duration_hours'] = max(1, $durationHours); // Ensure minimum 1 hour
+	public function storeReservation(Request $request)
+	{
+		$request->validate([
+			'event_title' => 'required|string|max:255',
+			'capacity' => 'required|integer|min:1',
+			'venue_id' => 'required|exists:venues,id',
+			'purpose' => 'required|string',
+			'start_date' => 'required|date|after:now',
+			'end_date' => 'required|date|after:start_date',
+			'activity_grid' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
+			'equipment' => 'nullable|array',
+			'equipment.*' => 'string',
+			'equipment_quantity' => 'nullable|array',
+			'equipment_quantity.*' => 'integer|min:1',
+			'price_per_hour' => 'required|numeric|min:0',
+			'base_price' => 'required|numeric|min:0',
+		]);
 
-        // Handle file upload
-        if ($request->hasFile('activity_grid')) {
-            $file = $request->file('activity_grid');
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            $filePath = $file->storeAs('activity_grids', $fileName, 'public');
-            $data['activity_grid'] = $filePath;
-        }
+		$venue = Venue::find($request->venue_id);
+		if (!$venue || $venue->capacity < $request->capacity) {
+			return back()->withErrors(['capacity' => 'No suitable venue found for the specified capacity.'])->withInput();
+		}
 
-        Reservation::create($data);
+		$minDate = now()->addDays(3);
+		if (strtotime($request->start_date) < strtotime($minDate)) {
+			return back()->withErrors(['start_date' => 'Reservations must be made at least 3 days in advance.'])->withInput();
+		}
+		if (strtotime($request->end_date) <= strtotime($request->start_date)) {
+			return back()->withErrors(['end_date' => 'End date must be after start date.'])->withInput();
+		}
 
-        return redirect()->route('user.reservations.index')
-            ->with('success', 'Reservation submitted successfully!');
-    }
+		// Enhanced overlap validation: block any non-cancelled/rejected reservations
+		$blockingStatuses = ['pending', 'approved_IOSA', 'approved_mhadel', 'approved_OTP'];
+		$conflict = Reservation::where('venue_id', $request->venue_id)
+			->where(function($q) use ($request) {
+				$q->where('start_date', '<', $request->end_date)
+					->where('end_date', '>', $request->start_date);
+			})
+			->whereIn('status', $blockingStatuses)
+			->exists();
+		if ($conflict) {
+			return back()->withErrors(['start_date' => 'The selected time overlaps with an existing reservation for this venue.'])->withInput();
+		}
 
-    public function profile()
-    {
-        $user = Auth::user();
-        return view('user.profile', compact('user'));
-    }
+		// Block if overlaps with official events (upcoming/ongoing)
+		$eventConflict = Event::where('venue_id', $request->venue_id)
+			->whereIn('status', ['upcoming','ongoing'])
+			->where(function($q) use ($request) {
+				$q->where('start_date', '<', $request->end_date)
+					->where('end_date', '>', $request->start_date);
+			})
+			->exists();
+		if ($eventConflict) {
+			return back()->withErrors(['start_date' => 'The selected time overlaps with an official event for this venue.'])->withInput();
+		}
+
+		$data = $request->all();
+		$data['user_id'] = Auth::id();
+		$data['status'] = 'pending';
+
+		if ($request->has('equipment') && is_array($request->equipment)) {
+			$equipmentDetails = [];
+			foreach ($request->equipment as $equipment) {
+				if ($equipment !== 'none') {
+					$quantity = $request->input("equipment_quantity.{$equipment}", 1);
+					$equipmentDetails[] = [
+						'name' => $equipment,
+						'quantity' => $quantity
+					];
+				}
+			}
+			$data['equipment_details'] = $equipmentDetails;
+		}
+
+		$startDate = Carbon::parse($request->start_date);
+		$endDate = Carbon::parse($request->end_date);
+		$durationHours = ceil($startDate->diffInSeconds($endDate) / 3600);
+		\Log::info('Duration calculation', [
+			'start_date' => $startDate->toDateTimeString(),
+			'end_date' => $endDate->toDateTimeString(),
+			'raw_duration_seconds' => $startDate->diffInSeconds($endDate),
+			'calculated_hours' => $durationHours,
+			'final_duration_hours' => max(1, $durationHours)
+		]);
+		$data['duration_hours'] = max(1, $durationHours);
+
+		if ($request->hasFile('activity_grid')) {
+			$file = $request->file('activity_grid');
+			$fileName = time() . '_' . $file->getClientOriginalName();
+			$filePath = $file->storeAs('activity_grids', $fileName, 'public');
+			$data['activity_grid'] = $filePath;
+		}
+
+		\Log::info('Creating reservation with data:', [
+			'user_id' => $data['user_id'],
+			'base_price' => $data['base_price'] ?? 'not set',
+			'price_per_hour' => $data['price_per_hour'] ?? 'not set',
+			'duration_hours' => $data['duration_hours'] ?? 'not set'
+		]);
+
+		Reservation::create($data);
+
+		return redirect()->route('user.reservations.index')
+			->with('success', 'Reservation submitted successfully!');
+	}
+
+	public function profile()
+	{
+		$user = Auth::user();
+		return view('user.profile', compact('user'));
+	}
+
+	// New: API to get unavailable time slots for a venue and date
+	public function unavailable(Request $request)
+	{
+		$request->validate([
+			'venue_id' => 'required|exists:venues,id',
+			'date' => 'required|date',
+		]);
+		$venueId = $request->input('venue_id');
+		$date = Carbon::parse($request->input('date'));
+		$dayStart = $date->copy()->startOfDay();
+		$dayEnd = $date->copy()->endOfDay();
+
+		$blockingStatuses = ['pending', 'approved_IOSA', 'approved_mhadel', 'approved_OTP'];
+		$rows = Reservation::where('venue_id', $venueId)
+			->whereIn('status', $blockingStatuses)
+			->where(function($q) use ($dayStart, $dayEnd) {
+				$q->where('start_date', '<', $dayEnd)
+					->where('end_date', '>', $dayStart);
+			})
+			->orderBy('start_date')
+			->get(['start_date','end_date','event_title']);
+
+		$slots = $rows->map(function($r){
+			return [
+				'start' => Carbon::parse($r->start_date)->format('H:i'),
+				'end' => Carbon::parse($r->end_date)->format('H:i'),
+				'title' => $r->event_title,
+			];
+		});
+
+		// Include official events as unavailable
+		$eventRows = Event::where('venue_id', $venueId)
+			->whereIn('status', ['upcoming','ongoing'])
+			->where(function($q) use ($dayStart, $dayEnd) {
+				$q->where('start_date', '<', $dayEnd)
+					->where('end_date', '>', $dayStart);
+			})
+			->orderBy('start_date')
+			->get(['start_date','end_date','title']);
+
+		$eventSlots = $eventRows->map(function($e){
+			return [
+				'start' => Carbon::parse($e->start_date)->format('H:i'),
+				'end' => Carbon::parse($e->end_date)->format('H:i'),
+				'title' => $e->title,
+			];
+		});
+
+		return response()->json(['slots' => $slots->merge($eventSlots)->values()]);
+	}
 }

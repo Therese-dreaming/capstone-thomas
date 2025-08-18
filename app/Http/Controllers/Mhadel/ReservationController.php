@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Mhadel;
 use App\Http\Controllers\Controller;
 use App\Models\Reservation;
 use Illuminate\Http\Request;
+use App\Models\Event;
 
 class ReservationController extends Controller
 {
@@ -41,7 +42,11 @@ class ReservationController extends Controller
             });
         }
         
-        $reservations = $query->orderBy('created_at', 'desc')->paginate(10);
+        $reservations = $query->select([
+            'id', 'user_id', 'venue_id', 'event_title', 'start_date', 'end_date', 
+            'purpose', 'status', 'notes', 'base_price', 'discount_percentage', 'final_price', 
+            'price_per_hour', 'duration_hours', 'created_at'
+        ])->with(['user', 'venue'])->orderBy('created_at', 'desc')->paginate(10);
         
         $stats = [
             'total' => Reservation::where('status', 'approved_IOSA')->count(),
@@ -66,6 +71,27 @@ class ReservationController extends Controller
     }
 
     /**
+     * Calendar view: show final approved reservations (OTP approved) and official events.
+     */
+    public function calendar(Request $request)
+    {
+        $reservations = Reservation::with(['user','venue'])
+            ->whereIn('status', ['approved_OTP'])
+            ->orderBy('start_date')
+            ->get(['id','user_id','venue_id','event_title','start_date','end_date','status','final_price','capacity','purpose']);
+
+        $events = Event::with(['venue'])
+            ->whereIn('status', ['upcoming','ongoing'])
+            ->orderBy('start_date')
+            ->get(['id','venue_id','title','organizer','start_date','end_date','status','max_participants']);
+
+        return view('mhadel.reservations.calendar', [
+            'reservations' => $reservations,
+            'events' => $events,
+        ]);
+    }
+
+    /**
      * Approve a reservation.
      */
     public function approve(Request $request, string $id)
@@ -76,17 +102,42 @@ class ReservationController extends Controller
         }
         
         $notes = $request->input('notes', '');
+        $newBasePrice = $request->input('base_price', 0);
+        $discount = $request->input('discount', 0);
+        $newFinalPrice = $request->input('final_price', 0);
+        
         $approvalNote = "[Ms. Mhadel Approved on " . now()->format('M d, Y H:i') . "]";
         if ($notes) {
             $approvalNote .= "\nNotes: " . $notes;
         }
         
+        // Add pricing information to notes
+        $approvalNote .= "\nPricing Review:";
+        if ($reservation->base_price > 0) {
+            $approvalNote .= "\n- User's Base Price: ₱" . number_format($reservation->base_price, 2);
+        } else {
+            $approvalNote .= "\n- User's Base Price: Free Event";
+        }
+        
+        if ($newBasePrice > 0) {
+            $approvalNote .= "\n- Ms. Mhadel's Base Price: ₱" . number_format($newBasePrice, 2);
+            if ($discount > 0) {
+                $approvalNote .= "\n- Discount Applied: " . $discount . "%";
+            }
+            $approvalNote .= "\n- Final Price: ₱" . number_format($newFinalPrice, 2);
+        } else {
+            $approvalNote .= "\n- Final Pricing: Free Event";
+        }
+        
         $reservation->update([
             'status' => 'approved_mhadel',
-            'notes' => $reservation->notes . "\n" . $approvalNote
+            'notes' => $reservation->notes . "\n" . $approvalNote,
+            'base_price' => $newBasePrice,
+            'discount_percentage' => $discount,
+            'final_price' => $newFinalPrice
         ]);
         
-        return redirect()->back()->with('success', 'Reservation approved successfully. Forwarded to Dr. Javier for final approval.');
+        return redirect()->back()->with('success', 'Reservation approved successfully. Forwarded to OTP for final approval.');
     }
 
     /**

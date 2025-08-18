@@ -1,6 +1,6 @@
 @extends('layouts.drjavier')
 
-@section('title', 'Dashboard - Dr. Javier')
+@section('title', 'Dashboard - OTP')
 @section('page-title', 'Dashboard')
 @section('page-subtitle', 'Final approval authority for reservations')
 
@@ -10,7 +10,7 @@
     <div class="bg-gradient-to-r from-maroon to-red-800 rounded-xl p-6 text-white">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold mb-2">Welcome, Dr. Javier</h1>
+                <h1 class="text-2xl font-bold mb-2">Welcome, OTP</h1>
                 <p class="text-red-100">Office of the President - Final Approval Authority</p>
             </div>
             <div class="text-right">
@@ -166,7 +166,7 @@
                     <p><strong>Step 1:</strong> User submits reservation</p>
                     <p><strong>Step 2:</strong> IOSA reviews and approves</p>
                     <p><strong>Step 3:</strong> Ms. Mhadel reviews and approves</p>
-                    <p><strong>Step 4:</strong> <strong>Dr. Javier (OTP) - Final Approval</strong></p>
+                    <p><strong>Step 4:</strong> <strong>OTP (Office of the President) - Final Approval</strong></p>
                 </div>
                 <p class="text-blue-600 font-medium mt-3">You are the final authority for all reservation approvals.</p>
             </div>

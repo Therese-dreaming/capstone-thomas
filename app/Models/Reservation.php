@@ -18,6 +18,8 @@ class Reservation extends Model
         'activity_grid',
         'equipment_details',
         'price_per_hour',
+        'base_price',
+        'discount_percentage',
         'final_price',
         'duration_hours',
         'status',
@@ -30,6 +32,8 @@ class Reservation extends Model
         'activity_grid' => 'string',
         'equipment_details' => 'array',
         'price_per_hour' => 'decimal:2',
+        'base_price' => 'decimal:2',
+        'discount_percentage' => 'integer',
         'final_price' => 'decimal:2',
         'duration_hours' => 'integer',
     ];

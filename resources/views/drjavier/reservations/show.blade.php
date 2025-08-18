@@ -1,6 +1,6 @@
 @extends('layouts.drjavier')
 
-@section('title', 'Reservation Details - Dr. Javier')
+@section('title', 'Reservation Details - OTP')
 @section('page-title', 'Reservation Details')
 @section('page-subtitle', 'Final approval authority for reservations')
 
@@ -63,14 +63,14 @@
                     <p class="text-gray-600">Submitted by {{ $reservation->user->name }}</p>
                 </div>
                 <div class="flex items-center space-x-3">
-                    @if($reservation->status === 'mhadel_approved')
-                        <span class="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-full font-medium">Pending Dr. Javier's Final Review</span>
-                    @elseif($reservation->status === 'dr_javier_approved')
-                        <span class="px-4 py-2 bg-green-100 text-green-800 rounded-full font-medium">Approved by Dr. Javier (OTP)</span>
-                    @elseif($reservation->status === 'dr_javier_rejected')
-                        <span class="px-4 py-2 bg-red-100 text-red-800 rounded-full font-medium">Rejected by Dr. Javier (OTP)</span>
+                    @if($reservation->status === 'approved_mhadel')
+                        <span class="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-full font-medium">Pending OTP's Final Review</span>
+                    @elseif($reservation->status === 'approved_OTP')
+                        <span class="px-4 py-2 bg-green-100 text-green-800 rounded-full font-medium">Final Approved by OTP</span>
+                    @elseif($reservation->status === 'rejected_OTP')
+                        <span class="px-4 py-2 bg-red-100 text-red-800 rounded-full font-medium">Final Rejected by OTP</span>
                     @else
-                        <span class="px-4 py-2 bg-gray-100 text-gray-800 rounded-full font-medium">{{ ucfirst($reservation->status) }}</span>
+                        <span class="px-4 py-2 bg-gray-100 text-gray-800 rounded-full font-medium">{{ ucfirst(str_replace('_', ' ', $reservation->status)) }}</span>
                     @endif
                 </div>
             </div>
@@ -245,8 +245,76 @@
                 </div>
             @endif
 
+            <!-- Pricing Information -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 animate-fadeIn">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-800 font-poppins flex items-center">
+                        <i class="fas fa-dollar-sign text-maroon mr-2"></i>
+                        Pricing Information
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Base Price</label>
+                            <p class="text-2xl font-bold text-green-600">₱{{ number_format($reservation->base_price ?? 0, 2) }}</p>
+                            <p class="text-sm text-gray-500">Set by Ms. Mhadel</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Discount Applied</label>
+                            <p class="text-xl font-semibold text-blue-600">{{ $reservation->discount_percentage ?? 0 }}%</p>
+                            @if($reservation->discount_percentage && $reservation->discount_percentage > 0)
+                                <p class="text-sm text-gray-500">Discount amount: ₱{{ number_format(($reservation->base_price * $reservation->discount_percentage / 100), 2) }}</p>
+                            @endif
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Final Price</label>
+                            <p class="text-2xl font-bold text-green-800">₱{{ number_format($reservation->final_price ?? 0, 2) }}</p>
+                            <p class="text-sm text-gray-500">Price after discount</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Rate per Hour</label>
+                            <p class="text-lg font-semibold text-gray-800">₱{{ number_format($reservation->price_per_hour ?? 0, 2) }}</p>
+                            <p class="text-sm text-gray-500">Venue hourly rate</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Equipment Details -->
+            @if($reservation->equipment_details && count($reservation->equipment_details) > 0)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 animate-fadeIn">
+                    <div class="p-6 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-800 font-poppins flex items-center">
+                            <i class="fas fa-tools text-maroon mr-2"></i>
+                            Equipment Requested
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            @foreach($reservation->equipment_details as $equipment)
+                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h4 class="font-medium text-gray-800">{{ $equipment['name'] }}</h4>
+                                            @if(isset($equipment['category']))
+                                                <p class="text-sm text-gray-600">{{ $equipment['category'] }}</p>
+                                            @endif
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="text-lg font-bold text-blue-600">{{ $equipment['quantity'] }}</span>
+                                            <p class="text-xs text-gray-500">Quantity</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <!-- Quick Actions -->
-            @if($reservation->status === 'mhadel_approved')
+            @if($reservation->status === 'approved_mhadel')
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 animate-fadeIn">
                     <div class="p-6 border-b border-gray-200">
                         <h2 class="text-lg font-semibold text-gray-800 font-poppins flex items-center">
@@ -266,6 +334,46 @@
                         <p class="text-xs text-gray-500 mt-3 text-center">
                             This is the final approval. The reservation will be confirmed.
                         </p>
+                    </div>
+                </div>
+            @elseif($reservation->status === 'approved_OTP')
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 animate-fadeIn">
+                    <div class="p-6 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-800 font-poppins flex items-center">
+                            <i class="fas fa-info-circle text-green-500 mr-2"></i>
+                            Status Information
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <i class="fas fa-check-circle text-green-500 mr-3 text-xl"></i>
+                                <div>
+                                    <h3 class="font-medium text-green-800">Reservation Final Approved by OTP</h3>
+                                    <p class="text-sm text-green-600 mt-1">This reservation has been fully approved and confirmed.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @elseif($reservation->status === 'rejected_OTP')
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 animate-fadeIn">
+                    <div class="p-6 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-800 font-poppins flex items-center">
+                            <i class="fas fa-info-circle text-red-500 mr-2"></i>
+                            Status Information
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <i class="fas fa-times-circle text-red-500 mr-3 text-xl"></i>
+                                <div>
+                                    <h3 class="font-medium text-red-800">Reservation Final Rejected by OTP</h3>
+                                    <p class="text-sm text-red-600 mt-1">This reservation has been rejected and will not proceed.</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             @endif

@@ -19,11 +19,11 @@ class DrJavierController extends Controller
         
         $stats = [
             'pending' => Reservation::where('status', 'approved_mhadel')->count(),
-            'approved_today' => Reservation::where('status', 'approved_OTP')
+            'approved' => Reservation::where('status', 'approved_OTP')
                 ->whereDate('updated_at', $today)->count(),
-            'rejected_today' => Reservation::where('status', 'rejected_OTP')
+            'rejected' => Reservation::where('status', 'rejected_OTP')
                 ->whereDate('updated_at', $today)->count(),
-            'total_month' => Reservation::whereIn('status', ['approved_mhadel', 'approved_OTP', 'rejected_OTP'])
+            'total' => Reservation::whereIn('status', ['approved_mhadel', 'approved_OTP', 'rejected_OTP'])
                 ->where('created_at', '>=', $startOfMonth)->count(),
         ];
         

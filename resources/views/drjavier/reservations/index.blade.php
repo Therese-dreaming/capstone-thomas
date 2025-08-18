@@ -1,10 +1,13 @@
 @extends('layouts.drjavier')
 
-@section('title', 'Reservations Management - Dr. Javier')
+@section('title', 'Reservations Management - OTP')
 @section('page-title', 'Reservations Management')
 @section('page-subtitle', 'Final approval authority for reservations')
 
 @section('header-actions')
+    <a href="{{ route('drjavier.reservations.export', request()->query()) }}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition shadow-sm mr-2 flex items-center">
+        <i class="fas fa-file-excel mr-2"></i>Export to Excel
+    </a>
     <button id="openFilterBtn" class="bg-white text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 transition shadow-sm mr-2 flex items-center">
         <i class="fas fa-filter mr-2 text-maroon"></i>Filter
     </button>
@@ -78,10 +81,6 @@
         background-color: #EF4444;
         color: #1F2937;
     }
-    .status-completed {
-        background-color: #6366F1;
-        color: #1F2937;
-    }
     .tab-active {
         border-bottom: 2px solid #800000;
         color: #800000;
@@ -102,14 +101,6 @@
         transform: translateY(-2px);
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     }
-    .animate-pulse {
-        animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-        0% { box-shadow: 0 0 0 0 rgba(128, 0, 0, 0.4); }
-        70% { box-shadow: 0 0 0 10px rgba(128, 0, 0, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(128, 0, 0, 0); }
-    }
     .view-toggle-btn.active {
         background-color: white;
         color: #800000;
@@ -129,8 +120,8 @@
                 <i class="fas fa-calendar-alt text-blue-500 text-xl"></i>
             </div>
             <div>
-                <p class="text-sm text-gray-500 font-medium">Total Reservations</p>
-                <h3 class="text-2xl font-bold text-gray-800">{{ $stats['total'] }}</h3>
+                <p class="text-sm text-gray-500 font-medium">Total Pending</p>
+                <h3 class="text-2xl font-bold text-gray-800">{{ $stats['pending'] }}</h3>
             </div>
         </div>
         
@@ -139,7 +130,7 @@
                 <i class="fas fa-clock text-yellow-500 text-xl"></i>
             </div>
             <div>
-                <p class="text-sm text-gray-500 font-medium">Pending Final Review</p>
+                <p class="text-sm text-gray-500 font-medium">Awaiting Final Approval</p>
                 <h3 class="text-2xl font-bold text-gray-800">{{ $stats['pending'] }}</h3>
             </div>
         </div>
@@ -149,7 +140,7 @@
                 <i class="fas fa-check-circle text-green-500 text-xl"></i>
             </div>
             <div>
-                <p class="text-sm text-gray-500 font-medium">Approved</p>
+                <p class="text-sm text-gray-500 font-medium">Final Approved</p>
                 <h3 class="text-2xl font-bold text-gray-800">{{ $stats['approved'] }}</h3>
             </div>
         </div>
@@ -159,7 +150,7 @@
                 <i class="fas fa-times-circle text-red-500 text-xl"></i>
             </div>
             <div>
-                <p class="text-sm text-gray-500 font-medium">Rejected</p>
+                <p class="text-sm text-gray-500 font-medium">Final Rejected</p>
                 <h3 class="text-2xl font-bold text-gray-800">{{ $stats['rejected'] }}</h3>
             </div>
         </div>
@@ -171,7 +162,7 @@
             <div class="flex items-center justify-between">
                 <h2 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
                     <i class="fas fa-calendar-check text-maroon mr-3"></i>
-                    Reservation Management - Dr. Javier (OTP)
+                    Final Approval Management - OTP (Office of the President)
                 </h2>
                 <div class="flex items-center space-x-2">
                     <div class="relative">
@@ -187,16 +178,16 @@
         <!-- Tabs -->
         <div class="flex border-b border-gray-200">
             <button onclick="filterByStatus('all')" class="px-6 py-3 text-gray-700 hover:text-maroon transition-colors {{ request('status') == null ? 'tab-active' : '' }}">
-                All Reservations
+                All Pending
             </button>
             <button onclick="filterByStatus('pending')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'pending' ? 'tab-active' : '' }}">
-                Pending Final Review
+                Awaiting Approval
             </button>
             <button onclick="filterByStatus('approved')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'approved' ? 'tab-active' : '' }}">
-                Approved
+                Final Approved
             </button>
             <button onclick="filterByStatus('rejected')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'rejected' ? 'tab-active' : '' }}">
-                Rejected
+                Final Rejected
             </button>
         </div>
         
@@ -212,7 +203,7 @@
                     </button>
                 </div>
                 <div class="text-sm text-gray-500">
-                    Showing {{ $reservations->count() }} of {{ $stats['total'] }} reservations
+                    Showing {{ $reservations->count() }} of {{ $stats['pending'] }} pending reservations
                 </div>
             </div>
         </div>
@@ -225,25 +216,34 @@
                         <div class="reservation-card bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-all duration-300">
                             <div class="flex items-center justify-between mb-4">
                                 <div class="flex items-center space-x-3">
-                                    <span class="status-badge status-pending">
-                                        Pending Final Review
-                                    </span>
+                                    @if($reservation->status === 'approved_mhadel')
+                                        <span class="status-badge status-pending">Awaiting Final Approval</span>
+                                    @elseif($reservation->status === 'approved_OTP')
+                                        <span class="status-badge status-approved">Final Approved</span>
+                                    @elseif($reservation->status === 'rejected_OTP')
+                                        <span class="status-badge status-rejected">Final Rejected</span>
+                                    @else
+                                        <span class="status-badge status-pending">{{ ucfirst(str_replace('_', ' ', $reservation->status)) }}</span>
+                                    @endif
                                     <span class="text-sm text-gray-500">{{ $reservation->created_at->format('M d, Y H:i') }}</span>
                                 </div>
                                 <div class="flex items-center space-x-2">
                                     <a href="{{ route('drjavier.reservations.show', $reservation->id) }}" class="btn-dark-blue px-3 py-2 rounded-lg text-sm font-medium transition-colors">
                                         <i class="fas fa-eye mr-1"></i>View Details
                                     </a>
-                                    <button onclick="openApproveModal({{ $reservation->id }}, '{{ $reservation->event_title }}')" class="btn-dark-green px-3 py-2 rounded-lg text-sm font-medium transition-colors">
-                                        <i class="fas fa-check mr-1"></i>Approve
-                                    </button>
-                                    <button onclick="openRejectModal({{ $reservation->id }}, '{{ $reservation->event_title }}')" class="btn-dark-red px-3 py-2 rounded-lg text-sm font-medium transition-colors">
-                                        <i class="fas fa-times mr-1"></i>Reject
-                                    </button>
+                                    @if($reservation->status === 'approved_mhadel')
+                                        <button onclick="openApproveModal({{ $reservation->id }}, '{{ $reservation->event_title }}')" class="btn-dark-green px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+                                            <i class="fas fa-check mr-1"></i>Final Approve
+                                        </button>
+                                        <button onclick="openRejectModal({{ $reservation->id }}, '{{ $reservation->event_title }}')" class="btn-dark-red px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+                                            <i class="fas fa-times mr-1"></i>Final Reject
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                             
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                                <!-- Event Information -->
                                 <div>
                                     <h3 class="font-semibold text-gray-800 text-lg mb-3">{{ $reservation->event_title }}</h3>
                                     <div class="space-y-2 text-sm text-gray-600">
@@ -256,32 +256,19 @@
                                             <span>{{ $reservation->user->email }}</span>
                                         </div>
                                         <div class="flex items-center">
-                                            <i class="fas fa-phone mr-2 text-maroon w-4"></i>
-                                            <span>{{ $reservation->user->phone ?? 'N/A' }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div>
-                                    <h4 class="font-medium text-gray-800 mb-3">Event Details</h4>
-                                    <div class="space-y-2 text-sm text-gray-600">
-                                        <div class="flex items-center">
                                             <i class="fas fa-calendar mr-2 text-maroon w-4"></i>
                                             <span>{{ $reservation->start_date->format('M d, Y') }}</span>
                                         </div>
                                         <div class="flex items-center">
                                             <i class="fas fa-clock mr-2 text-maroon w-4"></i>
-                                            <span>{{ $reservation->start_time }} - {{ $reservation->end_time }}</span>
-                                        </div>
-                                        <div class="flex items-center">
-                                            <i class="fas fa-users mr-2 text-maroon w-4"></i>
-                                            <span>{{ $reservation->expected_participants }} participants</span>
+                                            <span>{{ \Carbon\Carbon::parse($reservation->start_date)->format('H:i') }} - {{ \Carbon\Carbon::parse($reservation->end_date)->format('H:i') }}</span>
                                         </div>
                                     </div>
                                 </div>
                                 
+                                <!-- Venue & Capacity -->
                                 <div>
-                                    <h4 class="font-medium text-gray-800 mb-3">Venue Information</h4>
+                                    <h4 class="font-medium text-gray-800 mb-3">Venue & Capacity</h4>
                                     <div class="space-y-2 text-sm text-gray-600">
                                         <div class="flex items-center">
                                             <i class="fas fa-map-marker-alt mr-2 text-maroon w-4"></i>
@@ -292,9 +279,60 @@
                                             <span>{{ $reservation->venue->capacity }} capacity</span>
                                         </div>
                                         <div class="flex items-center">
+                                            <i class="fas fa-users mr-2 text-maroon w-4"></i>
+                                            <span>{{ $reservation->capacity ?? 'N/A' }} participants</span>
+                                        </div>
+                                        <div class="flex items-center">
                                             <i class="fas fa-info-circle mr-2 text-maroon w-4"></i>
                                             <span>{{ $reservation->purpose }}</span>
                                         </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Pricing Information -->
+                                <div>
+                                    <h4 class="font-medium text-gray-800 mb-3">Pricing Details</h4>
+                                    <div class="space-y-2 text-sm">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-600">Base Price:</span>
+                                            <span class="font-medium text-green-600">₱{{ number_format($reservation->base_price ?? 0, 2) }}</span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-600">Discount:</span>
+                                            <span class="font-medium text-blue-600">{{ $reservation->discount_percentage ?? 0 }}%</span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-600">Final Price:</span>
+                                            <span class="font-medium text-green-800 text-lg">₱{{ number_format($reservation->final_price ?? 0, 2) }}</span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-600">Rate/Hour:</span>
+                                            <span class="font-medium text-gray-800">₱{{ number_format($reservation->price_per_hour ?? 0, 2) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Equipment Details -->
+                                <div>
+                                    <h4 class="font-medium text-gray-800 mb-3">Equipment & Duration</h4>
+                                    <div class="space-y-2 text-sm">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-600">Duration:</span>
+                                            <span class="font-medium text-blue-600">{{ $reservation->duration_hours ?? 0 }} hours</span>
+                                        </div>
+                                        @if($reservation->equipment_details && count($reservation->equipment_details) > 0)
+                                            <div class="text-gray-600">Equipment:</div>
+                                            <div class="space-y-1">
+                                                @foreach($reservation->equipment_details as $equipment)
+                                                    <div class="text-xs bg-gray-100 px-2 py-1 rounded">
+                                                        <span class="font-medium">{{ $equipment['name'] }}</span>
+                                                        <span class="text-gray-500">({{ $equipment['quantity'] }})</span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <div class="text-gray-500 text-xs">No equipment requested</div>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -309,14 +347,14 @@
             @else
                 <div class="text-center py-12">
                     <i class="fas fa-calendar-check text-6xl text-gray-300 mb-6"></i>
-                    <h3 class="text-2xl font-bold text-gray-700 mb-4">No Pending Final Reviews</h3>
-                    <p class="text-gray-500 mb-6">All Mhadel approved reservations have been reviewed.</p>
+                    <h3 class="text-2xl font-bold text-gray-700 mb-4">No Pending Final Approvals</h3>
+                    <p class="text-gray-500 mb-6">All reservations approved by Ms. Mhadel have been processed.</p>
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
                         <div class="flex items-center">
                             <i class="fas fa-info-circle text-blue-500 mr-3"></i>
                             <div>
                                 <h4 class="font-medium text-blue-800">Workflow Information</h4>
-                                <p class="text-blue-700 text-sm mt-1">Reservations approved by Ms. Mhadel will appear here for your final review.</p>
+                                <p class="text-blue-700 text-sm mt-1">Reservations approved by Ms. Mhadel will appear here for your final approval.</p>
                             </div>
                         </div>
                     </div>
@@ -348,16 +386,16 @@
                     <!-- Calendar Legend -->
                     <div class="flex flex-wrap items-center justify-end mb-4 gap-4 text-sm">
                         <div class="flex items-center">
-                            <div class="w-4 h-4 bg-blue-100 border border-blue-300 rounded-md mr-2"></div>
-                            <span class="text-gray-600">Mhadel Approved</span>
+                            <div class="w-4 h-4 bg-yellow-400 rounded-md mr-2"></div>
+                            <span class="text-gray-600">Pending Final Approval</span>
                         </div>
                         <div class="flex items-center">
                             <div class="w-4 h-4 bg-green-600 text-white rounded-md mr-2"></div>
-                            <span class="text-gray-600">Final Approval</span>
+                            <span class="text-gray-600">Final Approved</span>
                         </div>
                         <div class="flex items-center">
-                            <div class="w-4 h-4 bg-red-100 border border-red-300 rounded-md mr-2"></div>
-                            <span class="text-gray-600">OTP Rejected</span>
+                            <div class="w-4 h-4 bg-red-400 rounded-md mr-2"></div>
+                            <span class="text-gray-600">Final Rejected</span>
                         </div>
                         <div class="flex items-center">
                             <div class="w-4 h-4 bg-maroon text-white rounded-md mr-2 animate-pulse"></div>
@@ -442,47 +480,15 @@
     </div>
 </div>
 
-<!-- Reservation Details Modal -->
-<div id="reservationDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full font-poppins animate-fadeIn">
-            <div class="p-6 border-b border-gray-200">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
-                        <i class="fas fa-calendar-check text-maroon mr-2"></i>
-                        Reservation Details
-                    </h3>
-                    <button onclick="closeReservationModal()" class="text-gray-400 hover:text-gray-600 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="p-6" id="reservationModalContent">
-                <!-- Content will be populated by JavaScript -->
-            </div>
-            
-            <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
-                <button onclick="closeReservationModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                    Close
-                </button>
-                <button onclick="viewFirstReservation()" class="px-4 py-2 bg-maroon text-white rounded-lg hover:bg-red-700 transition-colors">
-                    View Full Details
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Approve Modal -->
 <div id="approveModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full font-poppins animate-fadeIn">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full font-poppins animate-fadeIn">
             <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-white">
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
                         <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                        Approve Reservation
+                        Final Approval
                     </h3>
                     <button onclick="closeApproveModal()" class="text-gray-400 hover:text-gray-600 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
                         <i class="fas fa-times"></i>
@@ -491,15 +497,15 @@
             </div>
             
             <div class="p-6">
-                <p class="text-gray-700 mb-4">Are you sure you want to approve this reservation?</p>
+                <p class="text-gray-700 mb-4">Are you sure you want to give final approval to this reservation?</p>
                 <div class="bg-gray-50 p-4 rounded-lg mb-4">
                     <h4 class="font-semibold text-gray-800" id="approveEventTitle"></h4>
-                    <p class="text-sm text-gray-600 mt-1">This is the final approval. The reservation will be confirmed.</p>
+                    <p class="text-sm text-gray-600 mt-1">This is the final approval step. The reservation will be confirmed.</p>
                 </div>
                 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Additional Notes (Optional)</label>
-                    <textarea id="approveNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Add any additional notes for this approval..."></textarea>
+                    <textarea id="approveNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Add any additional notes for this final approval..."></textarea>
                 </div>
             </div>
             
@@ -511,7 +517,7 @@
                     @csrf
                     <input type="hidden" id="approveNotesInput" name="notes">
                     <button type="submit" class="px-4 py-2 btn-dark-green rounded-lg transition-colors">
-                        <i class="fas fa-check mr-2"></i>Approve Reservation
+                        <i class="fas fa-check mr-2"></i>Final Approve
                     </button>
                 </form>
             </div>
@@ -527,7 +533,7 @@
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
                         <i class="fas fa-times-circle text-red-500 mr-2"></i>
-                        Reject Reservation
+                        Final Rejection
                     </h3>
                     <button onclick="closeRejectModal()" class="text-gray-400 hover:text-gray-600 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
                         <i class="fas fa-times"></i>
@@ -536,7 +542,7 @@
             </div>
             
             <div class="p-6">
-                <p class="text-gray-700 mb-4">Are you sure you want to reject this reservation?</p>
+                <p class="text-gray-700 mb-4">Are you sure you want to give final rejection to this reservation?</p>
                 <div class="bg-gray-50 p-4 rounded-lg mb-4">
                     <h4 class="font-semibold text-gray-800" id="rejectEventTitle"></h4>
                     <p class="text-sm text-gray-600 mt-1">This action cannot be undone.</p>
@@ -556,9 +562,39 @@
                     @csrf
                     <input type="hidden" id="rejectNotesInput" name="notes">
                     <button type="submit" class="px-4 py-2 btn-dark-red rounded-lg transition-colors">
-                        <i class="fas fa-times mr-2"></i>Reject Reservation
+                        <i class="fas fa-times mr-2"></i>Final Reject
                     </button>
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reservation Details Modal -->
+<div id="reservationDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full font-poppins animate-fadeIn">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
+                        <i class="fas fa-calendar-check text-maroon mr-2"></i>
+                        Reservation Details
+                    </h3>
+                    <button onclick="closeReservationModal()" class="text-gray-400 hover:text-gray-600 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6" id="reservationModalContent">
+                <!-- Content populated by JavaScript -->
+            </div>
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+                <button onclick="closeReservationModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    Close
+                </button>
+                <a id="viewFullDetailsLink" href="#" class="px-4 py-2 bg-maroon text-white rounded-lg hover:bg-red-700 transition-colors">
+                    View Full Details
+                </a>
             </div>
         </div>
     </div>
@@ -635,16 +671,13 @@
             // Add visual indicator if there are reservations
             let reservationIndicator = '';
             if (dayReservations.length > 0) {
-                // Determine the status color based on the new status values
+                const reservation = dayReservations[0];
                 let statusColor = 'bg-yellow-400'; // Default for pending
-                const reservation = dayReservations[0]; // Use first reservation for color
                 
-                if (reservation.status === 'approved_mhadel') {
-                    statusColor = 'bg-blue-400'; // Blue for Mhadel approved (pending Dr. Javier review)
-                } else if (reservation.status === 'approved_OTP') {
-                    statusColor = 'bg-green-600'; // Darker green for final approval
+                if (reservation.status === 'approved_OTP') {
+                    statusColor = 'bg-green-600'; // Green for final approval
                 } else if (reservation.status === 'rejected_OTP') {
-                    statusColor = 'bg-red-400'; // Red for OTP rejection
+                    statusColor = 'bg-red-400'; // Red for rejection
                 }
                 
                 reservationIndicator = `
@@ -682,107 +715,6 @@
             currentYear++;
         }
         renderCalendar();
-    }
-    
-    function showReservationsForDate(date) {
-        const dateString = date.toISOString().split('T')[0];
-        const dayReservations = reservationsData.data.filter(reservation => 
-            reservation.start_date.startsWith(dateString)
-        );
-        
-        if (dayReservations.length > 0) {
-            const reservation = dayReservations[0]; // Show first reservation
-            const modalContent = document.getElementById('reservationModalContent');
-            
-            modalContent.innerHTML = `
-                <div class="space-y-4">
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <h4 class="font-semibold text-gray-800 text-lg mb-2">${reservation.event_title}</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <p class="text-gray-600"><strong>Requester:</strong> ${reservation.user.name}</p>
-                                <p class="text-gray-600"><strong>Date:</strong> ${new Date(reservation.start_date).toLocaleDateString()}</p>
-                                <p class="text-gray-600"><strong>Time:</strong> ${reservation.start_time} - ${reservation.end_time}</p>
-                            </div>
-                            <div>
-                                <p class="text-gray-600"><strong>Venue:</strong> ${reservation.venue.name}</p>
-                                <p class="text-gray-600"><strong>Capacity:</strong> ${reservation.venue.capacity}</p>
-                                <p class="text-gray-600"><strong>Purpose:</strong> ${reservation.purpose}</p>
-                            </div>
-                        </div>
-                        <div class="mt-3">
-                            <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
-                                Pending Final Review
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Store reservation ID for the "View Full Details" button
-            window.currentReservationId = reservation.id;
-            
-            document.getElementById('reservationDetailsModal').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-    }
-    
-    function closeReservationModal() {
-        document.getElementById('reservationDetailsModal').classList.add('hidden');
-        document.body.style.overflow = 'auto';
-    }
-    
-    function viewFirstReservation() {
-        if (window.currentReservationId) {
-            window.location.href = `/drjavier/reservations/${window.currentReservationId}`;
-        }
-    }
-    
-    // Filter Modal Functions
-    function openFilterModal() {
-        document.getElementById('filterModal').classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
-    
-    function closeFilterModal() {
-        document.getElementById('filterModal').classList.add('hidden');
-        document.body.style.overflow = 'auto';
-    }
-    
-    function resetFilters() {
-        document.getElementById('filterDateFrom').value = '';
-        document.getElementById('filterDateTo').value = '';
-        document.getElementById('filterVenue').value = '';
-        document.getElementById('filterDepartment').value = '';
-        applyFilters();
-    }
-    
-    function applyFilters() {
-        const dateFrom = document.getElementById('filterDateFrom').value;
-        const dateTo = document.getElementById('filterDateTo').value;
-        const venue = document.getElementById('filterVenue').value;
-        const department = document.getElementById('filterDepartment').value;
-        
-        // Build query parameters
-        const params = new URLSearchParams();
-        if (dateFrom) params.append('date_from', dateFrom);
-        if (dateTo) params.append('date_to', dateTo);
-        if (venue) params.append('venue', venue);
-        if (department) params.append('department', department);
-        
-        // Redirect with filters
-        window.location.href = `${window.location.pathname}?${params.toString()}`;
-    }
-    
-    // Tab functionality
-    function filterByStatus(status) {
-        const params = new URLSearchParams(window.location.search);
-        if (status === 'all') {
-            params.delete('status');
-        } else {
-            params.set('status', status);
-        }
-        window.location.href = `${window.location.pathname}?${params.toString()}`;
     }
     
     // Approve Modal Functions
@@ -848,18 +780,128 @@
             }
         });
         
-        document.getElementById('reservationDetailsModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeReservationModal();
-            }
-        });
-        
         // Filter Modal Functions
         document.getElementById('filterModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeFilterModal();
             }
         });
+    });
+    
+    // Filter Modal Functions
+    function openFilterModal() {
+        document.getElementById('filterModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeFilterModal() {
+        document.getElementById('filterModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+    
+    function resetFilters() {
+        document.getElementById('filterDateFrom').value = '';
+        document.getElementById('filterDateTo').value = '';
+        document.getElementById('filterVenue').value = '';
+        document.getElementById('filterDepartment').value = '';
+        applyFilters();
+    }
+    
+    function applyFilters() {
+        const dateFrom = document.getElementById('filterDateFrom').value;
+        const dateTo = document.getElementById('filterDateTo').value;
+        const venue = document.getElementById('filterVenue').value;
+        const department = document.getElementById('filterDepartment').value;
+        
+        // Build query parameters
+        const params = new URLSearchParams();
+        if (dateFrom) params.append('date_from', dateFrom);
+        if (dateTo) params.append('date_to', dateTo);
+        if (venue) params.append('venue', venue);
+        if (department) params.append('department', department);
+        
+        // Redirect with filters
+        window.location.href = `${window.location.pathname}?${params.toString()}`;
+    }
+    
+    // Tab functionality
+    function filterByStatus(status) {
+        const params = new URLSearchParams(window.location.search);
+        if (status === 'all') {
+            params.delete('status');
+        } else {
+            params.set('status', status);
+        }
+        window.location.href = `${window.location.pathname}?${params.toString()}`;
+    }
+
+    function showReservationsForDate(date) {
+        const dateString = date.toISOString().split('T')[0];
+        const dayReservations = reservationsData.data.filter(r => r.start_date.startsWith(dateString));
+        if (dayReservations.length === 0) return;
+
+        const r = dayReservations[0];
+        const start = new Date(r.start_date);
+        const end = new Date(r.end_date);
+
+        const equipmentHtml = (r.equipment_details && r.equipment_details.length)
+            ? r.equipment_details.map(e => `<div class="text-xs bg-gray-100 px-2 py-1 rounded">${e.name} <span class="text-gray-500">(${e.quantity})</span></div>`).join('')
+            : '<div class="text-gray-500 text-xs">No equipment requested</div>';
+
+        const pricingRows = `
+            <div class="flex items-center justify-between"><span class="text-gray-600">Base Price:</span><span class="font-medium text-green-600">₱${Number(r.base_price || 0).toFixed(2)}</span></div>
+            <div class="flex items-center justify-between"><span class="text-gray-600">Discount:</span><span class="font-medium text-blue-600">${Number(r.discount_percentage || 0)}%</span></div>
+            <div class="flex items-center justify-between"><span class="text-gray-600">Final Price:</span><span class="font-medium text-green-800 text-lg">₱${Number(r.final_price || 0).toFixed(2)}</span></div>
+            <div class="flex items-center justify-between"><span class="text-gray-600">Rate/Hour:</span><span class="font-medium text-gray-800">₱${Number(r.price_per_hour || 0).toFixed(2)}</span></div>
+            <div class="flex items-center justify-between"><span class="text-gray-600">Duration:</span><span class="font-medium text-blue-600">${Number(r.duration_hours || 0)} hours</span></div>
+        `;
+
+        const content = `
+            <div class="space-y-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 text-lg mb-2">${r.event_title}</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <p class="text-gray-600"><strong>Requester:</strong> ${r.user?.name || ''}</p>
+                            <p class="text-gray-600"><strong>Date:</strong> ${start.toLocaleDateString()}</p>
+                            <p class="text-gray-600"><strong>Time:</strong> ${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600"><strong>Venue:</strong> ${r.venue?.name || ''}</p>
+                            <p class="text-gray-600"><strong>Capacity:</strong> ${r.venue?.capacity || ''}</p>
+                            <p class="text-gray-600"><strong>Purpose:</strong> ${r.purpose || ''}</p>
+                        </div>
+                    </div>
+                    <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <h5 class="font-medium text-gray-800 mb-2">Pricing</h5>
+                            <div class="space-y-2 text-sm">${pricingRows}</div>
+                        </div>
+                        <div>
+                            <h5 class="font-medium text-gray-800 mb-2">Equipment</h5>
+                            <div class="space-y-1">${equipmentHtml}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('reservationModalContent').innerHTML = content;
+        const link = document.getElementById('viewFullDetailsLink');
+        link.href = `/drjavier/reservations/${r.id}`;
+
+        document.getElementById('reservationDetailsModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeReservationModal() {
+        document.getElementById('reservationDetailsModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+
+    // close when clicking outside
+    document.getElementById('reservationDetailsModal').addEventListener('click', function(e) {
+        if (e.target === this) closeReservationModal();
     });
 </script>
 @endsection 

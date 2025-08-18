@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Mhadel;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use Illuminate\Http\Request;
+use App\Models\Reservation;
 
 class EventController extends Controller
 {
@@ -41,6 +42,30 @@ class EventController extends Controller
             'max_participants' => 'nullable|integer|min:1',
         ]);
 
+        // Conflict checks: reservations (blocking statuses) and other events (not cancelled)
+        $blockingStatuses = ['pending', 'approved_IOSA', 'approved_mhadel', 'approved_OTP'];
+        $conflictReservation = Reservation::where('venue_id', $request->venue_id)
+            ->whereIn('status', $blockingStatuses)
+            ->where(function($q) use ($request) {
+                $q->where('start_date', '<', $request->end_date)
+                    ->where('end_date', '>', $request->start_date);
+            })
+            ->exists();
+        if ($conflictReservation) {
+            return back()->withErrors(['start_date' => 'This schedule overlaps with an existing reservation for the selected venue.'])->withInput();
+        }
+
+        $conflictEvent = Event::where('venue_id', $request->venue_id)
+            ->where('status', '!=', 'cancelled')
+            ->where(function($q) use ($request) {
+                $q->where('start_date', '<', $request->end_date)
+                    ->where('end_date', '>', $request->start_date);
+            })
+            ->exists();
+        if ($conflictEvent) {
+            return back()->withErrors(['start_date' => 'This schedule overlaps with another event for the selected venue.'])->withInput();
+        }
+
         Event::create([
             'title' => $request->title,
             'description' => $request->description,
@@ -53,7 +78,7 @@ class EventController extends Controller
         ]);
 
         return redirect()->route('mhadel.events.index')
-            ->with('success', 'Event created successfully!');
+            ->with('success', 'Event created successfully! It will now appear on the final calendar.');
     }
 
     /**
@@ -88,6 +113,30 @@ class EventController extends Controller
             'max_participants' => 'nullable|integer|min:1',
         ]);
 
+        $blockingStatuses = ['pending', 'approved_IOSA', 'approved_mhadel', 'approved_OTP'];
+        $conflictReservation = Reservation::where('venue_id', $request->venue_id)
+            ->whereIn('status', $blockingStatuses)
+            ->where(function($q) use ($request) {
+                $q->where('start_date', '<', $request->end_date)
+                    ->where('end_date', '>', $request->start_date);
+            })
+            ->exists();
+        if ($conflictReservation) {
+            return back()->withErrors(['start_date' => 'This schedule overlaps with an existing reservation for the selected venue.'])->withInput();
+        }
+
+        $conflictEvent = Event::where('venue_id', $request->venue_id)
+            ->where('id', '!=', $event->id)
+            ->where('status', '!=', 'cancelled')
+            ->where(function($q) use ($request) {
+                $q->where('start_date', '<', $request->end_date)
+                    ->where('end_date', '>', $request->start_date);
+            })
+            ->exists();
+        if ($conflictEvent) {
+            return back()->withErrors(['start_date' => 'This schedule overlaps with another event for the selected venue.'])->withInput();
+        }
+
         $event->update([
             'title' => $request->title,
             'description' => $request->description,
@@ -100,7 +149,7 @@ class EventController extends Controller
         ]);
 
         return redirect()->route('mhadel.events.index')
-            ->with('success', 'Event updated successfully!');
+            ->with('success', 'Event updated successfully! Changes will reflect on the final calendar.');
     }
 
     /**

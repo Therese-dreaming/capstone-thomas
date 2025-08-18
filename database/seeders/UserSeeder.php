@@ -76,12 +76,13 @@ class UserSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
 
-        // Create Dr. Javier user
+        // Create GSU user
         User::create([
-            'name' => 'Dr. Javier',
-            'email' => 'drjavier@pcc.edu.ph',
+            'name' => 'GSU',
+            'email' => 'gsu@pcc.edu.ph',
             'password' => Hash::make('password'),
-            'role' => 'Dr. Javier',
+            'role' => 'GSU',
+            'email_verified_at' => now(),
         ]);
     }
 }

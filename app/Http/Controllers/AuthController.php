@@ -99,9 +99,10 @@ class AuthController extends Controller
             case 'Mhadel':
             case 'Ms. Mhadel':
                 return redirect()->route('mhadel.dashboard');
-            case 'Dr. Javier':
-            case 'Dr Javier':
+                    case 'OTP':
                 return redirect()->route('drjavier.dashboard');
+            case 'GSU':
+                return redirect()->route('gsu.dashboard');
             case 'User':
             default:
                 return redirect()->route('user.dashboard');

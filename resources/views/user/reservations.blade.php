@@ -4,11 +4,11 @@
 @section('page-title', 'Reservations')
 
 @section('header-actions')
-<a href="{{ route('user.reservations.index') }}" class="px-4 py-2 bg-gradient-to-r from-maroon to-red-700 text-white rounded-lg hover:from-red-700 hover:to-maroon transition-all duration-300 flex items-center space-x-2 shadow-md">
+<a href="{{ route('user.reservations.index') }}" class="font-montserrat font-bold px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-all duration-300 flex items-center space-x-2 shadow-md">
     <i class="fas fa-bookmark text-lg"></i>
     <span>My Reservations</span>
 </a>
-<button onclick="openReservationModal()" class="px-4 py-2 bg-gradient-to-r from-maroon to-red-700 text-white rounded-lg hover:from-red-700 hover:to-maroon transition-all duration-300 flex items-center space-x-2 shadow-md">
+<button onclick="openReservationModal()" class="font-montserrat font-bold px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-all duration-300 flex items-center space-x-2 shadow-md">
     <i class="fas fa-calendar-plus text-lg"></i>
     <span>New Reservation</span>
 </button>
@@ -242,16 +242,16 @@
                                 <p class="text-xs text-gray-500 mt-2">Select equipment and specify quantities. Quantities cannot exceed available amounts.</p>
                             </div>
 
-                            <!-- Final Price Calculation -->
+                            <!-- Base Price Calculation -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
                                     <i class="fas fa-calculator text-maroon mr-2"></i>
-                                    Final Price <span class="text-red-500">*</span>
+                                    Base Price <span class="text-red-500">*</span>
                                 </label>
-                                <div id="final_price_display" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                                <div id="base_price_display" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
                                     <i class="fas fa-info-circle mr-2 text-blue-500"></i> Select capacity and dates first
                                 </div>
-                                <input type="hidden" id="final_price" name="final_price" value="">
+                                <input type="hidden" id="base_price" name="base_price" value="">
                                 <div id="price_breakdown" class="mt-2 text-xs text-gray-500 hidden">
                                     <div class="space-y-1">
                                         <div id="duration_info"></div>
@@ -287,7 +287,7 @@
 let currentDate = new Date();
 let selectedDate = null;
 // Sample data for unavailable dates - this should be populated from your backend
-const unavailableDates = [
+let unavailableDates = [
     // Format: 'YYYY-MM-DD'
     // This is just a placeholder - you should replace this with actual data from your backend
     new Date().toISOString().split('T')[0], // Today as an example
@@ -323,9 +323,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initial attachment of event listeners
     attachEquipmentEventListeners();
 
-    // Add event listeners for date inputs to recalculate final price
-    document.getElementById('start_date').addEventListener('change', calculateFinalPrice);
-    document.getElementById('end_date').addEventListener('change', calculateFinalPrice);
+    // Add event listeners for date inputs to recalculate base price
+    document.getElementById('start_date').addEventListener('change', calculateBasePrice);
+    document.getElementById('end_date').addEventListener('change', calculateBasePrice);
 
 });
 
@@ -361,9 +361,9 @@ function renderCalendar() {
         const isPast = date < new Date();
         const isTooSoon = date < minSelectable;
         
-        // Check if date is unavailable (booked)
+        // Check if date is unavailable (booked) - allow multiple reservations per day; block by timeslots only
         const dateString = date.toISOString().split('T')[0];
-        const isUnavailable = unavailableDates.includes(dateString);
+        const isUnavailable = false;
         
         let dayClass = 'calendar-day text-center py-3 relative rounded-lg transition-all duration-200';
         let dayStyle = '';
@@ -388,7 +388,7 @@ function renderCalendar() {
         }
         
         html += `
-            <div class="${dayClass}" style="${dayStyle}" ${(!isPast && !isTooSoon && !isUnavailable) ? `onclick="selectDate('${date.toISOString()}')"` : ''}>
+            <div class="${dayClass}" style="${dayStyle}" ${(!isPast && !isTooSoon && !isUnavailable) ? `onclick="selectDate('${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}T00:00')"` : ''}>
                 <span class="text-lg ${isToday ? 'font-bold' : ''}">${date.getDate()}</span>
                 ${isUnavailable ? '<div class="absolute bottom-1 left-1/2 transform -translate-x-1/2"><i class="fas fa-lock text-red-500 text-xs"></i></div>' : ''}
             </div>
@@ -422,20 +422,34 @@ function selectDate(dateString) {
     selectedDate = new Date(dateString);
     openReservationModal();
     
-    // Set the selected date in the form
+    // Set the selected date in the form using local time (avoid UTC shift)
     const startDateInput = document.getElementById('start_date');
     const endDateInput = document.getElementById('end_date');
-    
-    const dateStr = selectedDate.toISOString().slice(0, 16);
-    startDateInput.value = dateStr;
-    
-    // Set end time to 1 hour later
+
+    function fmt(d){
+        const y=d.getFullYear();
+        const m=String(d.getMonth()+1).padStart(2,'0');
+        const day=String(d.getDate()).padStart(2,'0');
+        const hh=String(d.getHours()).padStart(2,'0');
+        const mm=String(d.getMinutes()).padStart(2,'0');
+        return `${y}-${m}-${day}T${hh}:${mm}`;
+    }
+
+    // default start at 00:00; you can adjust to a preferred default hour if needed
+    startDateInput.value = fmt(selectedDate);
+
+    // Set end time to 1 hour later (local)
     const endDate = new Date(selectedDate);
     endDate.setHours(endDate.getHours() + 1);
-    endDateInput.value = endDate.toISOString().slice(0, 16);
+    endDateInput.value = fmt(endDate);
     
     // Show a toast notification
     showToast(`Selected date: ${selectedDate.toLocaleDateString()}`, 'info');
+
+    // Fetch and display unavailable times for this date/venue
+    if (typeof showUnavailableTimes === 'function') {
+        showUnavailableTimes();
+    }
 }
 
 function openReservationModal() {
@@ -571,8 +585,8 @@ document.getElementById('capacity').addEventListener('input', function() {
     // Show success toast
     showToast(`Venue "${selectedVenue.name}" automatically selected - Rate: ₱${price.toLocaleString()}/hour`, 'success');
     
-    // Calculate final price after venue selection
-    calculateFinalPrice();
+    // Calculate base price after venue selection
+    calculateBasePrice();
     
     // Generate equipment options for the selected venue
     generateEquipmentOptions(selectedVenue);
@@ -678,18 +692,18 @@ function generateEquipmentOptions(venue) {
     attachQuantityValidation();
 }
 
-// Calculate final price based on duration and rate
-function calculateFinalPrice() {
+// Calculate base price based on duration and rate
+function calculateBasePrice() {
     const startDate = document.getElementById('start_date').value;
     const endDate = document.getElementById('end_date').value;
     const pricePerHour = parseFloat(document.getElementById('price_per_hour').value) || 0;
-    const finalPriceDisplay = document.getElementById('final_price_display');
-    const finalPriceInput = document.getElementById('final_price');
+    const basePriceDisplay = document.getElementById('base_price_display');
+    const basePriceInput = document.getElementById('base_price');
     const priceBreakdown = document.getElementById('price_breakdown');
     
     if (!startDate || !endDate || pricePerHour <= 0) {
-        finalPriceDisplay.innerHTML = '<i class="fas fa-info-circle mr-2 text-blue-500"></i> Select capacity and dates first';
-        finalPriceInput.value = '';
+        basePriceDisplay.innerHTML = '<i class="fas fa-info-circle mr-2 text-blue-500"></i> Select capacity and dates first';
+        basePriceInput.value = '';
         priceBreakdown.classList.add('hidden');
         return;
     }
@@ -698,8 +712,8 @@ function calculateFinalPrice() {
     const end = new Date(endDate);
     
     if (end <= start) {
-        finalPriceDisplay.innerHTML = '<i class="fas fa-exclamation-circle mr-2 text-red-500"></i> End time must be after start time';
-        finalPriceInput.value = '';
+        basePriceDisplay.innerHTML = '<i class="fas fa-exclamation-circle mr-2 text-red-500"></i> End time must be after start time';
+        basePriceInput.value = '';
         priceBreakdown.classList.add('hidden');
         return;
     }
@@ -708,19 +722,85 @@ function calculateFinalPrice() {
     const durationMs = end - start;
     const durationHours = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60)));
     
-    // Calculate final price
-    const finalPrice = durationHours * pricePerHour;
+    // Calculate base price
+    const basePrice = durationHours * pricePerHour;
     
     // Update display
-    finalPriceDisplay.innerHTML = `<i class="fas fa-check-circle mr-2 text-green-500"></i> ₱${finalPrice.toLocaleString()} <span class="text-sm text-gray-500">(Total for ${durationHours} hour${durationHours > 1 ? 's' : ''})</span>`;
-    finalPriceInput.value = finalPrice;
+    basePriceDisplay.innerHTML = `<i class="fas fa-check-circle mr-2 text-green-500"></i> ₱${basePrice.toLocaleString()} <span class="text-sm text-gray-500">(Total for ${durationHours} hour${durationHours > 1 ? 's' : ''})</span>`;
+    basePriceInput.value = basePrice;
     
     // Show price breakdown
     priceBreakdown.classList.remove('hidden');
     document.getElementById('duration_info').textContent = `Duration: ${durationHours} hour${durationHours > 1 ? 's' : ''}`;
     document.getElementById('rate_info').textContent = `Rate: ₱${pricePerHour.toLocaleString()} per hour`;
-    document.getElementById('total_info').textContent = `Total: ₱${finalPrice.toLocaleString()}`;
+    document.getElementById('total_info').textContent = `Total: ₱${basePrice.toLocaleString()}`;
 }
+
+// Fetch unavailable timeslots for a given venue and date
+async function fetchUnavailableSlots(venueId, dateStr){
+	if(!venueId || !dateStr) return [];
+	try{
+		const params = new URLSearchParams({ venue_id: venueId, date: dateStr });
+		const res = await fetch(`/user/reservations/unavailable?${params.toString()}`);
+		if(!res.ok) return [];
+		const data = await res.json();
+		return data.slots || [];
+	}catch{ return []; }
+}
+
+// Display unavailable timeslots below the date inputs
+async function showUnavailableTimes(){
+	const venueId = document.getElementById('venue_id').value;
+	const startVal = document.getElementById('start_date').value;
+	if(!venueId || !startVal) return;
+	const dateOnly = startVal.slice(0,10);
+	const slots = await fetchUnavailableSlots(venueId, dateOnly);
+	let container = document.getElementById('unavailable_container');
+	if(!container){
+		container = document.createElement('div');
+		container.id = 'unavailable_container';
+		container.className = 'mt-3 text-sm';
+		document.getElementById('end_date').closest('.grid').after(container);
+	}
+	if(slots.length === 0){
+		container.innerHTML = '<div class="bg-green-50 border border-green-200 text-green-800 rounded-lg p-3"><i class="fas fa-check-circle mr-2"></i>No unavailable times for this day.</div>';
+		return;
+	}
+	const list = slots.map(s=>`<li class="flex items-center"><i class="fas fa-ban text-red-500 mr-2"></i>${s.start} – ${s.end} <span class="text-gray-500 ml-2">(${s.title})</span></li>`).join('');
+	container.innerHTML = `<div class="bg-red-50 border border-red-200 text-red-800 rounded-lg p-3"><div class="font-medium mb-1">Unavailable timeslots:</div><ul class="space-y-1">${list}</ul></div>`;
+}
+
+document.getElementById('start_date').addEventListener('change', showUnavailableTimes);
+// When venue gets selected automatically, also refresh
+const venueHiddenInput = document.getElementById('venue_id');
+const observer = new MutationObserver(showUnavailableTimes);
+observer.observe(venueHiddenInput, { attributes: true, attributeFilter: ['value'] });
+
+// Prevent overlap on submit using fetched slots
+function overlaps(aStart, aEnd, bStart, bEnd){ return aStart < bEnd && aEnd > bStart; }
+
+document.querySelector('form').addEventListener('submit', async function(e){
+	const venueId = document.getElementById('venue_id').value;
+	const startVal = document.getElementById('start_date').value;
+	const endVal = document.getElementById('end_date').value;
+	if(!venueId || !startVal || !endVal) return; // other validators will handle
+	const slots = await fetchUnavailableSlots(venueId, startVal.slice(0,10));
+	if(slots.length){
+		const start = new Date(startVal);
+		const end = new Date(endVal);
+		for(const s of slots){
+			const [sh, sm] = s.start.split(':').map(Number);
+			const [eh, em] = s.end.split(':').map(Number);
+			const blockStart = new Date(startVal.slice(0,10)+'T00:00'); blockStart.setHours(sh, sm||0, 0, 0);
+			const blockEnd = new Date(startVal.slice(0,10)+'T00:00'); blockEnd.setHours(eh, em||0, 0, 0);
+			if(overlaps(start, end, blockStart, blockEnd)){
+				e.preventDefault();
+				showToast(`Selected time overlaps with ${s.start}–${s.end}. Please pick a different time.`, 'error');
+				return;
+			}
+		}
+	}
+});
 
 // Form validation
 document.querySelector('form').addEventListener('submit', function(e) {
@@ -756,10 +836,10 @@ document.querySelector('form').addEventListener('submit', function(e) {
         return;
     }
     
-    const finalPrice = document.getElementById('final_price').value;
-    if (!finalPrice || finalPrice <= 0) {
+    const basePrice = document.getElementById('base_price').value;
+    if (!basePrice || basePrice <= 0) {
         e.preventDefault();
-        showToast('Please ensure all dates and capacity are selected to calculate the final price.', 'error');
+        showToast('Please ensure all dates and capacity are selected to calculate the base price.', 'error');
         return;
     }
     

@@ -16,7 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.role' => \App\Http\Middleware\AdminRoleMiddleware::class,
             'iosa.role' => \App\Http\Middleware\IOSARoleMiddleware::class,
             'mhadel.role' => \App\Http\Middleware\MhadelRoleMiddleware::class,
-            'drjavier.role' => \App\Http\Middleware\DrJavierRoleMiddleware::class,
+            'otp.role' => \App\Http\Middleware\OTPRoleMiddleware::class,
+            'gsu.role' => \App\Http\Middleware\GSURoleMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

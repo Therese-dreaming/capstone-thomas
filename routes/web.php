@@ -16,7 +16,9 @@ use App\Http\Controllers\Mhadel\ReservationController as MhadelReservationContro
 use App\Http\Controllers\Mhadel\VenueController as MhadelVenueController;
 use App\Http\Controllers\Mhadel\EventController as MhadelEventController;
 use App\Http\Controllers\DrJavier\DrJavierController;
-use App\Http\Controllers\DrJavier\ReservationController as DrJavierReservationController;
+use App\Http\Controllers\DrJavier\ReservationController as OTPReservationController;
+use App\Http\Controllers\GSU\GSUController as GSUController;
+use App\Http\Controllers\GSU\ReservationController as GSUReservationController;
 
 // Redirect root to login
 Route::get('/', function () {
@@ -54,6 +56,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('reservations', [UserController::class, 'index'])->name('reservations.index');
         Route::get('reservations/calendar', [UserController::class, 'calendar'])->name('reservations.calendar');
         Route::post('reservations', [UserController::class, 'storeReservation'])->name('reservations.store');
+        Route::get('reservations/unavailable', [UserController::class, 'unavailable'])->name('reservations.unavailable');
+        Route::get('reservations/{id}', [UserController::class, 'show'])->name('reservations.show');
     });
     Route::get('/profile', [UserController::class, 'profile'])->name('user.profile');
 
@@ -90,21 +94,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('events', MhadelEventController::class);
         
         // Reservations Routes
+        Route::get('reservations/calendar', [MhadelReservationController::class, 'calendar'])->name('reservations.calendar');
         Route::resource('reservations', MhadelReservationController::class);
         Route::post('reservations/{id}/approve', [MhadelReservationController::class, 'approve'])->name('reservations.approve');
         Route::post('reservations/{id}/reject', [MhadelReservationController::class, 'reject'])->name('reservations.reject');
         Route::get('reservations/{id}/download-activity-grid', [MhadelReservationController::class, 'downloadActivityGrid'])->name('reservations.download-activity-grid');
     });
 
-    // Dr. Javier Routes
-    Route::group(['prefix' => 'drjavier', 'as' => 'drjavier.', 'middleware' => ['auth', 'drjavier.role']], function () {
+    // OTP Routes
+    Route::group(['prefix' => 'drjavier', 'as' => 'drjavier.', 'middleware' => ['auth', 'otp.role']], function () {
         Route::get('/dashboard', [DrJavierController::class, 'dashboard'])->name('dashboard');
         
         // Reservations Routes
-        Route::resource('reservations', DrJavierReservationController::class);
-        Route::post('reservations/{id}/approve', [DrJavierReservationController::class, 'approve'])->name('reservations.approve');
-        Route::post('reservations/{id}/reject', [DrJavierReservationController::class, 'reject'])->name('reservations.reject');
-        Route::get('reservations/{id}/download-activity-grid', [DrJavierReservationController::class, 'downloadActivityGrid'])->name('reservations.download-activity-grid');
+        Route::resource('reservations', OTPReservationController::class);
+        Route::post('reservations/{id}/approve', [OTPReservationController::class, 'approve'])->name('reservations.approve');
+        Route::post('reservations/{id}/reject', [OTPReservationController::class, 'reject'])->name('reservations.reject');
+        Route::get('reservations/{id}/download-activity-grid', [OTPReservationController::class, 'downloadActivityGrid'])->name('reservations.download-activity-grid');
+        Route::get('reservations-export', [OTPReservationController::class, 'export'])->name('reservations.export');
+    });
+
+    // GSU Routes
+    Route::group(['prefix' => 'gsu', 'as' => 'gsu.', 'middleware' => ['auth', 'gsu.role']], function () {
+        Route::get('/dashboard', [GSUController::class, 'dashboard'])->name('dashboard');
+        Route::resource('reservations', GSUReservationController::class);
     });
 
     // Other user routes defined here

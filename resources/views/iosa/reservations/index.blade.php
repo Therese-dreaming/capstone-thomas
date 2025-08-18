@@ -471,7 +471,7 @@
     <div id="approveModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
         <div class="flex items-center justify-center min-h-screen p-4">
             <div class="bg-white rounded-xl shadow-2xl max-w-md w-full font-poppins animate-fadeIn">
-                <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-white">
+                <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-red-50 to-white">
                     <div class="flex items-center justify-between">
                         <h3 class="text-xl font-bold text-gray-800 flex items-center font-montserrat">
                             <i class="fas fa-check-circle text-green-500 mr-2"></i>
@@ -723,7 +723,17 @@
     let currentYear = currentDate.getFullYear();
     
     const reservationsData = @json($reservations);
-    
+
+    // Helpers for local date/time formatting
+    function formatDateLocal(d){
+        const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0');
+        return `${y}-${m}-${day}`;
+    }
+    function formatTimeLocal(dateLike){
+        const d = typeof dateLike === 'string' ? new Date(dateLike) : dateLike;
+        return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    }
+
     // View toggle functionality
     document.getElementById('listViewBtn').addEventListener('click', function() {
         document.getElementById('listView').classList.remove('hidden');
@@ -766,7 +776,7 @@
             date.setDate(startDate.getDate() + i);
             
             const isCurrentMonth = date.getMonth() === currentMonth;
-            const isToday = date.toDateString() === new Date().toDateString();
+            const isToday = formatDateLocal(date) === formatDateLocal(new Date());
             
             let dayClass = 'calendar-day text-center py-3 relative rounded-lg transition-all duration-200 cursor-pointer';
             
@@ -778,37 +788,31 @@
                 dayClass += ' bg-white hover:bg-gray-50';
             }
             
-            // Check for reservations on this date
-            const dateString = date.toISOString().split('T')[0];
-            const dayReservations = reservationsData.data.filter(reservation => 
-                reservation.start_date.startsWith(dateString)
-            );
+            // Check for reservations on this date using LOCAL date-only matching
+            const dateStringLocal = formatDateLocal(date);
+            const dayReservations = (reservationsData.data || []).filter(reservation => {
+                const rStartLocal = formatDateLocal(new Date(reservation.start_date));
+                return rStartLocal === dateStringLocal;
+            });
             
             // Add visual indicator if there are reservations
             let reservationIndicator = '';
             if (dayReservations.length > 0) {
-                // Determine the status color based on the new status values
-                let statusColor = 'bg-yellow-400'; // Default for pending
-                const reservation = dayReservations[0]; // Use first reservation for color
-                
-                if (reservation.status === 'pending') {
-                    statusColor = 'bg-yellow-400'; // Yellow for pending
-                } else if (reservation.status === 'approved_IOSA') {
-                    statusColor = 'bg-green-400'; // Green for IOSA approved
-                } else if (reservation.status === 'rejected_IOSA') {
-                    statusColor = 'bg-red-400'; // Red for IOSA rejected
-                }
-                
+                let statusColor = 'bg-yellow-400';
+                const reservation = dayReservations[0];
+                if (reservation.status === 'pending') statusColor = 'bg-yellow-400';
+                else if (reservation.status === 'approved_IOSA') statusColor = 'bg-green-400';
+                else if (reservation.status === 'rejected_IOSA') statusColor = 'bg-red-400';
                 reservationIndicator = `
                     <div class="absolute w-3 h-3 ${statusColor} rounded-full"
                          style="top: 4px; right: 4px;"
-                         title="${dayReservations.length} reservation(s) on this date">
+                         title="${dayReservations.length} reservation(s) on this date)">
                     </div>
                 `;
             }
             
             html += `
-                <div class="${dayClass}" onclick="showReservationsForDate(new Date('${dateString}'))">
+                <div class="${dayClass}" onclick="showReservationsForDate('${dateStringLocal}')">
                     <div class="text-sm font-medium">${date.getDate()}</div>
                     ${reservationIndicator}
                 </div>
@@ -817,7 +821,7 @@
         
         calendar.innerHTML = html;
     }
-    
+
     function updateCurrentMonth() {
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                            'July', 'August', 'September', 'October', 'November', 'December'];
@@ -827,30 +831,38 @@
     
     function previousMonth() {
         currentDate.setMonth(currentDate.getMonth() - 1);
+        currentMonth = currentDate.getMonth();
+        currentYear = currentDate.getFullYear();
         renderCalendar();
         updateCurrentMonth();
     }
     
     function nextMonth() {
         currentDate.setMonth(currentDate.getMonth() + 1);
+        currentMonth = currentDate.getMonth();
+        currentYear = currentDate.getFullYear();
         renderCalendar();
         updateCurrentMonth();
     }
     
-    function showReservationsForDate(date) {
-        openReservationDetailsModal(date);
+    function showReservationsForDate(dateOrString){
+        const dateString = typeof dateOrString === 'string' ? dateOrString : formatDateLocal(dateOrString);
+        openReservationDetailsModal(dateString);
     }
     
     // Reservation Details Modal Functions
     let selectedDateForModal = null;
     
-    function openReservationDetailsModal(date) {
-        selectedDateForModal = date;
-        const dayReservations = reservationsData.data.filter(reservation => {
+    function openReservationDetailsModal(dateOrString) {
+        // dateOrString is 'YYYY-MM-DD' local
+        selectedDateForModal = dateOrString;
+        const dayStart = new Date(`${dateOrString}T00:00`);
+        const dayEnd = new Date(`${dateOrString}T23:59:59`);
+        
+        const dayReservations = (reservationsData.data || []).filter(reservation => {
             const startDate = new Date(reservation.start_date);
             const endDate = new Date(reservation.end_date);
-            const currentDate = new Date(date);
-            return currentDate >= startDate && currentDate <= endDate;
+            return startDate < dayEnd && endDate > dayStart; // overlap on that day
         });
         
         if (dayReservations.length === 0) {
@@ -859,67 +871,43 @@
         }
         
         const modalContent = document.getElementById('reservationDetailsContent');
-        modalContent.innerHTML = ''; // Clear previous content
+        modalContent.innerHTML = '';
         
-        dayReservations.forEach((reservation, index) => {
-            const statusColor = reservation.status === 'pending' ? '🟡' : 
-                              reservation.status === 'approved_IOSA' ? '🟢' : '🔴';
-            const statusText = reservation.status.toUpperCase();
+        dayReservations.forEach((reservation) => {
             const statusClass = reservation.status === 'pending' ? 'text-yellow-600' : 
-                              reservation.status === 'approved_IOSA' ? 'text-green-600' : 'text-red-600';
+                                reservation.status === 'approved_IOSA' ? 'text-green-600' : 'text-red-600';
+            const startTime = formatTimeLocal(reservation.start_date);
+            const endTime = formatTimeLocal(reservation.end_date);
+            const dateLabel = new Date(reservation.start_date).toLocaleDateString();
+            const venueName = reservation.venue?.name || reservation.venue || '—';
+            const userName = reservation.user?.name || reservation.user || '—';
+            const equipment = Array.isArray(reservation.equipment_details) ? reservation.equipment_details.map(eq => `${eq.name} (${eq.quantity})`).join(', ') : '';
+            const price = reservation.final_price ? `₱${parseFloat(reservation.final_price).toLocaleString('en-US', {minimumFractionDigits:2})}` : '';
             
-            const reservationHtml = `
-                <div class="bg-gray-50 p-4 rounded-lg mb-4 border-l-4 border-gray-200">
+            const block = `
+                <div class="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200">
                     <div class="flex items-start justify-between">
                         <div class="flex-1">
                             <h4 class="font-semibold text-gray-800 text-lg">${reservation.event_title}</h4>
-                            <div class="flex items-center text-sm text-gray-600 mt-1">
-                                <i class="fas fa-user mr-2 text-maroon"></i>
-                                <span>${reservation.user}</span>
+                            <div class="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-700">
+                                <div><i class="fas fa-calendar mr-2 text-gray-500"></i>${dateLabel}</div>
+                                <div><i class="fas fa-clock mr-2 text-gray-500"></i>${startTime} – ${endTime}</div>
+                                <div><i class="fas fa-user mr-2 text-gray-500"></i>${userName}</div>
+                                <div><i class="fas fa-map-marker-alt mr-2 text-gray-500"></i>${venueName}</div>
+                                <div><i class="fas fa-users mr-2 text-gray-500"></i>${reservation.capacity ?? ''} attendees</div>
+                                ${price ? `<div><i class=\"fas fa-tag mr-2 text-gray-500\"></i>${price}</div>` : ''}
                             </div>
-                            <div class="flex items-center text-sm text-gray-600 mt-1">
-                                <i class="fas fa-clock mr-2 text-maroon"></i>
-                                <span>${reservation.start_date} ${reservation.start_time} - ${reservation.end_date} ${reservation.end_time}</span>
-                            </div>
-                            <div class="flex items-center text-sm text-gray-600 mt-1">
-                                <i class="fas fa-map-marker-alt mr-2 text-maroon"></i>
-                                <span>${reservation.venue}</span>
-                            </div>
-                            <div class="flex items-center text-sm text-gray-600 mt-1">
-                                <i class="fas fa-users mr-2 text-maroon"></i>
-                                <span>${reservation.capacity} attendees</span>
-                            </div>
-                            ${reservation.purpose ? `
-                            <div class="flex items-start text-sm text-gray-600 mt-1">
-                                <i class="fas fa-align-left mr-2 text-maroon mt-0.5"></i>
-                                <span>${reservation.purpose}</span>
-                            </div>
-                            ` : ''}
-                            ${reservation.final_price ? `
-                            <div class="flex items-center text-sm text-gray-600 mt-1">
-                                <i class="fas fa-tag mr-2 text-maroon"></i>
-                                <span>₱${parseFloat(reservation.final_price).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                            </div>
-                            ` : ''}
-                            ${reservation.equipment_details && reservation.equipment_details.length > 0 ? `
-                            <div class="flex items-start text-sm text-gray-600 mt-1">
-                                <i class="fas fa-tools mr-2 text-maroon mt-0.5"></i>
-                                <span>${reservation.equipment_details.map(eq => eq.name + ' (' + eq.quantity + ')').join(', ')}</span>
-                            </div>
-                            ` : ''}
+                            ${reservation.purpose ? `<div class="mt-2 text-sm text-gray-600"><strong>Purpose:</strong> ${reservation.purpose}</div>` : ''}
+                            ${equipment ? `<div class="mt-1 text-sm text-gray-600"><strong>Equipment:</strong> ${equipment}</div>` : ''}
                         </div>
-                        <div class="ml-4">
-                            <span class="px-3 py-1 rounded-full text-xs font-medium ${statusClass} bg-gray-100">
-                                ${statusColor} ${statusText}
-                            </span>
-                        </div>
+                        <span class="ml-4 px-3 py-1 rounded-full text-xs font-medium ${statusClass} bg-white border border-gray-200">${reservation.status.replace('_', ' ')}</span>
                     </div>
                 </div>
             `;
-            modalContent.innerHTML += reservationHtml;
+            modalContent.insertAdjacentHTML('beforeend', block);
         });
         
-        document.getElementById('modalDateTitle').textContent = `Reservations for ${new Date(date).toLocaleDateString()}`;
+        document.getElementById('modalDateTitle').textContent = `Reservations for ${new Date(`${dateOrString}T00:00`).toLocaleDateString()}`;
         document.getElementById('reservationDetailsModal').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
     }
@@ -935,19 +923,17 @@
             alert('No date selected.');
             return;
         }
-        
-        const dayReservations = reservationsData.data.filter(reservation => {
+        const dayStart = new Date(`${selectedDateForModal}T00:00`);
+        const dayEnd = new Date(`${selectedDateForModal}T23:59:59`);
+        const dayReservations = (reservationsData.data || []).filter(reservation => {
             const startDate = new Date(reservation.start_date);
             const endDate = new Date(reservation.end_date);
-            const currentDate = new Date(selectedDateForModal);
-            return currentDate >= startDate && currentDate <= endDate;
+            return startDate < dayEnd && endDate > dayStart;
         });
-        
         if (dayReservations.length === 0) {
             alert('No reservations for this date.');
             return;
         }
-        
         const firstReservation = dayReservations[0];
         window.location.href = `/iosa/reservations/${firstReservation.id}`;
     }

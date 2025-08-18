@@ -4,109 +4,104 @@
 @section('page-title', 'Profile')
 
 @section('content')
-<div class="max-w-2xl mx-auto space-y-6">
-    <!-- Profile Information -->
-    <div class="bg-white rounded-lg shadow-sm">
-        <div class="p-6 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-800">Profile Information</h2>
-        </div>
-        <div class="p-6 space-y-4">
-            <div class="flex items-center space-x-4">
-                <div class="w-16 h-16 bg-maroon rounded-full flex items-center justify-center">
-                    <i class="fas fa-user text-white text-2xl"></i>
-                </div>
-                <div>
-                    <h3 class="text-xl font-semibold text-gray-800">{{ $user->name }}</h3>
-                    <p class="text-gray-600">{{ $user->email }}</p>
-                    <p class="text-sm text-gray-500">Member since {{ $user->created_at->format('M Y') }}</p>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                    <p class="text-gray-800">{{ $user->name }}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <p class="text-gray-800">{{ $user->email }}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                    <p class="text-gray-800">{{ ucfirst($user->role ?? 'user') }}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email Verified</label>
-                    <p class="text-gray-800">
-                        @if($user->email_verified_at)
-                            <span class="text-green-600">✓ Verified</span>
-                        @else
-                            <span class="text-red-600">✗ Not verified</span>
-                        @endif
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="max-w-4xl mx-auto space-y-6 font-poppins">
+	<!-- Profile Header -->
+	<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+		<div class="flex items-start justify-between">
+			<div class="flex items-center space-x-4">
+				<div class="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center text-white">
+					<i class="fas fa-user text-2xl"></i>
+				</div>
+				<div>
+					<h3 class="text-2xl font-semibold text-gray-900 font-montserrat">{{ $user->name }}</h3>
+					<p class="text-gray-600">{{ $user->email }}</p>
+					<p class="text-sm text-gray-500">Member since {{ $user->created_at->format('M Y') }}</p>
+				</div>
+			</div>
+			<span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $user->email_verified_at ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-yellow-100 text-yellow-700 border border-yellow-300' }}">
+				<i class="fas {{ $user->email_verified_at ? 'fa-check-circle' : 'fa-exclamation-circle' }} mr-2"></i>
+				{{ $user->email_verified_at ? 'Email Verified' : 'Not Verified' }}
+			</span>
+		</div>
 
-    <!-- Account Statistics -->
-    <div class="bg-white rounded-lg shadow-sm">
-        <div class="p-6 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-800">Account Statistics</h2>
-        </div>
-        <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="text-center p-4 bg-blue-50 rounded-lg">
-                    <div class="text-2xl font-bold text-blue-600">
-                        {{ $user->reservations()->count() }}
-                    </div>
-                    <div class="text-sm text-gray-600">Total Reservations</div>
-                </div>
-                <div class="text-center p-4 bg-green-50 rounded-lg">
-                    <div class="text-2xl font-bold text-green-600">
-                        {{ $user->reservations()->where('status', 'approved')->count() }}
-                    </div>
-                    <div class="text-sm text-gray-600">Approved</div>
-                </div>
-                <div class="text-center p-4 bg-yellow-50 rounded-lg">
-                    <div class="text-2xl font-bold text-yellow-600">
-                        {{ $user->reservations()->where('status', 'pending')->count() }}
-                    </div>
-                    <div class="text-sm text-gray-600">Pending</div>
-                </div>
-            </div>
-        </div>
-    </div>
+		<div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+			<div>
+				<div class="text-xs text-gray-500">Role</div>
+				<div class="text-gray-800">{{ ucfirst($user->role ?? 'user') }}</div>
+			</div>
+			<div>
+				<div class="text-xs text-gray-500">Last Updated</div>
+				<div class="text-gray-800">{{ $user->updated_at?->format('M d, Y') }}</div>
+			</div>
+		</div>
+	</div>
 
-    <!-- Quick Actions -->
-    <div class="bg-white rounded-lg shadow-sm">
-        <div class="p-6 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-800">Quick Actions</h2>
-        </div>
-        <div class="p-6">
-            <div class="space-y-3">
-                <a href="{{ route('user.reservations.index') }}" class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-maroon hover:bg-maroon hover:text-white transition-colors">
-                    <i class="fas fa-calendar-plus text-xl mr-3"></i>
-                    <div>
-                        <h3 class="font-medium">Make New Reservation</h3>
-                        <p class="text-sm opacity-75">Book a venue for your event</p>
-                    </div>
-                </a>
-                
-                @if(!$user->email_verified_at)
-                <form action="{{ route('verification.send') }}" method="POST" class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-maroon hover:bg-maroon hover:text-white transition-colors">
-                    @csrf
-                    <button type="submit" class="flex items-center w-full text-left">
-                        <i class="fas fa-envelope text-xl mr-3"></i>
-                        <div>
-                            <h3 class="font-medium">Resend Verification Email</h3>
-                            <p class="text-sm opacity-75">Verify your email address</p>
-                        </div>
-                    </button>
-                </form>
-                @endif
-            </div>
-        </div>
-    </div>
+	<!-- Account Statistics -->
+	@php
+		$totalCount = $user->reservations()->count();
+		$pendingCount = $user->reservations()->whereIn('status', ['pending','approved_IOSA','approved_mhadel'])->count();
+		$approvedCount = $user->reservations()->whereIn('status', ['approved','approved_OTP'])->count();
+		$rejectedCount = $user->reservations()->whereIn('status', ['rejected','rejected_OTP'])->count();
+	@endphp
+	<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+		<h2 class="text-lg font-semibold text-gray-800 mb-4 font-montserrat">Account Statistics</h2>
+		<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+			<div class="text-center p-4 bg-blue-50 rounded-lg">
+				<div class="text-2xl font-bold text-blue-600">{{ $totalCount }}</div>
+				<div class="text-sm text-gray-600">Total</div>
+			</div>
+			<div class="text-center p-4 bg-yellow-50 rounded-lg">
+				<div class="text-2xl font-bold text-yellow-600">{{ $pendingCount }}</div>
+				<div class="text-sm text-gray-600">Pending/In Review</div>
+			</div>
+			<div class="text-center p-4 bg-green-50 rounded-lg">
+				<div class="text-2xl font-bold text-green-600">{{ $approvedCount }}</div>
+				<div class="text-sm text-gray-600">Approved</div>
+			</div>
+			<div class="text-center p-4 bg-red-50 rounded-lg">
+				<div class="text-2xl font-bold text-red-600">{{ $rejectedCount }}</div>
+				<div class="text-sm text-gray-600">Rejected</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Quick Actions -->
+	<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+		<h2 class="text-lg font-semibold text-gray-800 mb-4 font-montserrat">Quick Actions</h2>
+		<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+			<a href="{{ route('user.reservations.calendar') }}" class="flex items-center p-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors">
+				<div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mr-3">
+					<i class="fas fa-calendar-plus"></i>
+				</div>
+				<div>
+					<h3 class="font-medium">Make New Reservation</h3>
+					<p class="text-sm opacity-80">Book a venue for your event</p>
+				</div>
+			</a>
+			<a href="{{ route('user.reservations.index') }}" class="flex items-center p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+				<div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mr-3">
+					<i class="fas fa-book-open text-gray-700"></i>
+				</div>
+				<div>
+					<h3 class="font-medium text-gray-800">View My Reservations</h3>
+					<p class="text-sm text-gray-600">See your history and status</p>
+				</div>
+			</a>
+			@if(!$user->email_verified_at)
+			<form action="{{ route('verification.send') }}" method="POST" class="flex items-center p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+				@csrf
+				<button type="submit" class="flex items-center w-full text-left">
+					<div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mr-3">
+						<i class="fas fa-envelope text-gray-700"></i>
+					</div>
+					<div>
+						<h3 class="font-medium text-gray-800">Resend Verification Email</h3>
+						<p class="text-sm text-gray-600">Verify your email address</p>
+					</div>
+				</button>
+			</form>
+			@endif
+		</div>
+	</div>
 </div>
 @endsection 

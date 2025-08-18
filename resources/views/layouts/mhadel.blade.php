@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Ms. Mhadel Dashboard') - PCC Venue Reservation</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .bg-maroon {
@@ -29,6 +29,9 @@
     </style>
 </head>
 <body class="bg-gray-50">
+    <!-- Include safelist to preserve Tailwind classes -->
+    @include('tw-safelist')
+    
     <div class="flex h-screen">
         <!-- Sidebar -->
         <div class="w-64 bg-white shadow-lg flex flex-col">
@@ -63,6 +66,15 @@
                            class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('mhadel.reservations*') ? 'active-maroon' : 'text-gray-700' }}">
                             <i class="fas fa-calendar-check w-5 h-5"></i>
                             <span class="font-medium">Reservations</span>
+                        </a>
+                    </li>
+
+                    <!-- Calendar -->
+                    <li>
+                        <a href="{{ route('mhadel.reservations.calendar') }}"
+                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('mhadel.reservations.calendar') ? 'active-maroon' : 'text-gray-700' }}">
+                            <i class="fas fa-calendar-alt w-5 h-5"></i>
+                            <span class="font-medium">Calendar</span>
                         </a>
                     </li>
 
@@ -174,9 +186,10 @@
                     </div>
                 @endif
                 
-                @yield('content')
-            </main>
-        </div>
-    </div>
+                				@yield('content')
+			</main>
+		</div>
+	</div>
+	@stack('scripts')
 </body>
 </html> 
