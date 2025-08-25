@@ -36,6 +36,7 @@ class OTPReservationsExport implements FromCollection, WithHeadings, WithMapping
 			'Date Received',
 			'Date of Use',
 			'Requesting Party',
+			'Department/Organization',
 			'Purpose',
 			'Start Time',
 			'End Time',
@@ -67,6 +68,7 @@ class OTPReservationsExport implements FromCollection, WithHeadings, WithMapping
 			optional($r->created_at)->format('Y-m-d'),
 			optional($r->start_date)->format('Y-m-d'),
 			optional($r->user)->name,
+			$r->department ?? optional($r->user)->department,
 			$r->purpose,
 			optional($r->start_date)->format('g:i A'), // 12-hour format
 			optional($r->end_date)->format('g:i A'),   // 12-hour format
@@ -84,21 +86,22 @@ class OTPReservationsExport implements FromCollection, WithHeadings, WithMapping
 			'A' => 16, // Date Received
 			'B' => 16, // Date of Use
 			'C' => 28, // Requesting Party
-			'D' => 40, // Purpose
-			'E' => 14, // Start Time
-			'F' => 14, // End Time
-			'G' => 28, // Facilities
-			'H' => 18, // Participants
-			'I' => 16, // Amount
-			'J' => 36, // Equipment
-			'K' => 36, // Remarks
+			'D' => 28, // Department
+			'E' => 40, // Purpose
+			'F' => 14, // Start Time
+			'G' => 14, // End Time
+			'H' => 28, // Facilities
+			'I' => 18, // Participants
+			'J' => 16, // Amount
+			'K' => 36, // Equipment
+			'L' => 36, // Remarks
 		];
 	}
 
 	public function styles(Worksheet $sheet)
 	{
 		// Bold header
-		$sheet->getStyle('A1:K1')->getFont()->setBold(true);
+		$sheet->getStyle('A1:L1')->getFont()->setBold(true);
 		return [];
 	}
 
@@ -108,15 +111,15 @@ class OTPReservationsExport implements FromCollection, WithHeadings, WithMapping
 			AfterSheet::class => function (AfterSheet $event) {
 				$sheet = $event->sheet->getDelegate();
 				// Header background
-				$sheet->getStyle('A1:K1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+				$sheet->getStyle('A1:L1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
 					->getStartColor()->setARGB('FFEFEFEF');
 				// Borders
 				$lastRow = $sheet->getHighestRow();
-				$sheet->getStyle("A1:K{$lastRow}")->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+				$sheet->getStyle("A1:L{$lastRow}")->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 				// Wrap text for wide columns
-				$sheet->getStyle("D2:D{$lastRow}")->getAlignment()->setWrapText(true);
-				$sheet->getStyle("J2:J{$lastRow}")->getAlignment()->setWrapText(true);
+				$sheet->getStyle("E2:E{$lastRow}")->getAlignment()->setWrapText(true);
 				$sheet->getStyle("K2:K{$lastRow}")->getAlignment()->setWrapText(true);
+				$sheet->getStyle("L2:L{$lastRow}")->getAlignment()->setWrapText(true);
 				// Freeze header
 				$sheet->freezePane('A2');
 			}
@@ -126,7 +129,7 @@ class OTPReservationsExport implements FromCollection, WithHeadings, WithMapping
 	public function columnFormats(): array
 	{
 		return [
-			'I' => NumberFormat::FORMAT_NUMBER_00, // Amount with 2 decimals
+			'J' => NumberFormat::FORMAT_NUMBER_00, // Amount with 2 decimals
 		];
 	}
 } 

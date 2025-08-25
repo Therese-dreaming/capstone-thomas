@@ -121,6 +121,45 @@
 					<!-- Breadcrumb or additional header content -->
 					<div class="flex items-center space-x-4">
 						@yield('header-actions')
+						<div class="relative">
+							<button id="notifBell" class="relative px-3 py-2 rounded-lg hover:bg-gray-100">
+								<i class="fas fa-bell"></i>
+								@if(($globalUnreadNotifications ?? 0) > 0)
+								<span class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1">{{ $globalUnreadNotifications }}</span>
+								@endif
+							</button>
+							<div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+								<div class="p-3 border-b border-gray-100 flex items-center justify-between">
+									<span class="text-sm font-medium">Notifications</span>
+									<form method="POST" action="{{ route('notifications.markAllRead') }}">
+										@csrf
+										<button type="submit" class="text-xs text-gray-600 hover:text-gray-900">Mark all read</button>
+									</form>
+								</div>
+								<div class="max-h-80 overflow-auto">
+									@forelse(($globalLatestNotifications ?? []) as $n)
+										<div class="p-3 border-b border-gray-100 {{ $n->read_at ? '' : 'bg-gray-50' }}">
+											<div class="text-sm font-medium text-gray-800">{{ $n->title }}</div>
+											<div class="text-xs text-gray-600">{{ $n->body }}</div>
+											<div class="mt-2 flex items-center justify-between text-xs text-gray-500">
+												<span>{{ $n->created_at->diffForHumans() }}</span>
+												@if(!$n->read_at)
+												<form method="POST" action="{{ route('notifications.read', $n->id) }}">
+													@csrf
+													<button type="submit" class="text-blue-600 hover:underline">Mark read</button>
+												</form>
+												@endif
+											</div>
+										</div>
+									@empty
+										<div class="p-4 text-sm text-gray-600">No notifications</div>
+									@endforelse
+								</div>
+								<div class="p-2 text-center">
+									<a href="{{ route('notifications.index') }}" class="text-sm text-gray-700 hover:text-black">View all</a>
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
 			</header>
@@ -191,7 +230,7 @@
 		@endif
 	</div>
 
-	<!-- JavaScript for Toast Notifications -->
+	<!-- JavaScript for Toast Notifications and Notifications Dropdown -->
 	<script>
 		// Auto-hide toast notifications after 5 seconds
 		setTimeout(function() {
@@ -202,6 +241,15 @@
 				setTimeout(() => { toast.remove(); }, 500);
 			});
 		}, 5000);
+
+		document.addEventListener('DOMContentLoaded', function(){
+			const bell=document.getElementById('notifBell');
+			const dd=document.getElementById('notifDropdown');
+			if(bell && dd){
+				bell.addEventListener('click', ()=> dd.classList.toggle('hidden'));
+				document.addEventListener('click', (e)=>{ if(!dd.contains(e.target) && !bell.contains(e.target)){ dd.classList.add('hidden'); } });
+			}
+		});
 	</script>
 	@yield('scripts')
 </body>

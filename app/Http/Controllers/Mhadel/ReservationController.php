@@ -6,6 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Reservation;
 use Illuminate\Http\Request;
 use App\Models\Event;
+use App\Models\Notification;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ReservationStatusChanged;
 
 class ReservationController extends Controller
 {
@@ -137,6 +142,52 @@ class ReservationController extends Controller
             'final_price' => $newFinalPrice
         ]);
         
+        Notification::create([
+            'user_id' => $reservation->user_id,
+            'title' => 'Your reservation was approved by Ms. Mhadel',
+            'body' => 'Reservation "' . $reservation->event_title . '" is forwarded to OTP for final approval.',
+            'type' => 'reservation_status',
+            'related_id' => $reservation->id,
+            'related_type' => Reservation::class,
+        ]);
+        
+        // Notify OTP reviewer(s)
+        $otpUser = User::where('role', 'otp')->first();
+        if ($otpUser) {
+            Notification::create([
+                'user_id' => $otpUser->id,
+                'title' => 'Reservation requires final approval',
+                'body' => 'Reservation "' . $reservation->event_title . '" is awaiting your final approval.',
+                'type' => 'reservation_action',
+                'related_id' => $reservation->id,
+                'related_type' => Reservation::class,
+            ]);
+        }
+        
+        // Self notification to Ms. Mhadel actor
+        Notification::create([
+            'user_id' => Auth::id(),
+            'title' => 'You approved a reservation',
+            'body' => 'You approved "' . $reservation->event_title . '" and forwarded to OTP.',
+            'type' => 'self_info',
+            'related_id' => $reservation->id,
+            'related_type' => Reservation::class,
+        ]);
+        
+        // Email requester with pricing details
+        $pricing = [
+            'base_price' => $newBasePrice > 0 ? '₱' . number_format($newBasePrice, 2) : 'Free',
+            'discount' => $discount > 0 ? $discount . '%' : '—',
+            'final_price' => $newFinalPrice > 0 ? '₱' . number_format($newFinalPrice, 2) : 'Free',
+        ];
+        Mail::to($reservation->user->email)->send(new ReservationStatusChanged(
+            $reservation,
+            $reservation->user,
+            'approved_mhadel',
+            'Ms. Mhadel',
+            ['pricing' => $pricing]
+        ));
+        
         return redirect()->back()->with('success', 'Reservation approved successfully. Forwarded to OTP for final approval.');
     }
 
@@ -160,6 +211,34 @@ class ReservationController extends Controller
             'status' => 'rejected_mhadel',
             'notes' => $reservation->notes . "\n" . $rejectionNote
         ]);
+        
+        Notification::create([
+            'user_id' => $reservation->user_id,
+            'title' => 'Your reservation was rejected by Ms. Mhadel',
+            'body' => 'Reservation "' . $reservation->event_title . '" was rejected. Reason: ' . $notes,
+            'type' => 'reservation_status',
+            'related_id' => $reservation->id,
+            'related_type' => Reservation::class,
+        ]);
+        
+        // Self notification to Ms. Mhadel actor
+        Notification::create([
+            'user_id' => Auth::id(),
+            'title' => 'You rejected a reservation',
+            'body' => 'You rejected "' . $reservation->event_title . '". Reason: ' . $notes,
+            'type' => 'self_info',
+            'related_id' => $reservation->id,
+            'related_type' => Reservation::class,
+        ]);
+        
+        // Email requester with reason
+        Mail::to($reservation->user->email)->send(new ReservationStatusChanged(
+            $reservation,
+            $reservation->user,
+            'rejected_mhadel',
+            'Ms. Mhadel',
+            ['reason' => $notes]
+        ));
         
         return redirect()->back()->with('success', 'Reservation rejected successfully.');
     }

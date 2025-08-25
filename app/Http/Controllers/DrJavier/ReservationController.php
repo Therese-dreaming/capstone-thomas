@@ -7,6 +7,10 @@ use App\Models\Reservation;
 use Illuminate\Http\Request;
 use App\Exports\OTPReservationsExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Models\Notification;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ReservationStatusChanged;
 
 class ReservationController extends Controller
 {
@@ -136,6 +140,33 @@ class ReservationController extends Controller
 			'notes' => $reservation->notes . "\n" . $approvalNote
 		]);
 		
+		Notification::create([
+			'user_id' => $reservation->user_id,
+			'title' => 'Your reservation received final approval',
+			'body' => 'Reservation "' . $reservation->event_title . '" is now fully approved (OTP).',
+			'type' => 'reservation_status',
+			'related_id' => $reservation->id,
+			'related_type' => Reservation::class,
+		]);
+		
+		// Self notification to OTP actor
+		Notification::create([
+			'user_id' => Auth::id(),
+			'title' => 'You approved a reservation (Final)',
+			'body' => 'You granted final approval for "' . $reservation->event_title . '".',
+			'type' => 'self_info',
+			'related_id' => $reservation->id,
+			'related_type' => Reservation::class,
+		]);
+		
+		// Email requester final approval
+		Mail::to($reservation->user->email)->send(new ReservationStatusChanged(
+			$reservation,
+			$reservation->user,
+			'approved_OTP',
+			'OTP'
+		));
+		
 		return redirect()->back()->with('success', 'Reservation approved successfully. This is the final approval.');
 	}
 
@@ -159,6 +190,34 @@ class ReservationController extends Controller
 			'status' => 'rejected_OTP',
 			'notes' => $reservation->notes . "\n" . $rejectionNote
 		]);
+		
+		Notification::create([
+			'user_id' => $reservation->user_id,
+			'title' => 'Your reservation was rejected by OTP',
+			'body' => 'Reservation "' . $reservation->event_title . '" was rejected. Reason: ' . $notes,
+			'type' => 'reservation_status',
+			'related_id' => $reservation->id,
+			'related_type' => Reservation::class,
+		]);
+		
+		// Self notification to OTP actor
+		Notification::create([
+			'user_id' => Auth::id(),
+			'title' => 'You rejected a reservation (Final)',
+			'body' => 'You rejected "' . $reservation->event_title . '". Reason: ' . $notes,
+			'type' => 'self_info',
+			'related_id' => $reservation->id,
+			'related_type' => Reservation::class,
+		]);
+		
+		// Email requester final rejection
+		Mail::to($reservation->user->email)->send(new ReservationStatusChanged(
+			$reservation,
+			$reservation->user,
+			'rejected_OTP',
+			'OTP',
+			['reason' => $notes]
+		));
 		
 		return redirect()->back()->with('success', 'Reservation rejected successfully.');
 	}

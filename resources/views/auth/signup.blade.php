@@ -12,19 +12,13 @@
             padding: 0;
             overflow: hidden;
         }
-        .bg-maroon {
-            background-color: #8B1818;
-        }
-        .btn-maroon {
-            background-color: #8B1818;
-            color: white;
-        }
-        .btn-maroon:hover {
-            background-color: #6B1212;
-        }
-        .logo-glow {
-            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.3));
-        }
+        .bg-maroon { background-color: #8B1818; }
+        .btn-maroon { background-color: #8B1818; color: white; }
+        .btn-maroon:hover { background-color: #6B1212; }
+        .logo-glow { filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.3)); }
+        .loading-overlay { background: rgba(0,0,0,0.45); backdrop-filter: blur(3px); }
+        .spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="h-full">
@@ -42,7 +36,7 @@
             <div class="w-4/5 max-w-md">
                 <h2 class="text-3xl font-bold text-maroon mb-8 text-center">Sign Up</h2>
                 
-                <form action="{{ route('signup.submit') }}" method="POST" class="space-y-4">
+                <form id="signupForm" action="{{ route('signup.submit') }}" method="POST" class="space-y-4">
                     @csrf
                     
                     <div>
@@ -101,8 +95,8 @@
                     </div>
                     
                     <div class="pt-4">
-                        <button type="submit" class="w-full btn-maroon py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-maroon">
-                            Sign Up
+                        <button id="signupSubmit" type="submit" class="w-full btn-maroon py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-maroon flex items-center justify-center">
+                            <i class="fas fa-user-plus mr-2"></i> Sign Up
                         </button>
                     </div>
                 </form>
@@ -113,5 +107,28 @@
             </div>
         </div>
     </div>
+
+    <!-- Loading Modal Overlay -->
+    <div id="signupLoading" class="hidden fixed inset-0 z-50 loading-overlay flex items-center justify-center">
+        <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm text-center">
+            <div class="mx-auto w-16 h-16 rounded-full bg-maroon bg-opacity-10 flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-maroon spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-800">Creating your account…</h3>
+            <p class="text-sm text-gray-600 mt-1">Please wait while we process your registration.</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('signupForm').addEventListener('submit', function(e){
+            const overlay = document.getElementById('signupLoading');
+            const btn = document.getElementById('signupSubmit');
+            btn.disabled = true;
+            overlay.classList.remove('hidden');
+        });
+    </script>
 </body>
 </html>

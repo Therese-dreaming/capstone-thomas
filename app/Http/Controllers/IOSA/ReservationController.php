@@ -5,6 +5,11 @@ namespace App\Http\Controllers\IOSA;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Reservation;
+use App\Models\Notification;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ReservationStatusChanged;
 
 class ReservationController extends Controller
 {
@@ -126,6 +131,46 @@ class ReservationController extends Controller
             'notes' => $reservation->notes . "\n" . $approvalNote
         ]);
         
+        // Self notification to IOSA actor
+        Notification::create([
+            'user_id' => Auth::id(),
+            'title' => 'You approved a reservation',
+            'body' => 'You approved "' . $reservation->event_title . '" and forwarded to Ms. Mhadel.',
+            'type' => 'self_info',
+            'related_id' => $reservation->id,
+            'related_type' => Reservation::class,
+        ]);
+        
+        // Notify Mhadel role about new item to review
+        $mhadelUser = User::where('role', 'mhadel')->first();
+        if ($mhadelUser) {
+            Notification::create([
+                'user_id' => $mhadelUser->id,
+                'title' => 'Reservation forwarded by IOSA',
+                'body' => 'Reservation "' . $reservation->event_title . '" is awaiting your review.',
+                'type' => 'reservation_action',
+                'related_id' => $reservation->id,
+                'related_type' => Reservation::class,
+            ]);
+        }
+        
+        Notification::create([
+            'user_id' => $reservation->user_id,
+            'title' => 'Your reservation was approved by IOSA',
+            'body' => 'Reservation "' . $reservation->event_title . '" is forwarded to Ms. Mhadel.',
+            'type' => 'reservation_status',
+            'related_id' => $reservation->id,
+            'related_type' => Reservation::class,
+        ]);
+        
+        // Email requester
+        Mail::to($reservation->user->email)->send(new ReservationStatusChanged(
+            $reservation,
+            $reservation->user,
+            'approved_IOSA',
+            'IOSA'
+        ));
+        
         return redirect()->back()->with('success', 'Reservation approved successfully. Forwarded to Ms. Mhadel for review.');
     }
 
@@ -149,6 +194,34 @@ class ReservationController extends Controller
             'status' => 'rejected_IOSA',
             'notes' => $reservation->notes . "\n" . $rejectionNote
         ]);
+        
+        // Self notification to IOSA actor
+        Notification::create([
+            'user_id' => Auth::id(),
+            'title' => 'You rejected a reservation',
+            'body' => 'You rejected "' . $reservation->event_title . '". Reason: ' . $notes,
+            'type' => 'self_info',
+            'related_id' => $reservation->id,
+            'related_type' => Reservation::class,
+        ]);
+        
+        Notification::create([
+            'user_id' => $reservation->user_id,
+            'title' => 'Your reservation was rejected by IOSA',
+            'body' => 'Reservation "' . $reservation->event_title . '" was rejected. Reason: ' . $notes,
+            'type' => 'reservation_status',
+            'related_id' => $reservation->id,
+            'related_type' => Reservation::class,
+        ]);
+        
+        // Email requester
+        Mail::to($reservation->user->email)->send(new ReservationStatusChanged(
+            $reservation,
+            $reservation->user,
+            'rejected_IOSA',
+            'IOSA',
+            ['reason' => $notes]
+        ));
         
         return redirect()->back()->with('success', 'Reservation rejected successfully.');
     }

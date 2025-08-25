@@ -264,6 +264,10 @@
                                             <span>{{ $reservation->user->name }}</span>
                                         </div>
                                         <div class="flex items-center">
+                                            <i class="fas fa-building mr-2 text-maroon w-4"></i>
+                                            <span>{{ $reservation->department ?? $reservation->user->department ?? 'N/A' }}</span>
+                                        </div>
+                                        <div class="flex items-center">
                                             <i class="fas fa-envelope mr-2 text-maroon w-4"></i>
                                             <span>{{ $reservation->user->email }}</span>
                                         </div>
@@ -603,7 +607,7 @@
                         <!-- Summary -->
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
                             <div class="flex items-start">
-                                <i class="fas fa-save text-blue-500 mr-2 mt-0.5"></i>
+                                <i class="fas fa-save text-blue-500 mr-2"></i>
                                 <div class="text-xs text-blue-700">
                                     <p class="font-medium">This information will be saved:</p>
                                     <ul class="mt-1 space-y-1">

@@ -24,12 +24,25 @@
 		.nav-active i { color: #111827 !important; }
 		.header { background: #ffffff; }
 		.badge { background: #f3f4f6; color: #374151; }
+		/* Loading Overlay */
+		.loading-overlay { position: fixed; inset: 0; background: rgba(17,24,39,0.55); backdrop-filter: blur(3px); z-index: 9999; display: none; align-items: center; justify-content: center; }
+		.loading-card { background: #fff; border-radius: 1rem; padding: 1.25rem 1.5rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); width: 92%; max-width: 360px; text-align: center; }
+		.spinner { width: 2rem; height: 2rem; border: 3px solid #eee; border-top-color: var(--maroon); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 0.75rem; }
+		@keyframes spin { to { transform: rotate(360deg); } }
 	</style>
 	@yield('styles')
 </head>
 <body class="bg-gray-50">
 	<!-- Include safelist to preserve Tailwind classes -->
 	@include('tw-safelist')
+	
+	<!-- Global Loading Overlay -->
+	<div id="globalLoading" class="loading-overlay">
+		<div class="loading-card">
+			<div class="spinner"></div>
+			<div class="text-sm text-gray-700" id="globalLoadingText">Processing your request…</div>
+		</div>
+	</div>
 	
 	<div class="flex h-screen">
 		<!-- Sidebar -->
@@ -127,6 +140,45 @@
 					<!-- Breadcrumb or additional header content -->
 					<div class="flex items-center space-x-4">
 						@yield('header-actions')
+						<div class="relative">
+							<button id="notifBell" class="relative px-3 py-2 rounded-lg hover:bg-gray-100">
+								<i class="fas fa-bell"></i>
+								@if(($globalUnreadNotifications ?? 0) > 0)
+								<span class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1">{{ $globalUnreadNotifications }}</span>
+								@endif
+							</button>
+							<div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+								<div class="p-3 border-b border-gray-100 flex items-center justify-between">
+									<span class="text-sm font-medium">Notifications</span>
+									<form method="POST" action="{{ route('notifications.markAllRead') }}">
+										@csrf
+										<button type="submit" class="text-xs text-gray-600 hover:text-gray-900">Mark all read</button>
+									</form>
+								</div>
+								<div class="max-h-80 overflow-auto">
+									@forelse(($globalLatestNotifications ?? []) as $n)
+										<div class="p-3 border-b border-gray-100 {{ $n->read_at ? '' : 'bg-gray-50' }}">
+											<div class="text-sm font-medium text-gray-800">{{ $n->title }}</div>
+											<div class="text-xs text-gray-600">{{ $n->body }}</div>
+											<div class="mt-2 flex items-center justify-between text-xs text-gray-500">
+												<span>{{ $n->created_at->diffForHumans() }}</span>
+												@if(!$n->read_at)
+												<form method="POST" action="{{ route('notifications.read', $n->id) }}">
+													@csrf
+													<button type="submit" class="text-blue-600 hover:underline">Mark read</button>
+												</form>
+												@endif
+											</div>
+										</div>
+									@empty
+										<div class="p-4 text-sm text-gray-600">No notifications</div>
+									@endforelse
+								</div>
+								<div class="p-2 text-center">
+									<a href="{{ route('notifications.index') }}" class="text-sm text-gray-700 hover:text-black">View all</a>
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
 			</header>
@@ -227,6 +279,32 @@
 					toast.classList.add('opacity-0', 'pointer-events-none');
 					setTimeout(() => toast.remove(), 500);
 				}, 4000);
+			});
+		});
+
+		// Notifications dropdown toggle
+		document.addEventListener('DOMContentLoaded', function(){
+			const bell=document.getElementById('notifBell');
+			const dd=document.getElementById('notifDropdown');
+			if(bell && dd){
+				bell.addEventListener('click', ()=> dd.classList.toggle('hidden'));
+				document.addEventListener('click', (e)=>{ if(!dd.contains(e.target) && !bell.contains(e.target)){ dd.classList.add('hidden'); } });
+			}
+		});
+
+		// Global loading API
+		function showLoading(text){
+			const overlay=document.getElementById('globalLoading');
+			const t=document.getElementById('globalLoadingText');
+			if(text) t.textContent=text; else t.textContent='Processing your request…';
+			overlay.style.display='flex';
+		}
+		function hideLoading(){ document.getElementById('globalLoading').style.display='none'; }
+
+		// Auto-show for forms with data-loading attribute
+		document.addEventListener('DOMContentLoaded', function(){
+			document.querySelectorAll('form[data-loading]')?.forEach(frm=>{
+				frm.addEventListener('submit', function(){ showLoading(frm.getAttribute('data-loading')||'Processing…'); });
 			});
 		});
 	</script>

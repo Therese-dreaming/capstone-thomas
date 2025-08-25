@@ -19,6 +19,7 @@ use App\Http\Controllers\DrJavier\DrJavierController;
 use App\Http\Controllers\DrJavier\ReservationController as OTPReservationController;
 use App\Http\Controllers\GSU\GSUController as GSUController;
 use App\Http\Controllers\GSU\ReservationController as GSUReservationController;
+use Illuminate\Support\Facades\Auth;
 
 // Redirect root to login
 Route::get('/', function () {
@@ -39,8 +40,12 @@ Route::get('/email/verify', function () {
 
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
     $request->fulfill();
-    return redirect('/dashboard');
+    $userName = $request->user()->name;
+    Auth::logout();
+    return redirect()->route('verification.success')->with('verified_name', $userName);
 })->middleware(['auth', 'signed'])->name('verification.verify');
+
+Route::view('/email/verified-success', 'auth.verified-success')->name('verification.success');
 
 Route::post('/email/verification-notification', function (Request $request) {
     $request->user()->sendEmailVerificationNotification();
@@ -60,6 +65,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('reservations/{id}', [UserController::class, 'show'])->name('reservations.show');
     });
     Route::get('/profile', [UserController::class, 'profile'])->name('user.profile');
+
+    // Notifications
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
 
     // Admin Routes
     Route::middleware(['auth', 'admin.role'])->prefix('admin')->group(function () {
@@ -99,6 +109,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('reservations/{id}/approve', [MhadelReservationController::class, 'approve'])->name('reservations.approve');
         Route::post('reservations/{id}/reject', [MhadelReservationController::class, 'reject'])->name('reservations.reject');
         Route::get('reservations/{id}/download-activity-grid', [MhadelReservationController::class, 'downloadActivityGrid'])->name('reservations.download-activity-grid');
+    });
+
+    // Ms. Mhadel routes
+    Route::middleware(['web','auth'])->group(function(){
+        Route::get('/mhadel/dashboard', [\App\Http\Controllers\Mhadel\MhadelController::class, 'dashboard'])->name('mhadel.dashboard');
+        Route::get('/mhadel/reports', [\App\Http\Controllers\Mhadel\MhadelController::class, 'reports'])->name('mhadel.reports');
     });
 
     // OTP Routes

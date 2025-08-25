@@ -8,6 +8,10 @@ use App\Models\Reservation;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Models\Event;
+use App\Models\User;
+use App\Models\Notification;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ReservationSubmitted;
 
 class UserController extends Controller
 {
@@ -133,6 +137,7 @@ class UserController extends Controller
 		$data = $request->all();
 		$data['user_id'] = Auth::id();
 		$data['status'] = 'pending';
+		$data['department'] = Auth::user()->department ?? null;
 
 		if ($request->has('equipment') && is_array($request->equipment)) {
 			$equipmentDetails = [];
@@ -174,7 +179,33 @@ class UserController extends Controller
 			'duration_hours' => $data['duration_hours'] ?? 'not set'
 		]);
 
-		Reservation::create($data);
+		$reservation = Reservation::create($data);
+
+		// Self notification to the requester
+		Notification::create([
+			'user_id' => Auth::id(),
+			'title' => 'Reservation submitted successfully',
+			'body' => 'Your reservation "' . ($request->event_title) . '" has been submitted for review.',
+			'type' => 'self_info',
+			'related_id' => 0,
+			'related_type' => Reservation::class,
+		]);
+
+		// Send email confirmation
+		Mail::to(Auth::user()->email)->send(new ReservationSubmitted($reservation, Auth::user()));
+
+		// Notify IOSA role about new reservation submission
+		$iosaUsers = User::where('role', 'iosa')->get();
+		foreach ($iosaUsers as $u) {
+			Notification::create([
+				'user_id' => $u->id,
+				'title' => 'New reservation submitted',
+				'body' => 'User ' . (Auth::user()->name ?? 'A user') . ' submitted "' . ($request->event_title) . '" for review.',
+				'type' => 'reservation_action',
+				'related_id' => $reservation->id,
+				'related_type' => Reservation::class,
+			]);
+		}
 
 		return redirect()->route('user.reservations.index')
 			->with('success', 'Reservation submitted successfully!');

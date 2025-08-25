@@ -37,7 +37,7 @@ class AuthController extends Controller
             if (!$user->email_verified_at) {
                 Auth::logout();
                 return back()->withErrors([
-                    'username' => 'Please verify your email address before logging in.',
+                    'username' => 'Only verified accounts can log in. Please check your inbox for the verification email or request a new one.',
                 ])->withInput(['username' => $request->username]);
             }
 
@@ -73,20 +73,32 @@ class AuthController extends Controller
     public function signup(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'department' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        User::create([
-            'name' => $request->name,
+        $fullName = trim($request->first_name . ' ' . $request->last_name);
+
+        $user = User::create([
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'name' => $fullName,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'User', // Only allow User role for signup
-            'email_verified_at' => now() // Auto-verify for now, can be changed later
+            'role' => 'User',
+            'department' => $request->department,
         ]);
 
-        return redirect()->route('login')->with('success', 'Account created successfully! You can now log in.');
+        // Send email verification
+        $user->sendEmailVerificationNotification();
+
+        // Log the user in so they can view the verify page (auth middleware)
+        Auth::login($user);
+
+        return redirect()->route('verification.notice')->with('message', 'Account created! Check your email for a verification link.');
     }
 
     private function redirectBasedOnRole($user)

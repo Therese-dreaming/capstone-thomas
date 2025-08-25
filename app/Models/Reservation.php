@@ -23,7 +23,8 @@ class Reservation extends Model
         'final_price',
         'duration_hours',
         'status',
-        'notes'
+        'notes',
+        'department',
     ];
 
     protected $casts = [
