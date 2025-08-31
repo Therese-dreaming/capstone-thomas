@@ -94,6 +94,8 @@ class UserController extends Controller
 			'equipment_quantity.*' => 'integer|min:1',
 			'price_per_hour' => 'required|numeric|min:0',
 			'base_price' => 'required|numeric|min:0',
+			'department' => 'required|string|max:255',
+			'other_department' => 'nullable|string|max:255',
 		]);
 
 		$venue = Venue::find($request->venue_id);
@@ -137,7 +139,13 @@ class UserController extends Controller
 		$data = $request->all();
 		$data['user_id'] = Auth::id();
 		$data['status'] = 'pending';
-		$data['department'] = Auth::user()->department ?? null;
+		
+		// Handle department field - if "Other" is selected, use the other_department value
+		if ($request->department === 'Other' && $request->filled('other_department')) {
+			$data['department'] = $request->other_department;
+		} else {
+			$data['department'] = $request->department;
+		}
 
 		if ($request->has('equipment') && is_array($request->equipment)) {
 			$equipmentDetails = [];
@@ -207,6 +215,16 @@ class UserController extends Controller
 			]);
 		}
 
+		// Return JSON response for AJAX requests
+		if ($request->expectsJson()) {
+			return response()->json([
+				'success' => true,
+				'message' => 'Reservation submitted successfully!',
+				'reservation_id' => $reservation->id
+			]);
+		}
+		
+		// Return redirect for regular form submissions
 		return redirect()->route('user.reservations.index')
 			->with('success', 'Reservation submitted successfully!');
 	}
@@ -266,5 +284,159 @@ class UserController extends Controller
 		});
 
 		return response()->json(['slots' => $slots->merge($eventSlots)->values()]);
+	}
+
+	public function edit($id)
+	{
+		$reservation = Reservation::where('id', $id)
+			->where('user_id', Auth::id())
+			->with(['venue'])
+			->firstOrFail();
+
+		// Only allow editing of pending reservations
+		if (!in_array($reservation->status, ['pending', 'approved_IOSA', 'approved_mhadel'])) {
+			return redirect()->route('user.reservations.show', $reservation->id)
+				->with('error', 'This reservation cannot be edited.');
+		}
+
+		$venues = Venue::where('is_available', true)->get();
+		
+		return view('user.reservations.edit', compact('reservation', 'venues'));
+	}
+
+	public function update(Request $request, $id)
+	{
+		$reservation = Reservation::where('id', $id)
+			->where('user_id', Auth::id())
+			->firstOrFail();
+
+		// Only allow updating of pending reservations
+		if (!in_array($reservation->status, ['pending', 'approved_IOSA', 'approved_mhadel'])) {
+			return redirect()->route('user.reservations.show', $reservation->id)
+				->with('error', 'This reservation cannot be updated.');
+		}
+
+		$request->validate([
+			'event_title' => 'required|string|max:255',
+			'capacity' => 'required|integer|min:1',
+			'venue_id' => 'required|exists:venues,id',
+			'purpose' => 'required|string',
+			'start_date' => 'required|date|after:now',
+			'end_date' => 'required|date|after:start_date',
+			'activity_grid' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
+			'equipment' => 'nullable|array',
+			'equipment.*' => 'string',
+			'equipment_quantity' => 'nullable|array',
+			'equipment_quantity.*' => 'integer|min:1',
+			'price_per_hour' => 'required|numeric|min:0',
+			'base_price' => 'required|numeric|min:0',
+			'department' => 'required|string|max:255',
+			'other_department' => 'nullable|string|max:255',
+		]);
+
+		// Handle department field - if "Other" is selected, use the other_department value
+		$department = $request->department;
+		if ($request->department === 'Other' && $request->filled('other_department')) {
+			$department = $request->other_department;
+		}
+
+		$data = [
+			'event_title' => $request->event_title,
+			'capacity' => $request->capacity,
+			'venue_id' => $request->venue_id,
+			'purpose' => $request->purpose,
+			'start_date' => $request->start_date,
+			'end_date' => $request->end_date,
+			'price_per_hour' => $request->price_per_hour,
+			'base_price' => $request->base_price,
+			'department' => $department,
+		];
+
+		// Handle equipment data
+		if ($request->has('equipment')) {
+			$equipmentData = [];
+			foreach ($request->equipment as $equipment) {
+				if ($equipment !== 'none') {
+					$quantity = $request->input("equipment_quantity.{$equipment}", 1);
+					$equipmentData[$equipment] = $quantity;
+				}
+			}
+			$data['equipment'] = $equipmentData;
+		}
+
+		// Handle activity grid file
+		if ($request->hasFile('activity_grid')) {
+			$data['activity_grid'] = $request->file('activity_grid')->store('activity_grids', 'public');
+		}
+
+		$reservation->update($data);
+
+		// Create notification
+		Notification::create([
+			'user_id' => Auth::id(),
+			'title' => 'Reservation updated successfully',
+			'body' => 'Your reservation "' . $request->event_title . '" has been updated.',
+			'type' => 'self_info',
+			'related_id' => 0,
+			'related_type' => Reservation::class,
+		]);
+
+		// Return JSON response for AJAX requests
+		if ($request->expectsJson()) {
+			return response()->json([
+				'success' => true,
+				'message' => 'Reservation updated successfully!',
+				'reservation_id' => $reservation->id
+			]);
+		}
+
+		return redirect()->route('user.reservations.show', $reservation->id)
+			->with('success', 'Reservation updated successfully!');
+	}
+
+	public function cancel($id)
+	{
+		$reservation = Reservation::where('id', $id)
+			->where('user_id', Auth::id())
+			->firstOrFail();
+
+		// Only allow cancellation of pending reservations
+		if (!in_array($reservation->status, ['pending', 'approved_IOSA', 'approved_mhadel'])) {
+			return response()->json([
+				'success' => false,
+				'message' => 'This reservation cannot be cancelled.'
+			], 400);
+		}
+
+		// Update status to cancelled
+		$reservation->update(['status' => 'cancelled']);
+
+		// Create notification
+		Notification::create([
+			'user_id' => Auth::id(),
+			'title' => 'Reservation cancelled',
+			'body' => 'Your reservation "' . $reservation->event_title . '" has been cancelled.',
+			'type' => 'self_info',
+			'related_id' => 0,
+			'related_type' => Reservation::class,
+		]);
+
+		// Notify admins about cancellation
+		$adminUsers = User::whereIn('role', ['admin', 'iosa', 'mhadel'])->get();
+		foreach ($adminUsers as $admin) {
+			Notification::create([
+				'user_id' => $admin->id,
+				'title' => 'Reservation cancelled',
+				'body' => 'User ' . Auth::user()->name . ' cancelled reservation "' . $reservation->event_title . '".',
+				'type' => 'reservation_action',
+				'related_id' => $reservation->id,
+				'related_type' => Reservation::class,
+			]);
+		}
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Reservation cancelled successfully!'
+		]);
 	}
 }

@@ -45,6 +45,18 @@
 							<span class="font-medium">Reservations</span>
 						</a>
 					</li>
+					<li>
+						<a href="{{ route('gsu.events.index') }}" class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('gsu.events*') ? 'active-maroon' : 'text-gray-700' }}">
+							<i class="fas fa-calendar-alt w-5 h-5"></i>
+							<span class="font-medium">Events</span>
+						</a>
+					</li>
+					<li>
+						<a href="{{ route('gsu.calendar') }}" class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('gsu.calendar*') ? 'active-maroon' : 'text-gray-700' }}">
+							<i class="fas fa-calendar w-5 h-5"></i>
+							<span class="font-medium">Calendar</span>
+						</a>
+					</li>
 				</ul>
 			</nav>
 			<div class="border-t border-gray-200 p-4">

@@ -131,6 +131,8 @@
     }
     
 
+    
+
 </style>
 
 <div class="space-y-6 font-inter">
@@ -360,6 +362,28 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Calendar Status Filter -->
+                <div class="p-4 border-b border-gray-200 bg-gray-50">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-medium text-gray-800">Filter by Status:</h3>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="filterCalendarByStatus('all')" id="filter-all" class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn active">
+                                All
+                            </button>
+                            <button onclick="filterCalendarByStatus('pending')" id="filter-pending" class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn">
+                                Pending
+                            </button>
+                            <button onclick="filterCalendarByStatus('approved')" id="filter-approved" class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn">
+                                Approved
+                            </button>
+                            <button onclick="filterCalendarByStatus('rejected')" id="filter-rejected" class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn">
+                                Rejected
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="p-6">
                     <!-- Calendar Legend -->
                     <div class="flex flex-wrap items-center justify-end mb-4 gap-4 text-sm">
@@ -606,7 +630,7 @@
                         
                         <!-- Summary -->
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                            <div class="flex items-start">
+                            <div class="flex items-start">  
                                 <i class="fas fa-save text-blue-500 mr-2"></i>
                                 <div class="text-xs text-blue-700">
                                     <p class="font-medium">This information will be saved:</p>
@@ -769,10 +793,18 @@
             }
             
             // Check for reservations on this date
-            const dateString = date.toISOString().split('T')[0];
-            const dayReservations = reservationsData.data.filter(reservation => 
-                reservation.start_date.startsWith(dateString)
-            );
+            // Convert the date to local timezone to avoid timezone issues
+            const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            const localDateString = localDate.toISOString().split('T')[0];
+            
+            const dayReservations = reservationsData.data.filter(reservation => {
+                // Parse the reservation date and convert to local timezone
+                const reservationDate = new Date(reservation.start_date);
+                const reservationLocalDate = new Date(reservationDate.getFullYear(), reservationDate.getMonth(), reservationDate.getDate());
+                const reservationLocalString = reservationLocalDate.toISOString().split('T')[0];
+                
+                return reservationLocalString === localDateString;
+            });
             
             // Add visual indicator if there are reservations
             let reservationIndicator = '';
@@ -800,7 +832,7 @@
             }
             
             html += `
-                <div class="${dayClass}" onclick="showReservationsForDate(new Date('${dateString}'))">
+                <div class="${dayClass}" onclick="showReservationsForDate(${date.getTime()})">
                     <div class="text-sm font-medium">${date.getDate()}</div>
                     ${reservationIndicator}
                 </div>
@@ -828,11 +860,20 @@
         renderCalendar();
     }
     
-    function showReservationsForDate(date) {
-        const dateString = date.toISOString().split('T')[0];
-        const dayReservations = reservationsData.data.filter(reservation => 
-            reservation.start_date.startsWith(dateString)
-        );
+    function showReservationsForDate(timestamp) {
+        // Convert timestamp to Date object and then to local timezone
+        const date = new Date(timestamp);
+        const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const localDateString = localDate.toISOString().split('T')[0];
+        
+        const dayReservations = reservationsData.data.filter(reservation => {
+            // Parse the reservation date and convert to local timezone
+            const reservationDate = new Date(reservation.start_date);
+            const reservationLocalDate = new Date(reservationDate.getFullYear(), reservationDate.getMonth(), reservationDate.getDate());
+            const reservationLocalString = reservationLocalDate.toISOString().split('T')[0];
+            
+            return reservationLocalString === localDateString;
+        });
         
         if (dayReservations.length > 0) {
             const reservation = dayReservations[0]; // Show first reservation
@@ -881,6 +922,8 @@
             window.location.href = `/mhadel/reservations/${window.currentReservationId}`;
         }
     }
+    
+
     
     // Approve Modal Functions
     function openApproveModal(reservationId, eventTitle) {

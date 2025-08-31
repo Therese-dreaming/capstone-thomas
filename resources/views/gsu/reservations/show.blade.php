@@ -5,49 +5,587 @@
 @section('page-subtitle', 'Final Approved Reservation')
 
 @section('content')
-<div class="space-y-6">
-	<div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-		<div class="flex items-center justify-between mb-4">
-			<h2 class="text-xl font-bold text-gray-800">{{ $reservation->event_title }}</h2>
-			<span class="status-badge status-approved">Final Approved</span>
-		</div>
-		<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-			<div>
-				<h3 class="font-semibold text-gray-800 mb-3">Event Information</h3>
-				<div class="space-y-2 text-sm text-gray-600">
-					<div><strong>Requester:</strong> {{ $reservation->user->name }}</div>
-					<div><strong>Date:</strong> {{ $reservation->start_date->format('M d, Y') }}</div>
-					<div><strong>Time:</strong> {{ \Carbon\Carbon::parse($reservation->start_date)->format('g:i A') }} - {{ \Carbon\Carbon::parse($reservation->end_date)->format('g:i A') }}</div>
-					<div><strong>Purpose:</strong> {{ $reservation->purpose }}</div>
-				</div>
-			</div>
-			<div>
-				<h3 class="font-semibold text-gray-800 mb-3">Venue & Capacity</h3>
-				<div class="space-y-2 text-sm text-gray-600">
-					<div><strong>Venue:</strong> {{ $reservation->venue->name }}</div>
-					<div><strong>Participants:</strong> {{ $reservation->capacity ?? 'N/A' }}</div>
-				</div>
-			</div>
-			<div>
-				<h3 class="font-semibold text-gray-800 mb-3">Pricing</h3>
-				<div class="space-y-2 text-sm text-gray-600">
-					<div><strong>Final Price:</strong> ₱{{ number_format($reservation->final_price ?? 0, 2) }}</div>
-					<div><strong>Rate/Hour:</strong> ₱{{ number_format($reservation->price_per_hour ?? 0, 2) }}</div>
-				</div>
-			</div>
-		</div>
-		<div>
-			<h3 class="font-semibold text-gray-800 mb-3">Equipment Requested</h3>
-			@if($reservation->equipment_details && count($reservation->equipment_details) > 0)
-				<div class="space-y-1 text-sm">
-					@foreach($reservation->equipment_details as $eq)
-						<div class="text-xs bg-gray-100 px-2 py-1 rounded"><span class="font-medium">{{ $eq['name'] }}</span> <span class="text-gray-500">({{ $eq['quantity'] }})</span></div>
-					@endforeach
-				</div>
-			@else
-				<div class="text-gray-500 text-sm">No equipment requested</div>
-			@endif
-		</div>
-	</div>
+<!-- Google Fonts Import -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    .font-inter { font-family: 'Inter', sans-serif; }
+    .font-poppins { font-family: 'Poppins', sans-serif; }
+    
+    .animate-fadeIn { 
+        animation: fadeIn 0.3s ease-out; 
+    }
+    
+    @keyframes fadeIn { 
+        from { opacity: 0; transform: translateY(20px); } 
+        to { opacity: 1; transform: translateY(0); } 
+    }
+    
+    .status-badge { 
+        padding: 0.5rem 1rem; 
+        border-radius: 9999px; 
+        font-size: 0.75rem; 
+        font-weight: 600; 
+        text-transform: uppercase; 
+        letter-spacing: 0.05em;
+        background-color: #10B981;
+        color: #ffffff;
+    }
+    
+    .info-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s ease;
+    }
+    
+    .info-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px -5px rgba(0,0,0,0.1);
+        border-color: #3b82f6;
+    }
+    
+    .glass-effect {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .highlight-box {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border: 1px solid #e2e8f0;
+        border-left: 4px solid #800000;
+    }
+</style>
+
+<div class="space-y-6 font-inter animate-fadeIn">
+    <!-- Header Section -->
+    <div class="glass-effect rounded-xl shadow-lg overflow-hidden">
+        <div class="p-6 border-b border-gray-200 bg-gray-50">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800 flex items-center font-poppins mb-2">
+                        <div class="w-10 h-10 bg-maroon rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-calendar-check text-white text-lg"></i>
+                        </div>
+                        Reservation Details
+                    </h1>
+                    <p class="text-gray-600 font-medium">Final approved reservation information and details</p>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex items-center space-x-3">
+                    <a href="{{ route('gsu.reservations.index') }}" 
+                       class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg flex items-center space-x-2 text-sm">
+                        <i class="fas fa-arrow-left mr-1.5"></i>
+                        <span>Back to List</span>
+                    </a>
+                    <span class="status-badge">Final Approved</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column - Event Information -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Event Details Card -->
+            <div class="info-card rounded-xl p-6">
+                <div class="flex items-center mb-4">
+                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-calendar text-blue-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800">Event Information</h3>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <i class="fas fa-user text-maroon mr-3 w-4"></i>
+                                <div>
+                                    <p class="text-xs text-gray-500 font-medium">Requester</p>
+                                    <p class="text-sm font-semibold text-gray-800">{{ $reservation->user->name }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <i class="fas fa-calendar text-maroon mr-3 w-4"></i>
+                                <div>
+                                    <p class="text-xs text-gray-500 font-medium">Date</p>
+                                    <p class="text-sm font-semibold text-gray-800">{{ $reservation->start_date->format('M d, Y') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <i class="fas fa-clock text-maroon mr-3 w-4"></i>
+                                <div>
+                                    <p class="text-xs text-gray-500 font-medium">Time</p>
+                                    <p class="text-sm font-semibold text-gray-800">
+                                        {{ \Carbon\Carbon::parse($reservation->start_date)->format('g:i A') }} - {{ \Carbon\Carbon::parse($reservation->end_date)->format('g:i A') }}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            @if($reservation->start_date && $reservation->end_date)
+                                <div class="flex items-center">
+                                    <i class="fas fa-hourglass-half text-maroon mr-3 w-4"></i>
+                                    <div>
+                                        <p class="text-xs text-gray-500 font-medium">Duration</p>
+                                        <p class="text-sm font-semibold text-gray-800">
+                                            {{ \Carbon\Carbon::parse($reservation->start_date)->diffInHours($reservation->end_date) }} hours
+                                        </p>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                    
+                    @if($reservation->purpose)
+                        <div class="highlight-box p-4 rounded-lg">
+                            <div class="flex items-start">
+                                <i class="fas fa-info-circle text-maroon mr-3 mt-0.5"></i>
+                                <div>
+                                    <p class="text-xs text-gray-500 font-medium mb-1">Purpose</p>
+                                    <p class="text-sm text-gray-700 leading-relaxed">{{ $reservation->purpose }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Venue & Capacity Card -->
+            <div class="info-card rounded-xl p-6">
+                <div class="flex items-center mb-4">
+                    <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-map-marker-alt text-green-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800">Venue & Capacity</h3>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-map-marker-alt text-maroon mr-3 w-4"></i>
+                            <div>
+                                <p class="text-xs text-gray-500 font-medium">Venue Name</p>
+                                <p class="text-sm font-semibold text-gray-800">{{ $reservation->venue->name }}</p>
+                            </div>
+                        </div>
+                        
+                        @if($reservation->venue->description)
+                            <div class="flex items-start">
+                                <i class="fas fa-info-circle text-maroon mr-3 mt-0.5 w-4"></i>
+                                <div>
+                                    <p class="text-xs text-gray-500 font-medium">Description</p>
+                                    <p class="text-sm text-gray-700">{{ $reservation->venue->description }}</p>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-users text-maroon mr-3 w-4"></i>
+                            <div>
+                                <p class="text-xs text-gray-500 font-medium">Expected Participants</p>
+                                <p class="text-sm font-semibold text-gray-800">{{ $reservation->capacity ?? 'N/A' }}</p>
+                            </div>
+                        </div>
+                        
+                        @if($reservation->venue->capacity)
+                            <div class="flex items-center">
+                                <i class="fas fa-building text-maroon mr-3 w-4"></i>
+                                <div>
+                                    <p class="text-xs text-gray-500 font-medium">Venue Capacity</p>
+                                    <p class="text-sm font-semibold text-gray-800">{{ $reservation->venue->capacity }}</p>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- Equipment Card -->
+            <div class="info-card rounded-xl p-6">
+                <div class="flex items-center mb-4">
+                    <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-tools text-purple-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800">Equipment Requested</h3>
+                </div>
+                
+                @if($reservation->equipment_details && count($reservation->equipment_details) > 0)
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        @foreach($reservation->equipment_details as $eq)
+                            <div class="bg-blue-50 text-blue-800 px-3 py-2 rounded-lg border border-blue-200 flex items-center justify-between">
+                                <span class="font-medium text-sm">{{ $eq['name'] }}</span>
+                                <span class="bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded-full font-semibold">
+                                    {{ $eq['quantity'] }}
+                                </span>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                        <i class="fas fa-tools text-3xl text-gray-300 mb-3"></i>
+                        <p class="text-gray-500 text-sm">No equipment requested for this reservation</p>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Right Column - Pricing & Actions -->
+        <div class="space-y-6">
+            <!-- Pricing Card -->
+            <div class="info-card rounded-xl p-6">
+                <div class="flex items-center mb-4">
+                    <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-tag text-green-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800">Pricing Details</h3>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <div class="text-center">
+                            <p class="text-xs text-green-600 font-medium mb-1">Final Price</p>
+                            <p class="text-2xl font-bold text-green-800">₱{{ number_format($reservation->final_price ?? 0, 2) }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                            <span class="text-sm text-gray-600">Rate per Hour</span>
+                            <span class="font-semibold text-gray-800">₱{{ number_format($reservation->price_per_hour ?? 0, 2) }}</span>
+                        </div>
+                        
+                        @if($reservation->start_date && $reservation->end_date)
+                            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                <span class="text-sm text-gray-600">Duration</span>
+                                <span class="font-semibold text-gray-800">
+                                    {{ \Carbon\Carbon::parse($reservation->start_date)->diffInHours($reservation->end_date) }} hours
+                                </span>
+                            </div>
+                        @endif
+                        
+                        @if($reservation->equipment_details && count($reservation->equipment_details) > 0)
+                            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                <span class="text-sm text-gray-600">Equipment</span>
+                                <span class="font-semibold text-gray-800">{{ count($reservation->equipment_details) }} items</span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reservation Status Card -->
+            <div class="info-card rounded-xl p-6">
+                <div class="flex items-center mb-4">
+                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-info-circle text-blue-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800">Reservation Status</h3>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Status</span>
+                        <span class="status-badge text-xs">Final Approved</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Reservation ID</span>
+                        <span class="font-mono text-sm font-semibold text-gray-800">#{{ $reservation->id }}</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Created</span>
+                        <span class="text-sm font-medium text-gray-800">{{ $reservation->created_at->format('M d, Y') }}</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Last Updated</span>
+                        <span class="text-sm font-medium text-gray-800">{{ $reservation->updated_at->format('M d, Y') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Card -->
+            <div class="info-card rounded-xl p-6">
+                <div class="flex items-center mb-4">
+                    <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-bolt text-amber-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800">Quick Actions</h3>
+                </div>
+                
+                <div class="space-y-3">
+                    <a href="{{ route('gsu.reservations.index') }}" 
+                       class="w-full px-4 py-3 bg-maroon text-white rounded-lg hover:bg-red-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg flex items-center justify-center space-x-2 text-sm">
+                        <i class="fas fa-list mr-1.5"></i>
+                        <span>View All Reservations</span>
+                    </a>
+                    
+                    <a href="{{ route('gsu.reservations.pdf', $reservation->id) }}" 
+                       class="w-full px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg flex items-center justify-center space-x-2 text-sm">
+                        <i class="fas fa-eye mr-1.5"></i>
+                        <span>View PDF Receipt</span>
+                    </a>
+                    
+                    @if($reservation->status !== 'completed')
+                    <button onclick="openCompleteModal({{ $reservation->id }}, '{{ $reservation->event_title }}', 'reservation')" 
+                            class="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg flex items-center justify-center space-x-2 text-sm">
+                        <i class="fas fa-check-circle mr-1.5"></i>
+                        <span>Mark as Complete</span>
+                    </button>
+                    @else
+                    <div class="w-full px-4 py-3 bg-green-100 text-green-800 rounded-lg flex items-center justify-center space-x-2 text-sm font-medium">
+                        <i class="fas fa-check-circle mr-1.5"></i>
+                        <span>Already Completed</span>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add smooth scroll behavior
+    document.documentElement.style.scrollBehavior = 'smooth';
+    
+    // Add print styles
+    const style = document.createElement('style');
+    style.textContent = `
+        @media print {
+            .glass-effect, .info-card { box-shadow: none !important; }
+            .bg-gray-50 { background-color: #f9fafb !important; }
+            .animate-fadeIn { animation: none !important; }
+        }
+    `;
+    document.head.appendChild(style);
+});
+
+// Complete modal functions
+let currentCompleteItem = null;
+
+function openCompleteModal(id, title, type) {
+    currentCompleteItem = { id: id, title: title, type: type };
+    
+    const itemDetails = document.getElementById('completeItemDetails');
+    itemDetails.innerHTML = `
+        <div class="font-medium text-gray-800">${title}</div>
+        <div class="text-gray-600">${type === 'event' ? 'Event' : 'Reservation'}</div>
+    `;
+    
+    document.getElementById('completionNotes').value = '';
+    document.getElementById('completeModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeCompleteModal() {
+    document.getElementById('completeModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    currentCompleteItem = null;
+}
+
+function confirmComplete() {
+    if (!currentCompleteItem) return;
+    
+    const notes = document.getElementById('completionNotes').value;
+    const { id, type } = currentCompleteItem;
+    
+    // Check if report section is visible and has data
+    const reportSection = document.getElementById('reportSection');
+    const hasReport = !reportSection.classList.contains('hidden') && 
+        document.getElementById('reportType').value && 
+        document.getElementById('reportSeverity').value && 
+        document.getElementById('reportDescription').value;
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('_token', '{{ csrf_token() }}');
+    formData.append('completion_notes', notes);
+    
+    // Add report data if present
+    if (hasReport) {
+        formData.append('type', document.getElementById('reportType').value);
+        formData.append('severity', document.getElementById('reportSeverity').value);
+        formData.append('description', document.getElementById('reportDescription').value);
+        formData.append('actions_taken', document.getElementById('reportActions').value);
+    }
+    
+    // Determine the route based on type
+    const route = type === 'event' 
+        ? `{{ route('gsu.events.complete', ':id') }}`.replace(':id', id)
+        : `{{ route('gsu.reservations.complete', ':id') }}`.replace(':id', id);
+    
+    // Send request
+    fetch(route, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            let message = 'Item marked as completed successfully!';
+            if (hasReport) {
+                message += ' Issue has also been reported.';
+            }
+            showNotification(message, 'success');
+            closeCompleteModal();
+            
+            // Reload the page to reflect changes
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showNotification(data.message || 'Error marking item as complete', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error marking item as complete', 'error');
+    });
+}
+
+function toggleReportSection() {
+    const reportSection = document.getElementById('reportSection');
+    const toggleText = document.getElementById('reportToggleText');
+    
+    if (reportSection.classList.contains('hidden')) {
+        reportSection.classList.remove('hidden');
+        toggleText.textContent = 'Hide Report';
+    } else {
+        reportSection.classList.add('hidden');
+        toggleText.textContent = 'Report Issue';
+        // Clear form fields when hiding
+        document.getElementById('reportType').value = '';
+        document.getElementById('reportSeverity').value = '';
+        document.getElementById('reportDescription').value = '';
+        document.getElementById('reportActions').value = '';
+    }
+}
+
+function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full ${
+        type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+    }`;
+    notification.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Remove after 5 seconds
+    setTimeout(() => {
+        notification.classList.add('translate-x-full');
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 5000);
+}
+</script>
+
+<!-- Complete Modal -->
+<div id="completeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full font-poppins">
+            <div class="p-6 border-b border-gray-200 bg-gray-50">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-gray-800 font-montserrat">
+                        <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                        Mark as Complete
+                    </h3>
+                    <button onclick="closeCompleteModal()" class="text-gray-400 hover:text-gray-600 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="mb-4">
+                    <p class="text-gray-700 mb-2">Are you sure you want to mark this item as completed?</p>
+                    <div id="completeItemDetails" class="bg-gray-50 p-3 rounded-lg text-sm text-gray-600"></div>
+                </div>
+                <div class="mb-4">
+                    <label for="completionNotes" class="block text-sm font-medium text-gray-700 mb-2">Completion Notes (Optional)</label>
+                    <textarea id="completionNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200" placeholder="Add any notes about the completion..."></textarea>
+                </div>
+                
+                <!-- Report Issue Section -->
+                <div class="mb-4 border-t border-gray-200 pt-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-sm font-medium text-gray-700">Report Issue (Optional)</h4>
+                        <button type="button" onclick="toggleReportSection()" class="text-sm text-maroon hover:text-red-700 font-medium">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            <span id="reportToggleText">Report Issue</span>
+                        </button>
+                    </div>
+                    
+                    <div id="reportSection" class="hidden space-y-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label for="reportType" class="block text-xs font-medium text-gray-700 mb-1">Issue Type</label>
+                                <select id="reportType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 text-sm">
+                                    <option value="">Select type...</option>
+                                    <option value="accident">Accident</option>
+                                    <option value="problem">Problem</option>
+                                    <option value="violation">Violation</option>
+                                    <option value="damage">Damage</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="reportSeverity" class="block text-xs font-medium text-gray-700 mb-1">Severity</label>
+                                <select id="reportSeverity" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 text-sm">
+                                    <option value="">Select severity...</option>
+                                    <option value="low">Low</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="high">High</option>
+                                    <option value="critical">Critical</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="reportDescription" class="block text-xs font-medium text-gray-700 mb-1">Description</label>
+                            <textarea id="reportDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 text-sm" placeholder="Describe what happened..."></textarea>
+                        </div>
+                        <div>
+                            <label for="reportActions" class="block text-xs font-medium text-gray-700 mb-1">Actions Taken (Optional)</label>
+                            <textarea id="reportActions" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 text-sm" placeholder="What actions were taken to address the issue..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-sm text-gray-600 mb-4">
+                    <i class="fas fa-info-circle text-blue-600 mr-1"></i>
+                    This will notify IOSA, Ms. Mhadel, and OTP about the completion.
+                </div>
+            </div>
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+                <button onclick="closeCompleteModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Cancel</button>
+                <button onclick="confirmComplete()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+                    <i class="fas fa-check mr-2"></i>Mark Complete
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection 

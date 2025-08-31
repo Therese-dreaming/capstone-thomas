@@ -5,6 +5,8 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Facade;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Notification;
 
 class AppServiceProvider extends ServiceProvider
@@ -14,7 +16,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Register PDF facade alias
+        $this->app->alias('pdf', Pdf::class);
     }
 
     /**

@@ -46,6 +46,52 @@ class MhadelController extends Controller
 			$revenueSeries[] = (float) ($monthlyRaw[$i] ?? 0);
 		}
 		
+		// Quarterly revenue data
+		$quarterlyRaw = Reservation::where('status', 'approved_OTP')
+			->where('updated_at', '>=', $startOfYear)
+			->selectRaw('QUARTER(updated_at) as q, SUM(final_price) as revenue')
+			->groupBy('q')
+			->pluck('revenue', 'q');
+		$revenueQuarterly = [];
+		for ($i = 1; $i <= 4; $i++) {
+			$revenueQuarterly[] = (float) ($quarterlyRaw[$i] ?? 0);
+		}
+		
+		// Expected revenue datasets (IOSA approved and Mhadel approved - waiting for final OTP approval)
+		$monthlyExpectedRaw = Reservation::whereIn('status', ['approved_IOSA', 'approved_mhadel'])
+			->where('start_date', '>=', $startOfYear)
+			->whereNotNull('final_price')
+			->selectRaw('MONTH(start_date) as m, SUM(final_price) as expected_revenue')
+			->groupBy('m')
+			->pluck('expected_revenue', 'm');
+		$expectedRevenueSeries = [];
+		for ($i = 1; $i <= 12; $i++) {
+			$expectedRevenueSeries[] = (float) ($monthlyExpectedRaw[$i] ?? 0);
+		}
+		
+		// Quarterly expected revenue data
+		$quarterlyExpectedRaw = Reservation::whereIn('status', ['approved_IOSA', 'approved_mhadel'])
+			->where('start_date', '>=', $startOfYear)
+			->whereNotNull('final_price')
+			->selectRaw('QUARTER(start_date) as q, SUM(final_price) as expected_revenue')
+			->groupBy('q')
+			->pluck('expected_revenue', 'q');
+		$expectedRevenueQuarterly = [];
+		for ($i = 1; $i <= 4; $i++) {
+			$expectedRevenueQuarterly[] = (float) ($quarterlyExpectedRaw[$i] ?? 0);
+		}
+		
+		// Debug: Log the expected revenue data
+		\Log::info('Expected Revenue Debug:', [
+			'monthlyExpectedRaw' => $monthlyExpectedRaw->toArray(),
+			'expectedRevenueSeries' => $expectedRevenueSeries,
+			'startOfYear' => $startOfYear->toDateString(),
+			'count_approved_IOSA' => Reservation::where('status', 'approved_IOSA')->count(),
+			'count_approved_mhadel' => Reservation::where('status', 'approved_mhadel')->count(),
+			'count_with_final_price' => Reservation::whereIn('status', ['approved_IOSA', 'approved_mhadel'])->whereNotNull('final_price')->count(),
+			'sample_reservations' => Reservation::whereIn('status', ['approved_IOSA', 'approved_mhadel'])->take(3)->get(['id', 'status', 'final_price', 'start_date'])->toArray()
+		]);
+		
 		$approvalsVsRejections = [
 			'approved' => Reservation::where('status', 'approved_mhadel')
 				->where('updated_at', '>=', $startOfMonth)->count(),
@@ -63,10 +109,34 @@ class MhadelController extends Controller
 			->get()
 			->map(function ($r) {
 				return [
-					'venue' => optional($r->venue)->name ?? 'Unknown',
+					'venue' => $r->venue ? $r->venue->name : 'Unknown Venue',
 					'total' => (float) ($r->total ?? 0),
 				];
-			});
+			})
+			->filter(function ($item) {
+				return $item['total'] > 0; // Only show venues with actual revenue
+			})
+			->values();
+		
+		// Top venues by bookings count
+		$topVenuesByBookings = Reservation::where('status', 'approved_OTP')
+			->where('updated_at', '>=', $startOfYear)
+			->selectRaw('venue_id, COUNT(*) as total_bookings')
+			->groupBy('venue_id')
+			->with('venue')
+			->orderByDesc('total_bookings')
+			->take(5)
+			->get()
+			->map(function ($r) {
+				return [
+					'venue' => $r->venue ? $r->venue->name : 'Unknown Venue',
+					'total' => (int) ($r->total_bookings ?? 0),
+				];
+			})
+			->filter(function ($item) {
+				return $item['total'] > 0; // Only show venues with actual bookings
+			})
+			->values();
 		
 		// Trends datasets
 		$byDepartment = Reservation::whereNotNull('department')
@@ -79,24 +149,168 @@ class MhadelController extends Controller
 				return [ 'department' => $r->department, 'count' => (int) $r->c ];
 			});
 		
-		$utilizationWeeks = Reservation::where('start_date', '>=', $startOfMonth)
+		// Department data by revenue
+		$byDepartmentRevenue = Reservation::whereNotNull('department')
+			->where('status', 'approved_OTP')
+			->whereNotNull('final_price')
+			->selectRaw('department, SUM(final_price) as total_revenue')
+			->groupBy('department')
+			->orderByDesc('total_revenue')
+			->take(6)
+			->get()
+			->map(function ($r) {
+				return [ 'department' => $r->department, 'revenue' => (float) $r->total_revenue ];
+			});
+		
+		$utilizationWeeks = Reservation::whereNotNull('start_date')
+			->whereNotNull('end_date')
+			->where('start_date', '>=', $startOfMonth)
 			->selectRaw('WEEK(start_date, 1) as wk, SUM(TIMESTAMPDIFF(HOUR, start_date, end_date)) as hrs')
 			->groupBy('wk')
 			->orderBy('wk')
 			->get()
 			->map(function ($r) {
 				return [ 'week' => (int) $r->wk, 'hours' => (int) $r->hrs ];
+			})
+			->filter(function ($item) {
+				return $item['hours'] > 0; // Only show weeks with actual usage
+			})
+			->values();
+		
+		// Additional data for enhanced charts
+		$totalRevenue = Reservation::where('status', 'approved_OTP')
+			->where('updated_at', '>=', $startOfMonth)
+			->sum('final_price');
+		
+		$averageRevenue = Reservation::where('status', 'approved_OTP')
+			->where('updated_at', '>=', $startOfMonth)
+			->whereNotNull('final_price')
+			->avg('final_price');
+		
+		// Calculate expected revenue from pending reservations
+		$expectedRevenue = Reservation::whereIn('status', ['approved_IOSA', 'approved_mhadel'])
+			->where('start_date', '>=', $startOfMonth)
+			->whereNotNull('final_price')
+			->sum('final_price');
+		
+		// Debug: Log the single expected revenue calculation
+		\Log::info('Single Expected Revenue Debug:', [
+			'expectedRevenue' => $expectedRevenue,
+			'startOfMonth' => $startOfMonth->toDateString(),
+			'count_approved_IOSA_current_month' => Reservation::where('status', 'approved_IOSA')
+				->where('start_date', '>=', $startOfMonth)
+				->count(),
+			'count_approved_mhadel_current_month' => Reservation::where('status', 'approved_mhadel')
+				->where('start_date', '>=', $startOfMonth)
+				->count(),
+			'count_with_final_price_current_month' => Reservation::whereIn('status', ['approved_IOSA', 'approved_mhadel'])
+				->where('start_date', '>=', $startOfMonth)
+				->whereNotNull('final_price')
+				->count(),
+			'sample_current_month' => Reservation::whereIn('status', ['approved_IOSA', 'approved_mhadel'])
+				->where('start_date', '>=', $startOfMonth)
+				->take(3)->get(['id', 'status', 'final_price', 'start_date'])->toArray()
+		]);
+		
+		// Debug: Show all reservation statuses in the database
+		\Log::info('All Reservation Statuses:', [
+			'status_counts' => Reservation::selectRaw('status, COUNT(*) as count')
+				->groupBy('status')
+				->pluck('count', 'status')
+				->toArray(),
+			'statuses_with_final_price' => Reservation::whereNotNull('final_price')
+				->selectRaw('status, COUNT(*) as count, SUM(final_price) as total_price')
+				->groupBy('status')
+				->get()
+				->toArray()
+		]);
+		
+		// Calculate revenue growth (compare with previous month)
+		$previousMonth = Carbon::now()->subMonth()->startOfMonth();
+		$previousMonthRevenue = Reservation::where('status', 'approved_OTP')
+			->where('updated_at', '>=', $previousMonth)
+			->where('updated_at', '<', $startOfMonth)
+			->sum('final_price');
+		
+		$revenueGrowth = $previousMonthRevenue > 0 
+			? round((($totalRevenue - $previousMonthRevenue) / $previousMonthRevenue) * 100, 1)
+			: 0;
+		
+		// Additional metrics for trends
+		$totalUsers = \App\Models\User::count();
+		$totalVenues = \App\Models\Venue::where('is_available', true)->count();
+		$totalReservations = Reservation::count();
+		
+		// Calculate average processing time (in hours)
+		$avgProcessingTime = Reservation::whereIn('status', ['approved_mhadel', 'rejected_mhadel'])
+			->whereNotNull('created_at')
+			->whereNotNull('updated_at')
+			->get()
+			->avg(function ($r) {
+				return $r->created_at->diffInHours($r->updated_at);
 			});
+		
+		// Status flow data
+		$statusFlow = [
+			'submitted' => Reservation::where('status', 'pending')->count(),
+			'iosa_approved' => Reservation::where('status', 'approved_IOSA')->count(),
+			'mhadel_approved' => Reservation::where('status', 'approved_mhadel')->count(),
+			'final_approved' => Reservation::where('status', 'approved_OTP')->count(),
+			'rejected' => Reservation::whereIn('status', ['rejected_IOSA', 'rejected_mhadel', 'rejected_OTP'])->count(),
+		];
+		
+		// Peak booking hours data
+		$peakHours = Reservation::selectRaw('HOUR(start_date) as hour, COUNT(*) as count')
+			->groupBy('hour')
+			->orderBy('hour')
+			->get()
+			->map(function ($r) {
+				return [
+					'hour' => $r->hour,
+					'count' => (int) $r->count
+				];
+			});
+		
+		// Monthly comparison data (last 6 months)
+		$monthlyComparison = [];
+		for ($i = 5; $i >= 0; $i--) {
+			$monthStart = Carbon::now()->subMonths($i)->startOfMonth();
+			$monthEnd = Carbon::now()->subMonths($i)->endOfMonth();
+			
+			$monthlyComparison[] = [
+				'month' => $monthStart->format('M'),
+				'reservations' => Reservation::whereBetween('start_date', [$monthStart, $monthEnd])->count(),
+				'revenue' => (float) Reservation::where('status', 'approved_OTP')
+					->whereBetween('updated_at', [$monthStart, $monthEnd])
+					->sum('final_price')
+			];
+		}
 		
 		return view('mhadel.dashboard', [
 			'tab' => $tab,
 			'stats' => $stats,
 			'recent_reservations' => $recent_reservations,
 			'revenueSeries' => $revenueSeries,
+			'revenueQuarterly' => $revenueQuarterly,
+			'expectedRevenueSeries' => $expectedRevenueSeries,
+			'expectedRevenueQuarterly' => $expectedRevenueQuarterly,
 			'approvalsVsRejections' => $approvalsVsRejections,
 			'topVenues' => $topVenues,
+			'topVenuesByBookings' => $topVenuesByBookings,
 			'byDepartment' => $byDepartment,
+			'byDepartmentRevenue' => $byDepartmentRevenue,
 			'utilizationWeeks' => $utilizationWeeks,
+			'totalRevenue' => $totalRevenue,
+			'averageRevenue' => $averageRevenue,
+			'expectedRevenue' => $expectedRevenue,
+			'revenueGrowth' => $revenueGrowth,
+			'totalUsers' => $totalUsers,
+			'totalVenues' => $totalVenues,
+			'totalReservations' => $totalReservations,
+			'avgProcessingTime' => round($avgProcessingTime ?? 0, 1),
+			'statusFlow' => $statusFlow,
+			'peakHours' => $peakHours,
+			'monthlyComparison' => $monthlyComparison,
 		]);
 	}
 

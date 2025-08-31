@@ -100,7 +100,83 @@
     <!-- Toast Container -->
     <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col items-end"></div>
     
-    <!-- Reservation Modal -->
+    <!-- Activity Grid Modal (Step 1) -->
+    <div id="activityGridModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-screen overflow-y-auto font-poppins">
+                <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white sticky top-0 z-10">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-gray-800 flex items-center font-montserrat">
+                            <i class="fas fa-file-upload text-maroon mr-2"></i>
+                            Step 1: Upload Activity Grid
+                        </h3>
+                        <button onclick="closeActivityGridModal()" class="text-gray-400 hover:text-gray-600 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <form id="activityGridForm" class="p-6">
+                    @csrf
+                    
+                    <div class="space-y-6">
+                        <!-- Event Title -->
+                        <div>
+                            <label for="step1_event_title" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                <i class="fas fa-heading text-maroon mr-2"></i>
+                                Event Title <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="step1_event_title" name="event_title" required
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
+                        </div>
+
+                        <!-- Purpose -->
+                        <div>
+                            <label for="step1_purpose" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                <i class="fas fa-align-left text-maroon mr-2"></i>
+                                Purpose <span class="text-red-500">*</span>
+                            </label>
+                            <textarea id="step1_purpose" name="purpose" rows="3" required
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors"></textarea>
+                        </div>
+
+                        <!-- Activity Grid -->
+                        <div>
+                            <label for="step1_activity_grid" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                <i class="fas fa-file-upload text-maroon mr-2"></i>
+                                Activity Grid <span class="text-red-500">*</span>
+                            </label>
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-maroon transition-colors">
+                                <input type="file" id="step1_activity_grid" name="activity_grid" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required
+                                       class="hidden">
+                                <label for="step1_activity_grid" class="cursor-pointer">
+                                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                                    <p class="text-sm text-gray-500">Click to upload or drag and drop</p>
+                                    <p class="text-xs text-gray-400 mt-1">PDF, DOC, DOCX, JPG, JPEG, PNG (Max: 10MB)</p>
+                                </label>
+                                <div id="step1_file_name" class="mt-2 text-sm text-gray-600 hidden"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">Activity Grid is required before proceeding to reservation details</p>
+                        </div>
+                    </div>
+    
+                    <!-- Form Actions -->
+                    <div class="flex items-center justify-end space-x-3 pt-6 mt-6 border-t border-gray-200">
+                        <button type="button" onclick="closeActivityGridModal()"
+                                class="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
+                            <i class="fas fa-times mr-2"></i> Cancel
+                        </button>
+                        <button type="button" onclick="submitActivityGrid()"
+                                class="px-6 py-3 bg-maroon text-white rounded-lg hover:from-red-700 hover:to-maroon transition-all duration-300 shadow-md flex items-center">
+                            <i class="fas fa-arrow-right mr-2"></i> Next: Reservation Details
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reservation Modal (Step 2) -->
     <div id="reservationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
         <div class="flex items-center justify-center min-h-screen p-4">
             <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-screen overflow-y-auto font-poppins">
@@ -108,39 +184,94 @@
                     <div class="flex items-center justify-between">
                         <h3 class="text-xl font-bold text-gray-800 flex items-center font-montserrat">
                             <i class="fas fa-calendar-plus text-maroon mr-2"></i>
-                            New Reservation
+                            Step 2: Reservation Details
                         </h3>
                         <button onclick="closeReservationModal()" class="text-gray-400 hover:text-gray-600 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
                             <i class="fas fa-times text-xl"></i>
                         </button>
                     </div>
+                    <div class="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div class="flex items-center text-green-800">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            <span class="text-sm">Activity Grid uploaded successfully. You can now proceed with reservation details.</span>
+                        </div>
+                    </div>
                 </div>
                 
-                <!-- Rest of the form remains the same -->
                 <form action="{{ route('user.reservations.store') }}" method="POST" enctype="multipart/form-data" class="p-6">
                     @csrf
+                    
+                    <!-- Hidden fields for activity grid data -->
+                    <input type="hidden" id="final_event_title" name="event_title" value="">
+                    <input type="hidden" id="final_purpose" name="purpose" value="">
+                    <input type="hidden" id="final_activity_grid" name="activity_grid" value="">
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <!-- Left Column -->
                         <div class="space-y-6">
-                            <!-- Event Title -->
+                            <!-- Event Title Display (Read-only) -->
                             <div>
-                                <label for="event_title" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
                                     <i class="fas fa-heading text-maroon mr-2"></i>
-                                    Event Title <span class="text-red-500">*</span>
+                                    Event Title
                                 </label>
-                                <input type="text" id="event_title" name="event_title" required
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
+                                <div id="display_event_title" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                                    <!-- Will be populated from step 1 -->
+                                </div>
                             </div>
     
-                            <!-- Purpose -->
+                            <!-- Purpose Display (Read-only) -->
                             <div>
-                                <label for="purpose" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
                                     <i class="fas fa-align-left text-maroon mr-2"></i>
-                                    Purpose <span class="text-red-500">*</span>
+                                    Purpose
                                 </label>
-                                <textarea id="purpose" name="purpose" rows="3" required
-                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors"></textarea>
+                                <div id="display_purpose" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                                    <!-- Will be populated from step 1 -->
+                                </div>
+                            </div>
+    
+                            <!-- Department -->
+                            <div>
+                                <label for="department" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                    <i class="fas fa-building text-maroon mr-2"></i>
+                                    Department <span class="text-red-500">*</span>
+                                </label>
+                                <select id="department" name="department" required onchange="toggleOtherDepartment()"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
+                                    <option value="">Select Department</option>
+                                    <option value="ECE">ECE</option>
+                                    <option value="JHS">JHS</option>
+                                    <option value="SHS">SHS</option>
+                                    <option value="BSIT">BSIT</option>
+                                    <option value="BSENT">BSENT</option>
+                                    <option value="BSP">BSP</option>
+                                    <option value="BSBA">BSBA</option>
+                                    <option value="BSA">BSA</option>
+                                    <option value="TED">TED</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                
+                                <!-- Other Department Input (Hidden by default) -->
+                                <div id="other_department_container" class="mt-3 hidden">
+                                    <label for="other_department" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                        <i class="fas fa-edit text-maroon mr-2"></i>
+                                        Specify Other Department <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" id="other_department" name="other_department" 
+                                           placeholder="Enter department name"
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
+                                </div>
+                            </div>
+
+                            <!-- Capacity -->
+                            <div>
+                                <label for="capacity" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                    <i class="fas fa-users text-maroon mr-2"></i>
+                                    Expected Capacity <span class="text-red-500">*</span>
+                                </label>
+                                <input type="number" id="capacity" name="capacity" min="1" required
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
                             </div>
     
                             <!-- Date and Time -->
@@ -163,37 +294,10 @@
                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
                                 </div>
                             </div>
-    
-                            <!-- Activity Grid -->
-                            <div>
-                                <label for="activity_grid" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                                    <i class="fas fa-file-upload text-maroon mr-2"></i>
-                                    Activity Grid (Optional)
-                                </label>
-                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-maroon transition-colors">
-                                    <input type="file" id="activity_grid" name="activity_grid" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                           class="hidden">
-                                    <label for="activity_grid" class="cursor-pointer">
-                                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
-                                        <p class="text-sm text-gray-500">Click to upload or drag and drop</p>
-                                        <p class="text-xs text-gray-400 mt-1">PDF, DOC, DOCX, JPG, JPEG, PNG (Max: 10MB)</p>
-                                    </label>
-                                    <div id="file-name" class="mt-2 text-sm text-gray-600 hidden"></div>
-                                </div>
-                            </div>
                         </div>
     
                         <!-- Right Column -->
                         <div class="space-y-6">
-                            <!-- Capacity -->
-                            <div>
-                                <label for="capacity" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                                    <i class="fas fa-users text-maroon mr-2"></i>
-                                    Expected Capacity <span class="text-red-500">*</span>
-                                </label>
-                                <input type="number" id="capacity" name="capacity" min="1" required
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
-                            </div>
     
                             <!-- Venue (Auto-selected based on capacity, not editable) -->
                             <div>
@@ -266,12 +370,12 @@
     
                     <!-- Form Actions -->
                     <div class="flex items-center justify-end space-x-3 pt-6 mt-6 border-t border-gray-200">
-                        <button type="button" onclick="closeReservationModal()"
+                        <button type="button" onclick="goBackToStep1()"
                                 class="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
-                            <i class="fas fa-times mr-2"></i> Cancel
+                            <i class="fas fa-arrow-left mr-2"></i> Back to Step 1
                         </button>
                         <button type="submit"
-                                class="px-6 py-3 bg-gradient-to-r from-maroon to-red-700 text-white rounded-lg hover:from-red-700 hover:to-maroon transition-all duration-300 shadow-md flex items-center">
+                                class="px-6 py-3 bg-maroon text-white rounded-lg hover:from-red-700 hover:to-maroon transition-all duration-300 shadow-md flex items-center">
                             <i class="fas fa-check mr-2"></i> Submit Reservation
                         </button>
                     </div>
@@ -307,16 +411,16 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.appendChild(toastContainer);
     }
     
-    // File upload preview
-    const fileInput = document.getElementById('activity_grid');
-    const fileNameDisplay = document.getElementById('file-name');
+    // File upload preview for step 1
+    const step1FileInput = document.getElementById('step1_activity_grid');
+    const step1FileNameDisplay = document.getElementById('step1_file_name');
     
-    fileInput.addEventListener('change', function() {
+    step1FileInput.addEventListener('change', function() {
         if (this.files.length > 0) {
-            fileNameDisplay.textContent = this.files[0].name;
-            fileNameDisplay.classList.remove('hidden');
+            step1FileNameDisplay.textContent = this.files[0].name;
+            step1FileNameDisplay.classList.remove('hidden');
         } else {
-            fileNameDisplay.classList.add('hidden');
+            step1FileNameDisplay.classList.add('hidden');
         }
     });
     
@@ -420,6 +524,79 @@ function nextMonth() {
 
 function selectDate(dateString) {
     selectedDate = new Date(dateString);
+    openActivityGridModal();
+    
+    // Show a toast notification
+    showToast(`Selected date: ${selectedDate.toLocaleDateString()}. Please upload your Activity Grid first.`, 'info');
+}
+
+function openActivityGridModal() {
+    document.getElementById('activityGridModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    
+    // Add animation
+    const modalContent = document.querySelector('#activityGridModal > div > div');
+    modalContent.classList.add('animate-fadeIn');
+}
+
+function closeActivityGridModal() {
+    document.getElementById('activityGridModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+function openReservationModal() {
+    document.getElementById('reservationModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    
+    // Add animation
+    const modalContent = document.querySelector('#reservationModal > div > div');
+    modalContent.classList.add('animate-fadeIn');
+}
+
+function closeReservationModal() {
+    document.getElementById('reservationModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+function goBackToStep1() {
+    closeReservationModal();
+    openActivityGridModal();
+}
+
+function submitActivityGrid() {
+    const eventTitle = document.getElementById('step1_event_title').value.trim();
+    const purpose = document.getElementById('step1_purpose').value.trim();
+    const activityGrid = document.getElementById('step1_activity_grid').files[0];
+    
+    // Validation
+    if (!eventTitle) {
+        showToast('Please enter an event title.', 'error');
+        return;
+    }
+    
+    if (!purpose) {
+        showToast('Please enter a purpose.', 'error');
+        return;
+    }
+    
+    if (!activityGrid) {
+        showToast('Please upload an activity grid file.', 'error');
+        return;
+    }
+    
+    // Store the data for step 2
+    document.getElementById('final_event_title').value = eventTitle;
+    document.getElementById('final_purpose').value = purpose;
+    
+    // Store the file for later submission
+    window.storedActivityGrid = activityGrid;
+    
+    // Update display fields in step 2
+    document.getElementById('display_event_title').textContent = eventTitle;
+    document.getElementById('display_purpose').textContent = purpose;
+    
+    // Close step 1 and open step 2
+    closeActivityGridModal();
     openReservationModal();
     
     // Set the selected date in the form using local time (avoid UTC shift)
@@ -443,27 +620,29 @@ function selectDate(dateString) {
     endDate.setHours(endDate.getHours() + 1);
     endDateInput.value = fmt(endDate);
     
-    // Show a toast notification
-    showToast(`Selected date: ${selectedDate.toLocaleDateString()}`, 'info');
-
     // Fetch and display unavailable times for this date/venue
     if (typeof showUnavailableTimes === 'function') {
         showUnavailableTimes();
     }
-}
-
-function openReservationModal() {
-    document.getElementById('reservationModal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
     
-    // Add animation
-    const modalContent = document.querySelector('#reservationModal > div > div');
-    modalContent.classList.add('animate-fadeIn');
+    showToast('Activity Grid uploaded successfully! You can now proceed with reservation details.', 'success');
 }
 
-function closeReservationModal() {
-    document.getElementById('reservationModal').classList.add('hidden');
-    document.body.style.overflow = 'auto';
+// Function to toggle the "Other Department" input field
+function toggleOtherDepartment() {
+    const departmentSelect = document.getElementById('department');
+    const otherContainer = document.getElementById('other_department_container');
+    const otherInput = document.getElementById('other_department');
+    
+    if (departmentSelect.value === 'Other') {
+        otherContainer.classList.remove('hidden');
+        otherInput.required = true;
+        otherInput.focus();
+    } else {
+        otherContainer.classList.add('hidden');
+        otherInput.required = false;
+        otherInput.value = '';
+    }
 }
 
 // Close modal when clicking outside
@@ -779,7 +958,7 @@ observer.observe(venueHiddenInput, { attributes: true, attributeFilter: ['value'
 // Prevent overlap on submit using fetched slots
 function overlaps(aStart, aEnd, bStart, bEnd){ return aStart < bEnd && aEnd > bStart; }
 
-document.querySelector('form').addEventListener('submit', async function(e){
+document.querySelector('form[action*="reservations"]').addEventListener('submit', async function(e){
 	const venueId = document.getElementById('venue_id').value;
 	const startVal = document.getElementById('start_date').value;
 	const endVal = document.getElementById('end_date').value;
@@ -802,8 +981,15 @@ document.querySelector('form').addEventListener('submit', async function(e){
 	}
 });
 
-// Form validation
-document.querySelector('form').addEventListener('submit', function(e) {
+// Form validation - only for the reservation form
+document.querySelector('form[action*="reservations"]').addEventListener('submit', function(e) {
+    // Check if activity grid was uploaded in step 1
+    if (!window.storedActivityGrid) {
+        e.preventDefault();
+        showToast('Please complete Step 1 (Activity Grid) before submitting the reservation.', 'error');
+        return;
+    }
+    
     const startDate = new Date(document.getElementById('start_date').value);
     const endDate = new Date(document.getElementById('end_date').value);
     const capacity = parseInt(document.getElementById('capacity').value);
@@ -836,6 +1022,24 @@ document.querySelector('form').addEventListener('submit', function(e) {
         return;
     }
     
+    // Check if department is selected
+    const department = document.getElementById('department').value;
+    if (!department) {
+        e.preventDefault();
+        showToast('Please select a department.', 'error');
+        return;
+    }
+    
+    // If "Other" is selected, check if other department is specified
+    if (department === 'Other') {
+        const otherDepartment = document.getElementById('other_department').value.trim();
+        if (!otherDepartment) {
+            e.preventDefault();
+            showToast('Please specify the other department name.', 'error');
+            return;
+        }
+    }
+    
     const basePrice = document.getElementById('base_price').value;
     if (!basePrice || basePrice <= 0) {
         e.preventDefault();
@@ -863,7 +1067,65 @@ document.querySelector('form').addEventListener('submit', function(e) {
         return;
     }
     
-
+    // Attach the stored activity grid file to the form
+    const formData = new FormData(this);
+    formData.delete('activity_grid'); // Remove the hidden input
+    formData.append('activity_grid', window.storedActivityGrid);
+    
+    // Submit the form with the file
+    e.preventDefault();
+    submitReservationWithFile(formData);
 });
+
+// Function to submit the reservation with the stored file
+async function submitReservationWithFile(formData) {
+    try {
+        console.log('Submitting reservation...');
+        
+        const response = await fetch('{{ route("user.reservations.store") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
+        if (response.ok) {
+            const result = await response.json();
+            console.log('Success response:', result);
+            
+            showToast('Reservation submitted successfully!', 'success');
+            closeReservationModal();
+            
+            // Clear stored data
+            window.storedActivityGrid = null;
+            
+            // Optionally refresh the page or calendar after a short delay
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            // Handle validation errors or other server errors
+            if (response.status === 422) {
+                const errors = await response.json();
+                console.log('Validation errors:', errors);
+                const errorMessage = Object.values(errors.errors || {}).flat().join(', ');
+                showToast(errorMessage || 'Validation failed. Please check your inputs.', 'error');
+            } else {
+                const error = await response.json();
+                console.log('Error response:', error);
+                showToast(error.message || 'Failed to submit reservation. Please try again.', 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Exception occurred:', error);
+        showToast('An error occurred while submitting the reservation. Please try again.', 'error');
+    }
+}
 </script>
 @endpush

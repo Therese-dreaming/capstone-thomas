@@ -27,6 +27,23 @@
 	.calendar-day:hover:not(.disabled) { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); }
 	.animate-pulse { animation: pulse 2s infinite; }
 	@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(128,0,0,0.4); } 70% { box-shadow: 0 0 0 10px rgba(128,0,0,0); } 100% { box-shadow: 0 0 0 0 rgba(128,0,0,0); } }
+	
+	.calendar-filter-btn {
+		border-color: #d1d5db;
+		color: #6b7280;
+		background-color: #f9fafb;
+	}
+	
+	.calendar-filter-btn:hover {
+		background-color: #f3f4f6;
+		border-color: #9ca3af;
+	}
+	
+	.calendar-filter-btn.active {
+		background-color: #800000;
+		color: white;
+		border-color: #800000;
+	}
 </style>
 
 <div class="space-y-6 font-inter font-poppins">
@@ -48,10 +65,35 @@
 				</div>
 			</div>
 		</div>
+		<!-- Calendar Status Filter -->
+		<div class="p-4 border-b border-gray-200 bg-gray-50">
+			<div class="flex items-center justify-between">
+				<h3 class="text-lg font-medium text-gray-800">Filter by Status:</h3>
+				<div class="flex items-center space-x-2">
+					<button onclick="filterCalendarByStatus('all')" id="filter-all" class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn active">
+						All
+					</button>
+					<button onclick="filterCalendarByStatus('pending')" id="filter-pending" class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn">
+						Pending
+					</button>
+					<button onclick="filterCalendarByStatus('approved')" id="filter-approved" class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn">
+						Approved
+					</button>
+					<button onclick="filterCalendarByStatus('rejected')" id="filter-rejected" class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn">
+						Rejected
+					</button>
+				</div>
+			</div>
+		</div>
+		
 		<div class="p-6">
 			<div class="flex flex-wrap items-center justify-end mb-4 gap-4 text-sm">
-				<div class="flex items-center"><div class="w-4 h-4 bg-green-100 border border-green-300 rounded-md mr-2"></div><span class="text-gray-600">Final Approval</span></div>
-				<div class="flex items-center"><div class="w-4 h-4 bg-blue-100 border border-blue-300 rounded-md mr-2"></div><span class="text-gray-600">Official Event</span></div>
+				<div class="flex items-center"><div class="w-4 h-4 bg-yellow-400 rounded-md mr-2"></div><span class="text-gray-600">Pending</span></div>
+				<div class="flex items-center"><div class="w-4 h-4 bg-blue-400 rounded-md mr-2"></div><span class="text-gray-600">IOSA Approved</span></div>
+				<div class="flex items-center"><div class="w-4 h-4 bg-green-400 rounded-md mr-2"></div><span class="text-gray-600">Mhadel Approved</span></div>
+				<div class="flex items-center"><div class="w-4 h-4 bg-green-600 text-white rounded-md mr-2"></div><span class="text-gray-600">Final Approval</span></div>
+				<div class="flex items-center"><div class="w-4 h-4 bg-red-400 rounded-md mr-2"></div><span class="text-gray-600">Rejected</span></div>
+				<div class="flex items-center"><div class="w-4 h-4 bg-purple-400 rounded-md mr-2"></div><span class="text-gray-600">Official Event</span></div>
 				<div class="flex items-center"><div class="w-4 h-4 bg-maroon text-white rounded-md mr-2 animate-pulse"></div><span class="text-gray-600">Today</span></div>
 			</div>
 			<div id="calendar" class="grid grid-cols-7 gap-1 max-w-4xl mx-auto"></div>
@@ -87,6 +129,7 @@
 	let currentDate = new Date();
 	let currentMonth = currentDate.getMonth();
 	let currentYear = currentDate.getFullYear();
+	let currentCalendarFilter = 'all';
 	
 	function formatDateLocal(d){const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}
 	function timeLabel(s){const d=new Date(s);return d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});} 
@@ -94,6 +137,70 @@
 	function previousMonth(){ currentDate.setMonth(currentDate.getMonth()-1); currentMonth=currentDate.getMonth(); currentYear=currentDate.getFullYear(); renderCalendar(); updateHeader(); }
 	function nextMonth(){ currentDate.setMonth(currentDate.getMonth()+1); currentMonth=currentDate.getMonth(); currentYear=currentDate.getFullYear(); renderCalendar(); updateHeader(); }
 	function updateHeader(){ const names=['January','February','March','April','May','June','July','August','September','October','November','December']; document.getElementById('currentMonth').textContent=`${names[currentMonth]} ${currentYear}`; }
+	
+	// Calendar filter function
+	function filterCalendarByStatus(status) {
+		currentCalendarFilter = status;
+		
+		// Update button styles
+		document.querySelectorAll('.calendar-filter-btn').forEach(btn => {
+			btn.classList.remove('active');
+		});
+		document.getElementById(`filter-${status}`).classList.add('active');
+		
+		// Re-render calendar with new filter
+		renderCalendar();
+	}
+	
+	// Function to get status label and styling
+	function getStatusInfo(status) {
+		switch(status) {
+			case 'pending':
+				return {
+					label: 'Pending',
+					bgColor: 'bg-yellow-100',
+					textColor: 'text-yellow-800',
+					borderColor: 'border-yellow-300'
+				};
+			case 'approved_IOSA':
+				return {
+					label: 'IOSA Approved',
+					bgColor: 'bg-blue-100',
+					textColor: 'text-blue-800',
+					borderColor: 'border-blue-300'
+				};
+			case 'approved_mhadel':
+				return {
+					label: 'Mhadel Approved',
+					bgColor: 'bg-green-100',
+					textColor: 'text-green-800',
+					borderColor: 'border-green-300'
+				};
+			case 'approved_OTP':
+				return {
+					label: 'Final Approved',
+					bgColor: 'bg-green-100',
+					textColor: 'text-green-800',
+					borderColor: 'border-green-300'
+				};
+			case 'rejected_IOSA':
+			case 'rejected_mhadel':
+			case 'rejected_OTP':
+				return {
+					label: 'Rejected',
+					bgColor: 'bg-red-100',
+					textColor: 'text-red-800',
+					borderColor: 'border-red-300'
+				};
+			default:
+				return {
+					label: 'Unknown',
+					bgColor: 'bg-gray-100',
+					textColor: 'text-gray-800',
+					borderColor: 'border-gray-300'
+				};
+		}
+	}
 	
 	document.addEventListener('DOMContentLoaded', ()=>{ renderCalendar(); updateHeader(); });
 	
@@ -109,11 +216,46 @@
 			let dayClass='calendar-day text-center py-3 relative rounded-lg transition-all duration-200';
 			if(!inMonth){ dayClass+=' text-gray-400 bg-gray-50'; } else if(isToday){ dayClass+=' bg-maroon text-white font-bold'; } else { dayClass+=' bg-white hover:bg-gray-50'; }
 			const dateStr=formatDateLocal(date);
-			const dayReservations=(reservations||[]).filter(e=> formatDateLocal(new Date(e.start_date))===dateStr );
+			
+			// Get filtered reservations based on current filter
+			let filteredReservations = reservations || [];
+			if (currentCalendarFilter !== 'all') {
+				filteredReservations = (reservations || []).filter(reservation => {
+					if (currentCalendarFilter === 'pending') {
+						return ['pending', 'approved_IOSA'].includes(reservation.status);
+					} else if (currentCalendarFilter === 'approved') {
+						return ['approved_mhadel', 'approved_OTP'].includes(reservation.status);
+					} else if (currentCalendarFilter === 'rejected') {
+						return ['rejected_IOSA', 'rejected_mhadel', 'rejected_OTP'].includes(reservation.status);
+					}
+					return true;
+				});
+			}
+			
+			const dayReservations=filteredReservations.filter(e=> formatDateLocal(new Date(e.start_date))===dateStr );
 			const dayEvents=(events||[]).filter(e=> formatDateLocal(new Date(e.start_date))===dateStr );
+			
 			let marks='';
-			if(dayReservations.length){ marks+=`<div class="absolute w-3 h-3 bg-green-600 rounded-full" style="top:4px;right:4px" title="${dayReservations.length} reservation(s)"></div>`; }
-			if(dayEvents.length){ marks+=`<div class="absolute w-3 h-3 bg-blue-600 rounded-full" style="top:4px;left:4px" title="${dayEvents.length} event(s)"></div>`; }
+			if(dayReservations.length){
+				// Determine the status color based on the reservation status
+				let statusColor = 'bg-yellow-400'; // Default for pending
+				const reservation = dayReservations[0]; // Use first reservation for color
+				
+				if (reservation.status === 'pending') {
+					statusColor = 'bg-yellow-400'; // Yellow for pending
+				} else if (reservation.status === 'approved_IOSA') {
+					statusColor = 'bg-blue-400'; // Blue for IOSA approved
+				} else if (reservation.status === 'approved_mhadel') {
+					statusColor = 'bg-green-400'; // Green for Mhadel approved
+				} else if (reservation.status === 'approved_OTP') {
+					statusColor = 'bg-green-600'; // Darker green for final approval
+				} else if (reservation.status === 'rejected_IOSA' || reservation.status === 'rejected_mhadel' || reservation.status === 'rejected_OTP') {
+					statusColor = 'bg-red-400'; // Red for any rejection
+				}
+				
+				marks+=`<div class="absolute w-3 h-3 ${statusColor} rounded-full" style="top:4px;right:4px" title="${dayReservations.length} reservation(s)"></div>`;
+			}
+			if(dayEvents.length){ marks+=`<div class="absolute w-3 h-3 bg-purple-400 rounded-full" style="top:4px;left:4px" title="${dayEvents.length} event(s)"></div>`; }
 			html+=`<div class="${dayClass} cursor-pointer" onclick="openDetails('${dateStr}')"><div class="text-sm font-medium">${date.getDate()}</div>${marks}</div>`;
 		}
 		calendar.innerHTML=html;
@@ -121,7 +263,23 @@
 	
 	function openDetails(dateStr){
 		const start=new Date(`${dateStr}T00:00`), end=new Date(`${dateStr}T23:59:59`);
-		const dayReservations=(reservations||[]).filter(e=> new Date(e.start_date)<end && new Date(e.end_date)>start );
+		
+		// Get filtered reservations based on current filter
+		let filteredReservations = reservations || [];
+		if (currentCalendarFilter !== 'all') {
+			filteredReservations = (reservations || []).filter(reservation => {
+				if (currentCalendarFilter === 'pending') {
+					return ['pending', 'approved_IOSA'].includes(reservation.status);
+				} else if (currentCalendarFilter === 'approved') {
+					return ['approved_mhadel', 'approved_OTP'].includes(reservation.status);
+				} else if (currentCalendarFilter === 'rejected') {
+					return ['rejected_IOSA', 'rejected_mhadel', 'rejected_OTP'].includes(reservation.status);
+				}
+				return true;
+			});
+		}
+		
+		const dayReservations=filteredReservations.filter(e=> new Date(e.start_date)<end && new Date(e.end_date)>start );
 		const dayEvents=(events||[]).filter(e=> new Date(e.start_date)<end && new Date(e.end_date)>start );
 		if(!dayReservations.length && !dayEvents.length){
 			document.getElementById('modalDateTitle').textContent=`Entries for ${new Date(`${dateStr}T00:00`).toLocaleDateString()}`;
@@ -156,9 +314,10 @@
 			</div>`);
 		});
 
-		// Final approved reservations
+		// Reservations with correct status
 		dayReservations.forEach(e=>{
 			const venue=e.venue?.name || e.venue || '—'; const user=e.user?.name || e.user || '—';
+			const statusInfo = getStatusInfo(e.status);
 			wrap.insertAdjacentHTML('beforeend', `<div class="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200">
 				<div class="flex items-start justify-between">
 					<div class="flex-1">
@@ -173,7 +332,7 @@
 						</div>
 						${e.purpose ? `<div class=\"mt-2 text-sm text-gray-600\"><strong>Purpose:</strong> ${e.purpose}</div>` : ''}
 					</div>
-					<span class="ml-4 px-3 py-1 rounded-full text-xs font-medium text-green-700 bg-white border border-green-300">Final Approved</span>
+					<span class="ml-4 px-3 py-1 rounded-full text-xs font-medium ${statusInfo.textColor} bg-white border ${statusInfo.borderColor}">${statusInfo.label}</span>
 				</div>
 			</div>`);
 		});

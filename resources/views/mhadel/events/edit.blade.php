@@ -1,8 +1,8 @@
 @extends('layouts.mhadel')
 
-@section('title', 'Create New Event')
-@section('page-title', 'Create New Event')
-@section('page-subtitle', 'Add a new event to your calendar')
+@section('title', 'Edit Event')
+@section('page-title', 'Edit Event')
+@section('page-subtitle', 'Update event details and information')
 
 <!-- Google Fonts Import -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -132,60 +132,62 @@
     }
     
     .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
         padding: 0.75rem 1.5rem;
         border-radius: 0.75rem;
         font-weight: 600;
         font-size: 0.875rem;
         transition: all 0.3s ease;
-        text-decoration: none;
-        border: none;
         cursor: pointer;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         gap: 0.5rem;
     }
     
     .btn-primary {
         background: #8B0000;
         color: white;
+        box-shadow: 0 4px 6px -1px rgba(139, 0, 0, 0.2);
     }
     
     .btn-primary:hover {
         background: #7F0000;
         transform: translateY(-1px);
-        box-shadow: 0 4px 6px -1px rgba(139, 0, 0, 0.2);
+        box-shadow: 0 6px 8px -1px rgba(139, 0, 0, 0.3);
     }
     
     .btn-secondary {
         background: #6B7280;
         color: white;
+        box-shadow: 0 4px 6px -1px rgba(107, 114, 128, 0.2);
     }
     
     .btn-secondary:hover {
         background: #4B5563;
         transform: translateY(-1px);
+        box-shadow: 0 6px 8px -1px rgba(107, 114, 128, 0.3);
     }
     
     .btn-outline {
         background: transparent;
-        color: #6B7280;
-        border: 2px solid #e5e7eb;
+        color: #8B0000;
+        border: 2px solid #8B0000;
     }
     
     .btn-outline:hover {
-        background: #f9fafb;
-        border-color: #d1d5db;
+        background: #8B0000;
+        color: white;
     }
     
     .section-divider {
         height: 1px;
-        background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+        background: linear-gradient(90deg, transparent, #e5e7eb, transparent);
         margin: 2rem 0;
     }
     
     .info-box {
-        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        background: #eff6ff;
         border: 1px solid #bfdbfe;
         border-radius: 0.75rem;
         padding: 1rem;
@@ -221,11 +223,11 @@
         <div class="p-8 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
             <div class="flex items-center gap-4">
                 <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-maroon to-red-800 flex items-center justify-center text-white shadow-lg">
-                    <i class="fas fa-plus text-2xl"></i>
+                    <i class="fas fa-edit text-2xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-800 font-poppins mb-2">Create New Event</h1>
-                    <p class="text-gray-600 text-lg">Add a new event to your calendar with all the necessary details</p>
+                    <h1 class="text-3xl font-bold text-gray-800 font-poppins mb-2">Edit Event</h1>
+                    <p class="text-gray-600 text-lg">Update the details for "{{ $event->title }}"</p>
                 </div>
             </div>
         </div>
@@ -235,14 +237,15 @@
     <div class="form-card animate-fadeIn">
         <div class="form-header">
             <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
-                <i class="fas fa-calendar-plus text-maroon mr-3 text-2xl"></i>
+                <i class="fas fa-calendar-edit text-maroon mr-3 text-2xl"></i>
                 Event Details
             </h2>
-            <p class="text-gray-600 mt-2">Fill in the information below to create your event</p>
+            <p class="text-gray-600 mt-2">Modify the information below to update your event</p>
         </div>
 
-        <form action="{{ route('mhadel.events.store') }}" method="POST" class="form-content">
+        <form action="{{ route('mhadel.events.update', $event) }}" method="POST" class="form-content">
             @csrf
+            @method('PUT')
 
             @if ($errors->any())
             <div class="info-box bg-red-50 border-red-200 mb-6">
@@ -268,7 +271,7 @@
                         type="text" 
                         id="title" 
                         name="title" 
-                        value="{{ old('title') }}"
+                        value="{{ old('title', $event->title) }}"
                         class="form-input @error('title') error @enderror"
                         placeholder="Enter event title"
                         required
@@ -286,7 +289,7 @@
                         type="text" 
                         id="organizer" 
                         name="organizer" 
-                        value="{{ old('organizer') }}"
+                        value="{{ old('organizer', $event->organizer) }}"
                         class="form-input @error('organizer') error @enderror"
                         placeholder="Enter organizer name"
                         required
@@ -304,7 +307,7 @@
                         type="text" 
                         id="department" 
                         name="department" 
-                        value="{{ old('department') }}"
+                        value="{{ old('department', $event->department) }}"
                         class="form-input @error('department') error @enderror"
                         placeholder="Enter department name"
                     >
@@ -314,6 +317,25 @@
                     @enderror
                 </div>
             </div>
+
+            <!-- Description -->
+            <div class="form-group">
+                <label for="description" class="form-label">
+                    Description
+                </label>
+                <textarea 
+                    id="description" 
+                    name="description" 
+                    class="form-textarea @error('description') error @enderror"
+                    placeholder="Enter event description (optional)"
+                >{{ old('description', $event->description) }}</textarea>
+                <p class="help-text">Provide a detailed description of the event for participants.</p>
+                @error('description')
+                <p class="error-text">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="section-divider"></div>
 
             <!-- Venue Selection -->
             <div class="form-group">
@@ -328,7 +350,7 @@
                 >
                     <option value="">Select a venue</option>
                     @foreach(\App\Models\Venue::where('is_available', true)->get() as $venue)
-                    <option value="{{ $venue->id }}" {{ old('venue_id') == $venue->id ? 'selected' : '' }}>
+                    <option value="{{ $venue->id }}" {{ old('venue_id', $event->venue_id) == $venue->id ? 'selected' : '' }}>
                         {{ $venue->name }} - Capacity: {{ $venue->capacity }} people
                         @if($venue->price_per_hour)
                             (₱{{ number_format($venue->price_per_hour, 2) }}/hour)
@@ -354,7 +376,7 @@
                         type="datetime-local" 
                         id="start_date" 
                         name="start_date" 
-                        value="{{ old('start_date') }}"
+                        value="{{ old('start_date', $event->start_date->format('Y-m-d\TH:i')) }}"
                         class="form-input @error('start_date') error @enderror"
                         required
                     >
@@ -371,7 +393,7 @@
                         type="datetime-local" 
                         id="end_date" 
                         name="end_date" 
-                        value="{{ old('end_date') }}"
+                        value="{{ old('end_date', $event->end_date->format('Y-m-d\TH:i')) }}"
                         class="form-input @error('end_date') error @enderror"
                         required
                     >
@@ -380,6 +402,8 @@
                     @enderror
                 </div>
             </div>
+
+            <div class="section-divider"></div>
 
             <!-- Event Configuration Section -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -391,50 +415,19 @@
                         type="number" 
                         id="max_participants" 
                         name="max_participants" 
-                        value="{{ old('max_participants') }}"
+                        value="{{ old('max_participants', $event->max_participants) }}"
                         min="1"
                         class="form-input @error('max_participants') error @enderror"
-                        placeholder="Leave empty for no limit"
+                        placeholder="Enter maximum number of participants"
                     >
-                    <p class="help-text">Optional. Leave blank to allow unlimited attendees.</p>
+                    <p class="help-text">Leave empty if there's no participant limit.</p>
                     @error('max_participants')
                     <p class="error-text">{{ $message }}</p>
                     @enderror
                 </div>
             </div>
 
-            <!-- Description Section -->
-            <div class="form-group">
-                <label for="description" class="form-label">
-                    Event Description
-                </label>
-                <textarea 
-                    id="description" 
-                    name="description" 
-                    class="form-textarea @error('description') error @enderror"
-                    placeholder="Provide a detailed description of your event (optional)"
-                >{{ old('description') }}</textarea>
-                <p class="help-text">Describe what attendees can expect, the agenda, or any special requirements.</p>
-                @error('description')
-                <p class="error-text">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <!-- Help Information -->
-            <div class="info-box">
-                <div class="info-box-title">
-                    <i class="fas fa-lightbulb"></i>
-                    Tips for creating a great event
-                </div>
-                <div class="info-box-text">
-                    <ul class="list-disc pl-5 space-y-1">
-                        <li>Choose a descriptive title that clearly explains what the event is about</li>
-                        <li>Set realistic start and end times to avoid scheduling conflicts</li>
-                        <li>Select a venue that can accommodate your expected number of participants</li>
-                        <li>Provide a clear description to help attendees understand what to expect</li>
-                    </ul>
-                </div>
-            </div>
+            <div class="section-divider"></div>
 
             <!-- Event Status Information -->
             <div class="info-box bg-blue-50 border-blue-200">
@@ -450,56 +443,78 @@
                         <li><strong>Completed:</strong> Events that have finished</li>
                         <li><strong>Cancelled:</strong> Events that have been cancelled (can be set manually)</li>
                     </ul>
+                    <p class="mt-2 text-sm"><em>Note: Cancelled events will remain cancelled unless manually reactivated.</em></p>
+                </div>
+            </div>
+
+            <!-- Helpful Information -->
+            <div class="info-box">
+                <div class="info-box-title">
+                    <i class="fas fa-lightbulb"></i>
+                    Tips for Editing Events
+                </div>
+                <div class="info-box-text">
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li>Changing the venue will check for conflicts with existing reservations and events</li>
+                        <li>Updating dates will validate against venue availability</li>
+                        <li>Status changes will affect how the event appears in the system</li>
+                        <li>All changes are logged for audit purposes</li>
+                    </ul>
                 </div>
             </div>
 
             <!-- Form Actions -->
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-6 border-t border-gray-200">
-                <div class="flex items-center gap-2 text-sm text-gray-600">
-                    <i class="fas fa-info-circle text-maroon"></i>
-                    <span>Fields marked with <span class="required">*</span> are required</span>
-                </div>
-                <div class="flex items-center gap-3">
-                    <a href="{{ route('mhadel.events.index') }}" class="btn btn-outline">
-                        <i class="fas fa-times"></i>Cancel
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i>Create Event
-                    </button>
-                </div>
+            <div class="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
+                <button type="submit" class="btn btn-primary flex-1">
+                    <i class="fas fa-save"></i>
+                    Update Event
+                </button>
+                <a href="{{ route('mhadel.events.show', $event) }}" class="btn btn-secondary">
+                    <i class="fas fa-eye"></i>
+                    View Event
+                </a>
+                <a href="{{ route('mhadel.events.index') }}" class="btn btn-outline">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </a>
             </div>
         </form>
     </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Auto-calculate end date when start date changes
-    const startDateInput = document.getElementById('start_date');
+// Auto-calculate end date when start date changes
+document.getElementById('start_date').addEventListener('change', function() {
+    const startDate = new Date(this.value);
     const endDateInput = document.getElementById('end_date');
     
-    startDateInput.addEventListener('change', function() {
-        if (this.value && !endDateInput.value) {
-            // Set end date to 2 hours after start date by default
-            const startDate = new Date(this.value);
-            const endDate = new Date(startDate.getTime() + (2 * 60 * 60 * 1000)); // Add 2 hours
-            
-            // Format for datetime-local input
-            const endDateString = endDate.toISOString().slice(0, 16);
-            endDateInput.value = endDateString;
-        }
-    });
+    if (startDate && !endDateInput.value) {
+        // Set end date to 2 hours after start date
+        const endDate = new Date(startDate.getTime() + (2 * 60 * 60 * 1000));
+        endDateInput.value = endDate.toISOString().slice(0, 16);
+    }
+});
+
+// Validate that end date is after start date
+document.getElementById('end_date').addEventListener('change', function() {
+    const startDate = new Date(document.getElementById('start_date').value);
+    const endDate = new Date(this.value);
     
-    // Validate that end date is after start date
-    endDateInput.addEventListener('change', function() {
-        const startDate = new Date(startDateInput.value);
-        const endDate = new Date(this.value);
-        
-        if (endDate <= startDate) {
-            alert('End date must be after start date');
-            this.value = '';
-        }
-    });
+    if (endDate <= startDate) {
+        alert('End date must be after start date');
+        this.value = '';
+    }
+});
+
+// Validate that start date is not in the past
+document.getElementById('start_date').addEventListener('change', function() {
+    const startDate = new Date(this.value);
+    const now = new Date();
+    
+    if (startDate < now) {
+        alert('Start date cannot be in the past');
+        this.value = '';
+    }
 });
 </script>
-@endsection
+@endsection 

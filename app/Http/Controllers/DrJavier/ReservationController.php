@@ -11,6 +11,7 @@ use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ReservationStatusChanged;
+use Illuminate\Support\Facades\Storage;
 
 class ReservationController extends Controller
 {
@@ -223,7 +224,7 @@ class ReservationController extends Controller
 	}
 
 	/**
-	 * Download activity grid as text file.
+	 * Download activity grid file.
 	 */
 	public function downloadActivityGrid(string $id)
 	{
@@ -233,6 +234,20 @@ class ReservationController extends Controller
 			return redirect()->back()->with('error', 'No activity grid available for this reservation.');
 		}
 		
+		// Check if activity_grid is a file path (stored file)
+		if (Storage::disk('public')->exists($reservation->activity_grid)) {
+			$filePath = $reservation->activity_grid;
+			$originalName = basename($filePath);
+			
+			// Extract original filename without timestamp prefix
+			if (preg_match('/^\d+_(.+)$/', $originalName, $matches)) {
+				$originalName = $matches[1];
+			}
+			
+			return Storage::disk('public')->download($filePath, $originalName);
+		}
+		
+		// Fallback: if it's plain text (legacy data), download as text file
 		$filename = 'activity_grid_' . $reservation->id . '_' . date('Y-m-d') . '.txt';
 		
 		return response($reservation->activity_grid, 200, [

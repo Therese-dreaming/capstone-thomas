@@ -3,106 +3,81 @@
 namespace App\Http\Controllers\GSU;
 
 use App\Http\Controllers\Controller;
-use App\Models\Reservation;
+use App\Models\Event;
+use App\Models\Venue;
 use App\Models\Report;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
-class ReservationController extends Controller
+class EventController extends Controller
 {
-	public function index(Request $request)
-	{
-		$query = Reservation::with(['user','venue'])->where('status','approved_OTP');
-		
-		// Apply date filters if provided
-		if ($request->filled('start_date')) {
-			$query->where('start_date', '>=', $request->start_date);
-		}
-		if ($request->filled('end_date')) {
-			$query->where('start_date', '<=', $request->end_date . ' 23:59:59');
-		}
-		
-		// Apply other filters if needed
-		if ($request->filled('venue')) {
-			$query->where('venue_id', $request->venue);
-		}
-		
-		$reservations = $query->orderByDesc('created_at')->paginate(10);
-		$venues = \App\Models\Venue::orderBy('name')->get();
-		
-		return view('gsu.reservations.index', compact('reservations','venues'));
-	}
-
-	public function show(string $id)
-	{
-		$reservation = Reservation::with(['user','venue'])->where('status','approved_OTP')->findOrFail($id);
-		return view('gsu.reservations.show', compact('reservation'));
-	}
-
-	    public function pdf(string $id)
+    /**
+     * Display a listing of events for GSU users
+     */
+    public function index(Request $request)
     {
-        $reservation = Reservation::with(['user','venue'])->where('status','approved_OTP')->findOrFail($id);
+        $query = Event::with(['venue']);
 
-        // Generate PDF using DomPDF
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('gsu.reservations.pdf', compact('reservation'));
+        // Apply status filter
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
 
-        // Set paper size and orientation
-        $pdf->setPaper('A4', 'portrait');
+        // Apply search filter
+        if ($request->filled('q')) {
+            $search = $request->q;
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('organizer', 'like', "%{$search}%")
+                  ->orWhere('department', 'like', "%{$search}%");
+            });
+        }
 
-        // Return PDF as stream for preview
-        return $pdf->stream('GSU_Reservation_' . $reservation->id . '.pdf');
-    }
-
-    public function export(Request $request)
-    {
-        $query = Reservation::with(['user','venue'])->where('status','approved_OTP');
-        
-        // Apply date filters if provided
+        // Apply date range filter
         if ($request->filled('start_date')) {
             $query->where('start_date', '>=', $request->start_date);
         }
         if ($request->filled('end_date')) {
             $query->where('start_date', '<=', $request->end_date . ' 23:59:59');
         }
-        
-        // Apply other filters if needed
-        if ($request->filled('venue')) {
-            $query->where('venue_id', $request->venue);
-        }
-        
-        // Get all filtered reservations (no pagination for export)
-        $reservations = $query->orderByDesc('created_at')->get();
-        
-        // Generate filename with date range if applicable
-        $filename = 'GSU_Reservations';
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $filename .= '_' . $request->start_date . '_to_' . $request->end_date;
-        } elseif ($request->filled('start_date')) {
-            $filename .= '_from_' . $request->start_date;
-        } elseif ($request->filled('end_date')) {
-            $filename .= '_until_' . $request->end_date;
-        }
-        $filename .= '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
-        
-        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\GSUReservationsExport($reservations), $filename);
+
+        $events = $query->orderByDesc('created_at')->paginate(12);
+        $venues = Venue::orderBy('name')->get();
+
+        return view('gsu.events.index', compact('events', 'venues'));
     }
 
     /**
-     * Mark a reservation as completed (GSU users only)
+     * Display the specified event
      */
-    public function markAsComplete(string $id, Request $request)
+    public function show(Event $event)
     {
-        $reservation = Reservation::with(['user','venue'])->where('status','approved_OTP')->findOrFail($id);
-        
-        // Check if reservation can be marked as complete
-        if ($reservation->status === 'completed') {
+        return view('gsu.events.show', compact('event'));
+    }
+
+    /**
+     * Mark an event as completed (GSU users only)
+     */
+    public function markAsComplete(Event $event, Request $request)
+    {
+        // Check if event can be marked as complete
+        if ($event->status === 'completed') {
             if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => 'Reservation is already marked as completed.']);
+                return response()->json(['success' => false, 'message' => 'Event is already marked as completed.']);
             }
-            return back()->with('error', 'Reservation is already marked as completed.');
+            return back()->with('error', 'Event is already marked as completed.');
         }
 
-        // Update reservation with completion details
-        $reservation->update([
+        if ($event->status === 'cancelled') {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Cancelled events cannot be marked as completed.']);
+            }
+            return back()->with('error', 'Cancelled events cannot be marked as completed.');
+        }
+
+        // Update event with completion details
+        $event->update([
             'status' => 'completed',
             'completion_notes' => $request->input('completion_notes'),
             'completion_date' => now(),
@@ -110,18 +85,18 @@ class ReservationController extends Controller
         ]);
 
         // Create notifications for different roles
-        $this->createCompletionNotifications($reservation, 'reservation', $request->input('completion_notes'));
+        $this->createCompletionNotifications($event, 'event', $request->input('completion_notes'));
 
         // Create report if report data is provided
         if ($request->filled(['type', 'severity', 'description'])) {
-            $this->createReportFromCompletion($reservation, $request, 'reservation');
+            $this->createReportFromCompletion($event, $request, 'event');
         }
 
         if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'message' => "Reservation #{$reservation->id} has been marked as completed successfully!"]);
+            return response()->json(['success' => true, 'message' => "Event '{$event->title}' has been marked as completed successfully!"]);
         }
 
-        return back()->with('success', "Reservation #{$reservation->id} has been marked as completed successfully!");
+        return back()->with('success', "Event '{$event->title}' has been marked as completed successfully!");
     }
 
     /**
@@ -180,12 +155,54 @@ class ReservationController extends Controller
     }
 
     /**
-     * Report an issue with a reservation (GSU users only)
+     * Update event statuses (only ongoing updates)
      */
-    public function reportIssue(string $id, Request $request)
+    public function updateStatuses()
     {
-        $reservation = Reservation::with(['user','venue'])->where('status','approved_OTP')->findOrFail($id);
+        $now = now();
+        $updatedCount = 0;
+
+        // Only update upcoming events to ongoing (this is still useful)
+        $ongoingEvents = Event::where('status', 'upcoming')
+            ->where('start_date', '<=', $now)
+            ->where('end_date', '>=', $now)
+            ->get();
+
+        foreach ($ongoingEvents as $event) {
+            $event->update(['status' => 'ongoing']);
+            $updatedCount++;
+        }
+
+        return back()->with('success', "Event statuses updated successfully! {$updatedCount} events were updated to ongoing status.");
+    }
+
+    /**
+     * Display calendar view with events and reservations
+     */
+    public function calendar(Request $request)
+    {
+        $year = $request->get('year', now()->year);
+        $month = $request->get('month', now()->month);
         
+        $startDate = Carbon::create($year, $month, 1)->startOfMonth();
+        $endDate = $startDate->copy()->endOfMonth();
+        
+        // Get all events (not just for the month, so JavaScript can filter properly)
+        $events = Event::with(['venue'])->get();
+        
+        // Get all approved reservations (not just for the month, so JavaScript can filter properly)
+        $reservations = \App\Models\Reservation::with(['user', 'venue'])
+            ->where('status', 'approved_OTP')
+            ->get();
+        
+        return view('gsu.calendar.index', compact('events', 'reservations'));
+    }
+
+    /**
+     * Report an issue with an event (GSU users only)
+     */
+    public function reportIssue(Event $event, Request $request)
+    {
         $request->validate([
             'type' => 'required|in:accident,problem,violation,damage,other',
             'severity' => 'required|in:low,medium,high,critical',
@@ -195,10 +212,10 @@ class ReservationController extends Controller
 
         // Create the report
         $report = Report::create([
-            'reported_user_id' => $reservation->user_id,
+            'reported_user_id' => null, // Events don't have a specific user, so we'll leave this null
             'reporter_id' => auth()->id(),
-            'reservation_id' => $reservation->id,
-            'event_id' => null,
+            'reservation_id' => null,
+            'event_id' => $event->id,
             'type' => $request->type,
             'severity' => $request->severity,
             'description' => $request->description,
@@ -207,7 +224,7 @@ class ReservationController extends Controller
         ]);
 
         // Create notifications for different roles
-        $this->createReportNotifications($report, 'reservation');
+        $this->createReportNotifications($report, 'event');
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -225,7 +242,7 @@ class ReservationController extends Controller
     private function createReportNotifications($report, $type)
     {
         $itemTitle = $type === 'event' ? $report->event->title : $report->reservation->event_title;
-        $reportedUser = $report->reportedUser->name;
+        $reportedUser = $report->reportedUser ? $report->reportedUser->name : 'Event Organizer';
         $severityColor = [
             'low' => 'blue',
             'medium' => 'yellow', 
@@ -233,7 +250,7 @@ class ReservationController extends Controller
             'critical' => 'red'
         ][$report->severity] ?? 'gray';
 
-        $reportMessage = "GSU has reported a {$report->severity} severity {$report->type} issue with {$type} '{$itemTitle}' involving user {$reportedUser}. Description: {$report->description}";
+        $reportMessage = "GSU has reported a {$report->severity} severity {$report->type} issue with {$type} '{$itemTitle}' involving {$reportedUser}. Description: {$report->description}";
 
         // Notify IOSA users
         $iosaUsers = \App\Models\User::where('role', 'IOSA')->get();
@@ -285,9 +302,9 @@ class ReservationController extends Controller
     {
         // Create the report
         $report = Report::create([
-            'reported_user_id' => $type === 'reservation' ? $item->user_id : null,
+            'reported_user_id' => null, // Events don't have a specific user
             'reporter_id' => auth()->id(),
-            'reservation_id' => $type === 'reservation' ? $item->id : null,
+            'reservation_id' => null,
             'event_id' => $type === 'event' ? $item->id : null,
             'type' => $request->type,
             'severity' => $request->severity,

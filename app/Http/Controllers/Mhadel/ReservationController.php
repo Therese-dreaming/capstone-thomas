@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ReservationStatusChanged;
+use Illuminate\Support\Facades\Storage;
 
 class ReservationController extends Controller
 {
@@ -20,7 +21,7 @@ class ReservationController extends Controller
     public function index(Request $request)
     {
         $query = Reservation::with(['user', 'venue'])
-            ->where('status', 'approved_IOSA'); // Only show IOSA approved reservations
+            ->where('status', 'approved_IOSA'); // Only show IOSA approved reservations for list view
         
         if ($request->filled('status')) {
             if ($request->status === 'pending') {
@@ -76,12 +77,12 @@ class ReservationController extends Controller
     }
 
     /**
-     * Calendar view: show final approved reservations (OTP approved) and official events.
+     * Calendar view: show all reservations (regardless of status) and official events.
      */
     public function calendar(Request $request)
     {
+        // Get all reservations for calendar view (regardless of status)
         $reservations = Reservation::with(['user','venue'])
-            ->whereIn('status', ['approved_OTP'])
             ->orderBy('start_date')
             ->get(['id','user_id','venue_id','event_title','start_date','end_date','status','final_price','capacity','purpose']);
 
@@ -244,7 +245,7 @@ class ReservationController extends Controller
     }
 
     /**
-     * Download activity grid as text file.
+     * Download activity grid file.
      */
     public function downloadActivityGrid(string $id)
     {
@@ -254,8 +255,22 @@ class ReservationController extends Controller
             return redirect()->back()->with('error', 'No activity grid found for this reservation.');
         }
         
+        // Check if activity_grid is a file path (stored file)
+        if (Storage::disk('public')->exists($reservation->activity_grid)) {
+            $filePath = $reservation->activity_grid;
+            $originalName = basename($filePath);
+            
+            // Extract original filename without timestamp prefix
+            if (preg_match('/^\d+_(.+)$/', $originalName, $matches)) {
+                $originalName = $matches[1];
+            }
+            
+            return Storage::disk('public')->download($filePath, $originalName);
+        }
+        
+        // Fallback: if it's plain text (legacy data), download as text file
         $filename = 'activity_grid_' . $reservation->event_title . '_' . $reservation->id . '.txt';
-        $filename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $filename); // Sanitize filename
+        $filename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $filename);
         
         return response($reservation->activity_grid)
             ->header('Content-Type', 'text/plain')

@@ -19,6 +19,7 @@ use App\Http\Controllers\DrJavier\DrJavierController;
 use App\Http\Controllers\DrJavier\ReservationController as OTPReservationController;
 use App\Http\Controllers\GSU\GSUController as GSUController;
 use App\Http\Controllers\GSU\ReservationController as GSUReservationController;
+use App\Http\Controllers\GSU\EventController as GSUEventController;
 use Illuminate\Support\Facades\Auth;
 
 // Redirect root to login
@@ -63,6 +64,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('reservations', [UserController::class, 'storeReservation'])->name('reservations.store');
         Route::get('reservations/unavailable', [UserController::class, 'unavailable'])->name('reservations.unavailable');
         Route::get('reservations/{id}', [UserController::class, 'show'])->name('reservations.show');
+        Route::get('reservations/{id}/edit', [UserController::class, 'edit'])->name('reservations.edit');
+        Route::put('reservations/{id}', [UserController::class, 'update'])->name('reservations.update');
+        Route::delete('reservations/{id}', [UserController::class, 'cancel'])->name('reservations.cancel');
     });
     Route::get('/profile', [UserController::class, 'profile'])->name('user.profile');
 
@@ -102,6 +106,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         
         // Events Routes
         Route::resource('events', MhadelEventController::class);
+        Route::post('events/{event}/cancel', [MhadelEventController::class, 'cancel'])->name('events.cancel');
+        Route::post('events/{event}/complete', [MhadelEventController::class, 'markAsComplete'])->name('events.complete');
+        Route::post('events/update-statuses', [MhadelEventController::class, 'updateStatuses'])->name('events.update-statuses');
         
         // Reservations Routes
         Route::get('reservations/calendar', [MhadelReservationController::class, 'calendar'])->name('reservations.calendar');
@@ -133,6 +140,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::group(['prefix' => 'gsu', 'as' => 'gsu.', 'middleware' => ['auth', 'gsu.role']], function () {
         Route::get('/dashboard', [GSUController::class, 'dashboard'])->name('dashboard');
         Route::resource('reservations', GSUReservationController::class);
+        Route::get('reservations/{id}/pdf', [GSUReservationController::class, 'pdf'])->name('reservations.pdf');
+        Route::get('reservations-export', [GSUReservationController::class, 'export'])->name('reservations.export');
+        Route::post('reservations/{id}/complete', [GSUReservationController::class, 'markAsComplete'])->name('reservations.complete');
+        Route::post('reservations/{id}/report', [GSUReservationController::class, 'reportIssue'])->name('reservations.report');
+        
+        // GSU Events Routes
+        Route::get('events', [GSUEventController::class, 'index'])->name('events.index');
+        Route::get('events/{event}', [GSUEventController::class, 'show'])->name('events.show');
+        Route::post('events/{event}/complete', [GSUEventController::class, 'markAsComplete'])->name('events.complete');
+        Route::post('events/{event}/report', [GSUEventController::class, 'reportIssue'])->name('events.report');
+        Route::post('events/update-statuses', [GSUEventController::class, 'updateStatuses'])->name('events.update-statuses');
+        
+        // GSU Calendar Route
+        Route::get('calendar', [GSUEventController::class, 'calendar'])->name('calendar');
     });
 
     // Other user routes defined here

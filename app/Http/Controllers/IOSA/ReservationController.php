@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ReservationStatusChanged;
+use Illuminate\Support\Facades\Storage;
 
 class ReservationController extends Controller
 {
@@ -38,12 +39,12 @@ class ReservationController extends Controller
             $query->where('start_date', '<=', $request->date_to);
         }
         if ($request->filled('venue')) {
-            $query->where('venue_id', $request->venue);
+            $query->whereHas('venue', function($q) use ($request) {
+                $q->where('name', $request->venue);
+            });
         }
         if ($request->filled('department')) {
-            $query->whereHas('user', function($q) use ($request) {
-                $q->where('department', $request->department);
-            });
+            $query->where('department', $request->department);
         }
         
         $reservations = $query->orderBy('created_at', 'desc')->paginate(10);
@@ -227,7 +228,7 @@ class ReservationController extends Controller
     }
 
     /**
-     * Download activity grid as text file.
+     * Download activity grid file.
      */
     public function downloadActivityGrid(string $id)
     {
@@ -237,8 +238,22 @@ class ReservationController extends Controller
             return redirect()->back()->with('error', 'No activity grid found for this reservation.');
         }
         
+        // Check if activity_grid is a file path (stored file)
+        if (Storage::disk('public')->exists($reservation->activity_grid)) {
+            $filePath = $reservation->activity_grid;
+            $originalName = basename($filePath);
+            
+            // Extract original filename without timestamp prefix
+            if (preg_match('/^\d+_(.+)$/', $originalName, $matches)) {
+                $originalName = $matches[1];
+            }
+            
+            return Storage::disk('public')->download($filePath, $originalName);
+        }
+        
+        // Fallback: if it's plain text (legacy data), download as text file
         $filename = 'activity_grid_' . $reservation->event_title . '_' . $reservation->id . '.txt';
-        $filename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $filename); // Sanitize filename
+        $filename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $filename);
         
         return response($reservation->activity_grid)
             ->header('Content-Type', 'text/plain')

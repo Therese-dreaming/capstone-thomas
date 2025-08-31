@@ -14,14 +14,19 @@ class Event extends Model
         'end_date',
         'venue_id',
         'organizer',
+        'department',
         'status',
         'max_participants',
+        'completion_notes',
+        'completion_date',
+        'completed_by',
     ];
 
     protected $casts = [
         'start_date' => 'datetime',
         'end_date' => 'datetime',
         'max_participants' => 'integer',
+        'completion_date' => 'datetime',
     ];
 
     public function venue(): BelongsTo

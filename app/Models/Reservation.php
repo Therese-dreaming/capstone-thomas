@@ -25,6 +25,9 @@ class Reservation extends Model
         'status',
         'notes',
         'department',
+        'completion_notes',
+        'completion_date',
+        'completed_by',
     ];
 
     protected $casts = [
@@ -37,6 +40,7 @@ class Reservation extends Model
         'discount_percentage' => 'integer',
         'final_price' => 'decimal:2',
         'duration_hours' => 'integer',
+        'completion_date' => 'datetime',
     ];
 
     public function user(): BelongsTo

@@ -76,7 +76,7 @@
                     <!-- Reservations -->
                     <li>
                         <a href="{{ route('mhadel.reservations.index') }}"
-                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('mhadel.reservations*') ? 'active-maroon' : 'text-gray-700' }}">
+                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('mhadel.reservations.index') ? 'active-maroon' : 'text-gray-700' }}">
                             <i class="fas fa-calendar-check w-5 h-5"></i>
                             <span class="font-medium">Reservations</span>
                         </a>

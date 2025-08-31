@@ -1,20 +1,17 @@
-@extends('layouts.mhadel')
+@extends('layouts.gsu')
 
 @section('title', 'Events Management')
 @section('page-title', 'Events Management')
-@section('page-subtitle', 'Create, manage, and monitor all your events')
+@section('page-subtitle', 'View and manage all events')
 
 @section('header-actions')
 	<div class="flex items-center space-x-3">
-		<form action="{{ route('mhadel.events.update-statuses') }}" method="POST" class="inline">
+		<form action="{{ route('gsu.events.update-statuses') }}" method="POST" class="inline">
 			@csrf
 			<button type="submit" class="bg-blue-600 text-white px-4 py-3 rounded-xl hover:bg-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center">
 				<i class="fas fa-sync-alt mr-2"></i>Update to Ongoing
 			</button>
 		</form>
-		<a href="{{ route('mhadel.events.create') }}" class="bg-maroon text-white px-6 py-3 rounded-xl hover:bg-red-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center">
-			<i class="fas fa-plus mr-2"></i>Create New Event
-		</a>
 	</div>
 @endsection
 
@@ -57,15 +54,6 @@
 		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 		transform: translateY(-4px);
 		border-color: #e5e7eb;
-	}
-	
-	/* Ensure status badge container is always visible */
-	.event-card .absolute {
-		position: absolute;
-		top: 1rem;
-		right: 1rem;
-		z-index: 30;
-		pointer-events: none;
 	}
 	
 	.tab-button {
@@ -155,33 +143,6 @@
 		color: #64748b;
 		font-weight: 500;
 	}
-	
-	.modal {
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		background: rgba(0, 0, 0, 0.5);
-		display: none;
-		justify-content: center;
-		align-items: center;
-		z-index: 1000;
-	}
-	
-	.modal.show {
-		display: flex;
-	}
-	
-	.modal-content {
-		background: white;
-		border-radius: 1rem;
-		padding: 2rem;
-		max-width: 400px;
-		width: 90%;
-		text-align: center;
-		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-	}
 </style>
 
 <div class="space-y-8 font-inter">
@@ -191,10 +152,10 @@
 			<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
 				<div>
 					<h1 class="text-3xl font-bold text-gray-800 font-poppins mb-2">Events Management</h1>
-					<p class="text-gray-600 text-lg">Create, organize, and monitor all your events in one place</p>
+					<p class="text-gray-600 text-lg">View and manage all events in the system</p>
 				</div>
 				<div class="search-container">
-					<form method="GET" action="{{ route('mhadel.events.index') }}">
+					<form method="GET" action="{{ route('gsu.events.index') }}">
 						<input type="text" name="q" value="{{ request('q') }}" placeholder="Search events by title, description, or organizer..." class="search-input">
 						@if(request('status') && request('status') !== 'all')
 							<input type="hidden" name="status" value="{{ request('status') }}">
@@ -276,7 +237,7 @@
 				@php
 					$current = request('status', 'all');
 					$searchQuery = request('q');
-					$baseUrl = route('mhadel.events.index');
+					$baseUrl = route('gsu.events.index');
 				@endphp
 				
 				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'all'])) }}" 
@@ -419,38 +380,18 @@
 										Created {{ $event->created_at->diffForHumans() }}
 									</div>
 									<div class="flex space-x-2">
-										<a href="{{ route('mhadel.events.show', $event) }}" 
+										<a href="{{ route('gsu.events.show', $event) }}" 
 										   class="action-button bg-blue-50 text-blue-600 hover:bg-blue-100" title="View Details">
 											<i class="fas fa-eye"></i>
 										</a>
-										<a href="{{ route('mhadel.events.edit', $event) }}" 
-										   class="action-button bg-green-50 text-green-600 hover:bg-green-100" title="Edit Event">
-											<i class="fas fa-edit"></i>
-										</a>
-										@if($event->status !== 'cancelled' && $event->status !== 'completed')
-										<button type="button" 
-												onclick="openCancelModal({{ $event->id }}, '{{ $event->title }}')"
-												class="action-button bg-yellow-50 text-yellow-600 hover:bg-yellow-100" title="Cancel Event">
-											<i class="fas fa-ban"></i>
-										</button>
-										@endif
 										
 										@if($event->status !== 'cancelled' && $event->status !== 'completed')
-										<form action="{{ route('mhadel.events.complete', $event) }}" method="POST" class="inline">
-											@csrf
-											<button type="submit" 
-													class="action-button bg-green-50 text-green-600 hover:bg-green-100" 
-													title="Mark as Complete"
-													onclick="return confirm('Are you sure you want to mark \"{{ $event->title }}\" as completed?')">
-												<i class="fas fa-check-circle"></i>
-											</button>
-										</form>
-										@endif
-										<button type="button" 
-												onclick="openDeleteModal({{ $event->id }}, '{{ $event->title }}')"
-												class="action-button bg-red-50 text-red-600 hover:bg-red-100" title="Delete Event">
-											<i class="fas fa-trash"></i>
+										<button onclick="openCompleteModal({{ $event->id }}, '{{ $event->title }}', 'event')" 
+												class="action-button bg-green-50 text-green-600 hover:bg-green-100" 
+												title="Mark as Complete">
+											<i class="fas fa-check-circle"></i>
 										</button>
+										@endif
 									</div>
 								</div>
 							</div>
@@ -480,118 +421,235 @@
 						@elseif(request('status') && request('status') !== 'all')
 							No {{ request('status') }} events at the moment.
 						@else
-							Get started by creating your first event.
+							No events have been created yet.
 						@endif
 					</p>
-					<div class="flex flex-col sm:flex-row gap-3 justify-center">
-						@if(request('q') || (request('status') && request('status') !== 'all'))
-							<a href="{{ route('mhadel.events.index') }}" 
-							   class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
-								<i class="fas fa-times mr-2"></i>Clear Filters
-							</a>
-						@endif
-						<a href="{{ route('mhadel.events.create') }}" 
-						   class="inline-flex items-center px-6 py-3 bg-maroon text-white rounded-xl hover:bg-red-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105">
-							<i class="fas fa-plus mr-2"></i>Create New Event
+					@if(request('q') || (request('status') && request('status') !== 'all'))
+						<a href="{{ route('gsu.events.index') }}" 
+						   class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+							<i class="fas fa-times mr-2"></i>Clear Filters
 						</a>
-					</div>
+					@endif
 				</div>
 			@endif
 		</div>
 	</div>
 </div>
 
-<!-- Delete Confirmation Modal -->
-<div id="deleteModal" class="modal">
-	<div class="modal-content">
-		<div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-			<i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
-		</div>
-		<h3 class="text-xl font-bold text-gray-800 mb-2">Delete Event</h3>
-		<p class="text-gray-600 mb-6">Are you sure you want to delete "<span id="eventTitle" class="font-semibold"></span>"? This action cannot be undone.</p>
-		
-		<div class="flex justify-center space-x-3">
-			<button onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-				Cancel
-			</button>
-			<form id="deleteForm" method="POST" class="inline">
-				@csrf
-				@method('DELETE')
-				<button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-					Delete Event
+<!-- Complete Modal -->
+<div id="completeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
+	<div class="flex items-center justify-center min-h-screen p-4">
+		<div class="bg-white rounded-xl shadow-2xl max-w-md w-full font-poppins">
+			<div class="p-6 border-b border-gray-200 bg-gray-50">
+				<div class="flex items-center justify-between">
+					<h3 class="text-xl font-bold text-gray-800 font-montserrat">
+						<i class="fas fa-check-circle text-green-600 mr-2"></i>
+						Mark as Complete
+					</h3>
+					<button onclick="closeCompleteModal()" class="text-gray-400 hover:text-gray-600 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
+						<i class="fas fa-times"></i>
+					</button>
+				</div>
+			</div>
+			<div class="p-6">
+				<div class="mb-4">
+					<p class="text-gray-700 mb-2">Are you sure you want to mark this event as completed?</p>
+					<div id="completeItemDetails" class="bg-gray-50 p-3 rounded-lg text-sm text-gray-600"></div>
+				</div>
+				<div class="mb-4">
+					<label for="completionNotes" class="block text-sm font-medium text-gray-700 mb-2">Completion Notes (Optional)</label>
+					<textarea id="completionNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200" placeholder="Add any notes about the completion..."></textarea>
+				</div>
+				
+				<!-- Report Issue Section -->
+				<div class="mb-4 border-t border-gray-200 pt-4">
+					<div class="flex items-center justify-between mb-3">
+						<h4 class="text-sm font-medium text-gray-700">Report Issue (Optional)</h4>
+						<button type="button" onclick="toggleReportSection()" class="text-sm text-maroon hover:text-red-700 font-medium">
+							<i class="fas fa-exclamation-triangle mr-1"></i>
+							<span id="reportToggleText">Report Issue</span>
+						</button>
+					</div>
+					
+					<div id="reportSection" class="hidden space-y-3">
+						<div class="grid grid-cols-2 gap-3">
+							<div>
+								<label for="reportType" class="block text-xs font-medium text-gray-700 mb-1">Issue Type</label>
+								<select id="reportType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 text-sm">
+									<option value="">Select type...</option>
+									<option value="accident">Accident</option>
+									<option value="problem">Problem</option>
+									<option value="violation">Violation</option>
+									<option value="damage">Damage</option>
+									<option value="other">Other</option>
+								</select>
+							</div>
+							<div>
+								<label for="reportSeverity" class="block text-xs font-medium text-gray-700 mb-1">Severity</label>
+								<select id="reportSeverity" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 text-sm">
+									<option value="">Select severity...</option>
+									<option value="low">Low</option>
+									<option value="medium">Medium</option>
+									<option value="high">High</option>
+									<option value="critical">Critical</option>
+								</select>
+							</div>
+						</div>
+						<div>
+							<label for="reportDescription" class="block text-xs font-medium text-gray-700 mb-1">Description</label>
+							<textarea id="reportDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 text-sm" placeholder="Describe what happened..."></textarea>
+						</div>
+						<div>
+							<label for="reportActions" class="block text-xs font-medium text-gray-700 mb-1">Actions Taken (Optional)</label>
+							<textarea id="reportActions" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 text-sm" placeholder="What actions were taken to address the issue..."></textarea>
+						</div>
+					</div>
+				</div>
+				
+				<div class="text-sm text-gray-600 mb-4">
+					<i class="fas fa-info-circle text-blue-600 mr-1"></i>
+					This will notify IOSA, Ms. Mhadel, and OTP about the completion.
+				</div>
+			</div>
+			<div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+				<button onclick="closeCompleteModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Cancel</button>
+				<button onclick="confirmComplete()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+					<i class="fas fa-check mr-2"></i>Mark Complete
 				</button>
-			</form>
-		</div>
-	</div>
-</div>
-
-<!-- Cancel Event Modal -->
-<div id="cancelModal" class="modal">
-	<div class="modal-content">
-		<div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-			<i class="fas fa-exclamation-triangle text-yellow-600 text-2xl"></i>
-		</div>
-		<h3 class="text-xl font-bold text-gray-800 mb-2">Cancel Event</h3>
-		<p class="text-gray-600 mb-6">Are you sure you want to cancel "<span id="cancelEventTitle" class="font-semibold"></span>"? This will mark the event as cancelled but preserve all information.</p>
-		
-		<div class="flex justify-center space-x-3">
-			<button onclick="closeCancelModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-				Keep Event
-			</button>
-			<form id="cancelForm" method="POST" class="inline">
-				@csrf
-				<button type="submit" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors">
-					Cancel Event
-				</button>
-			</form>
+			</div>
 		</div>
 	</div>
 </div>
 
 <script>
-function openDeleteModal(eventId, eventTitle) {
-	document.getElementById('eventTitle').textContent = eventTitle;
-	document.getElementById('deleteForm').action = `/mhadel/events/${eventId}`;
-	document.getElementById('deleteModal').classList.add('show');
+let currentCompleteItem = null;
+
+function openCompleteModal(id, title, type) {
+	currentCompleteItem = { id: id, title: title, type: type };
+	
+	const itemDetails = document.getElementById('completeItemDetails');
+	itemDetails.innerHTML = `
+		<div class="font-medium text-gray-800">${title}</div>
+		<div class="text-gray-600">${type === 'event' ? 'Event' : 'Reservation'}</div>
+	`;
+	
+	document.getElementById('completionNotes').value = '';
+	document.getElementById('completeModal').classList.remove('hidden');
 	document.body.style.overflow = 'hidden';
 }
 
-function closeDeleteModal() {
-	document.getElementById('deleteModal').classList.remove('show');
+function closeCompleteModal() {
+	document.getElementById('completeModal').classList.add('hidden');
 	document.body.style.overflow = 'auto';
+	currentCompleteItem = null;
 }
 
-function openCancelModal(eventId, eventTitle) {
-	document.getElementById('cancelEventTitle').textContent = eventTitle;
-	document.getElementById('cancelForm').action = `/mhadel/events/${eventId}/cancel`;
-	document.getElementById('cancelModal').classList.add('show');
-	document.body.style.overflow = 'hidden';
+function confirmComplete() {
+	if (!currentCompleteItem) return;
+	
+	const notes = document.getElementById('completionNotes').value;
+	const { id, type } = currentCompleteItem;
+	
+	// Check if report section is visible and has data
+	const reportSection = document.getElementById('reportSection');
+	const hasReport = !reportSection.classList.contains('hidden') && 
+		document.getElementById('reportType').value && 
+		document.getElementById('reportSeverity').value && 
+		document.getElementById('reportDescription').value;
+	
+	// Create form data
+	const formData = new FormData();
+	formData.append('_token', '{{ csrf_token() }}');
+	formData.append('completion_notes', notes);
+	
+	// Add report data if present
+	if (hasReport) {
+		formData.append('type', document.getElementById('reportType').value);
+		formData.append('severity', document.getElementById('reportSeverity').value);
+		formData.append('description', document.getElementById('reportDescription').value);
+		formData.append('actions_taken', document.getElementById('reportActions').value);
+	}
+	
+	// Determine the route based on type
+	const route = type === 'event' 
+		? `{{ route('gsu.events.complete', ':id') }}`.replace(':id', id)
+		: `{{ route('gsu.reservations.complete', ':id') }}`.replace(':id', id);
+	
+	// Send request
+	fetch(route, {
+		method: 'POST',
+		body: formData
+	})
+	.then(response => response.json())
+	.then(data => {
+		if (data.success) {
+			// Show success message
+			let message = 'Event marked as completed successfully!';
+			if (hasReport) {
+				message += ' Issue has also been reported.';
+			}
+			showNotification(message, 'success');
+			closeCompleteModal();
+			
+			// Reload the page to reflect changes
+			setTimeout(() => {
+				window.location.reload();
+			}, 1500);
+		} else {
+			showNotification(data.message || 'Error marking event as complete', 'error');
+		}
+	})
+	.catch(error => {
+		console.error('Error:', error);
+		showNotification('Error marking event as complete', 'error');
+	});
 }
 
-function closeCancelModal() {
-	document.getElementById('cancelModal').classList.remove('show');
-	document.body.style.overflow = 'auto';
+function toggleReportSection() {
+	const reportSection = document.getElementById('reportSection');
+	const toggleText = document.getElementById('reportToggleText');
+	
+	if (reportSection.classList.contains('hidden')) {
+		reportSection.classList.remove('hidden');
+		toggleText.textContent = 'Hide Report';
+	} else {
+		reportSection.classList.add('hidden');
+		toggleText.textContent = 'Report Issue';
+		// Clear form fields when hiding
+		document.getElementById('reportType').value = '';
+		document.getElementById('reportSeverity').value = '';
+		document.getElementById('reportDescription').value = '';
+		document.getElementById('reportActions').value = '';
+	}
 }
 
-// Close modal when clicking outside
-document.getElementById('deleteModal').addEventListener('click', function(e) {
-	if (e.target === this) {
-		closeDeleteModal();
-	}
-});
-
-document.getElementById('cancelModal').addEventListener('click', function(e) {
-	if (e.target === this) {
-		closeCancelModal();
-	}
-});
-
-// Close modal with Escape key
-document.addEventListener('keydown', function(e) {
-	if (e.key === 'Escape') {
-		closeDeleteModal();
-		closeCancelModal();
-	}
-});
+function showNotification(message, type) {
+	// Create notification element
+	const notification = document.createElement('div');
+	notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full ${
+		type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+	}`;
+	notification.innerHTML = `
+		<div class="flex items-center">
+			<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i>
+			<span>${message}</span>
+		</div>
+	`;
+	
+	document.body.appendChild(notification);
+	
+	// Animate in
+	setTimeout(() => {
+		notification.classList.remove('translate-x-full');
+	}, 100);
+	
+	// Remove after 5 seconds
+	setTimeout(() => {
+		notification.classList.add('translate-x-full');
+		setTimeout(() => {
+			document.body.removeChild(notification);
+		}, 300);
+	}, 5000);
+}
 </script>
-@endsection
+@endsection 

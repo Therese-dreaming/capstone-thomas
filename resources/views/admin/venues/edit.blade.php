@@ -65,7 +65,7 @@
                         id="price_per_hour" 
                         name="price_per_hour" 
                         value="{{ old('price_per_hour', $venue->price_per_hour) }}"
-                        min="0"
+                        min="0.01"
                         step="0.01"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-maroon focus:border-maroon @error('price_per_hour') border-red-500 @enderror"
                         placeholder="0.00"
