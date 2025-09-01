@@ -10,7 +10,7 @@
         <span class="font-medium">Filter</span>
         <i class="fas fa-chevron-down text-xs ml-1 transition-transform duration-200" id="filterArrow"></i>
     </button>
-    <a href="{{ route('user.reservations.calendar') }}" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm">
+    <a href="{{ route('user.reservations.calendar') }}" class="px-4 py-1.5 bg-gray-800 text-white rounded-lg hover:bg-gray-800 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm">
         <i class="fas fa-calendar-alt text-base"></i>
         <span class="font-medium">View Calendar</span>
     </a>
@@ -296,11 +296,16 @@
                                 <!-- Enhanced Action Buttons -->
                                 <div class="mt-auto pt-4 border-t border-gray-100 flex justify-between items-center">
                                     <div class="flex space-x-1.5">
-                                        @if(in_array($reservation->status, ['pending','approved_IOSA','approved_mhadel']))
+                                        @if($reservation->status === 'pending')
                                             <a href="{{ route('user.reservations.edit', $reservation->id) }}" 
                                                class="p-1.5 bg-amber-50 text-amber-600 rounded-md hover:bg-amber-100 transition-all duration-200 group-hover:scale-105" title="Edit Reservation">
                                                 <i class="fas fa-edit"></i>
                                             </a>
+                                            <button onclick="openCancelModal({{ $reservation->id }}, '{{ addslashes($reservation->event_title) }}', '{{ $reservation->start_date ? $reservation->start_date->format('M d, Y g:i A') : 'No date' }}')" 
+                                                    class="p-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-all duration-200 group-hover:scale-105" title="Cancel Reservation">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        @elseif(in_array($reservation->status, ['approved_IOSA','approved_mhadel','approved_OTP']))
                                             <button onclick="openCancelModal({{ $reservation->id }}, '{{ addslashes($reservation->event_title) }}', '{{ $reservation->start_date ? $reservation->start_date->format('M d, Y g:i A') : 'No date' }}')" 
                                                     class="p-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-all duration-200 group-hover:scale-105" title="Cancel Reservation">
                                                 <i class="fas fa-times"></i>

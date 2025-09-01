@@ -87,19 +87,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // IOSA Routes
-    Route::middleware(['auth', 'iosa.role'])->prefix('iosa')->group(function () {
-        Route::get('/', [IOSAController::class, 'dashboard'])->name('iosa.dashboard');
+    Route::group(['prefix' => 'iosa', 'as' => 'iosa.', 'middleware' => ['auth', 'iosa.role']], function () {
+        Route::get('/', [IOSAController::class, 'dashboard'])->name('dashboard');
+        Route::get('/reports', [IOSAController::class, 'reports'])->name('reports');
+        Route::get('/reports/{report}', [IOSAController::class, 'showReport'])->name('reports.show');
+        Route::post('/reports/{report}/status', [IOSAController::class, 'updateReportStatus'])->name('reports.update-status');
         
         // Reservations Routes
-        Route::resource('reservations', IOSAReservationController::class, ['as' => 'iosa']);
-        Route::post('reservations/{id}/approve', [IOSAReservationController::class, 'approve'])->name('iosa.reservations.approve');
-        Route::post('reservations/{id}/reject', [IOSAReservationController::class, 'reject'])->name('iosa.reservations.reject');
-        Route::get('reservations/{id}/download-activity-grid', [IOSAReservationController::class, 'downloadActivityGrid'])->name('iosa.reservations.download-activity-grid');
+        Route::resource('reservations', IOSAReservationController::class);
+        Route::post('reservations/{id}/approve', [IOSAReservationController::class, 'approve'])->name('reservations.approve');
+        Route::post('reservations/{id}/reject', [IOSAReservationController::class, 'reject'])->name('reservations.reject');
+        Route::get('reservations/{id}/download-activity-grid', [IOSAReservationController::class, 'downloadActivityGrid'])->name('reservations.download-activity-grid');
     });
 
     // Mhadel Routes
     Route::group(['prefix' => 'mhadel', 'as' => 'mhadel.', 'middleware' => ['auth', 'mhadel.role']], function () {
-        Route::get('/dashboard', [MhadelController::class, 'dashboard'])->name('dashboard');
+        Route::get('/', [MhadelController::class, 'dashboard'])->name('dashboard');
+        Route::get('/reports', [MhadelController::class, 'reports'])->name('reports');
+        Route::get('/reports/{report}', [MhadelController::class, 'showReport'])->name('reports.show');
+        Route::get('/reports-export', [MhadelController::class, 'exportReports'])->name('reports.export');
+        Route::get('/gsu-reports', [MhadelController::class, 'gsuReports'])->name('gsu-reports');
+        Route::get('/gsu-reports/{report}', [MhadelController::class, 'showGsuReport'])->name('gsu-reports.show');
+        Route::post('/gsu-reports/{report}/status', [MhadelController::class, 'updateGsuReportStatus'])->name('gsu-reports.update-status');
         
         // Venues Routes
         Route::resource('venues', MhadelVenueController::class);
@@ -109,26 +118,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('events/{event}/cancel', [MhadelEventController::class, 'cancel'])->name('events.cancel');
         Route::post('events/{event}/complete', [MhadelEventController::class, 'markAsComplete'])->name('events.complete');
         Route::post('events/update-statuses', [MhadelEventController::class, 'updateStatuses'])->name('events.update-statuses');
+        Route::post('events/{event}/update-schedule', [MhadelEventController::class, 'updateSchedule'])->name('events.update-schedule');
+        Route::post('events/{event}/check-conflicts', [MhadelEventController::class, 'checkConflicts'])->name('events.check-conflicts');
         
         // Reservations Routes
         Route::get('reservations/calendar', [MhadelReservationController::class, 'calendar'])->name('reservations.calendar');
         Route::resource('reservations', MhadelReservationController::class);
+        Route::get('reservations/{id}/edit', [MhadelReservationController::class, 'edit'])->name('reservations.edit');
         Route::post('reservations/{id}/approve', [MhadelReservationController::class, 'approve'])->name('reservations.approve');
         Route::post('reservations/{id}/reject', [MhadelReservationController::class, 'reject'])->name('reservations.reject');
         Route::get('reservations/{id}/download-activity-grid', [MhadelReservationController::class, 'downloadActivityGrid'])->name('reservations.download-activity-grid');
+        Route::post('reservations/{id}/update-schedule', [MhadelReservationController::class, 'updateSchedule'])->name('reservations.update-schedule');
+        Route::post('reservations/{id}/check-conflicts', [MhadelReservationController::class, 'checkConflicts'])->name('reservations.check-conflicts');
     });
 
-    // Ms. Mhadel routes
-    Route::middleware(['web','auth'])->group(function(){
-        Route::get('/mhadel/dashboard', [\App\Http\Controllers\Mhadel\MhadelController::class, 'dashboard'])->name('mhadel.dashboard');
-        Route::get('/mhadel/reports', [\App\Http\Controllers\Mhadel\MhadelController::class, 'reports'])->name('mhadel.reports');
-    });
+
 
     // OTP Routes
     Route::group(['prefix' => 'drjavier', 'as' => 'drjavier.', 'middleware' => ['auth', 'otp.role']], function () {
-        Route::get('/dashboard', [DrJavierController::class, 'dashboard'])->name('dashboard');
-        
-        // Reservations Routes
+        Route::get('/', [OTPReservationController::class, 'index'])->name('dashboard');
+        Route::get('/gsu-reports', [OTPReservationController::class, 'gsuReports'])->name('gsu-reports');
+        Route::get('/gsu-reports/{report}', [OTPReservationController::class, 'showGsuReport'])->name('gsu-reports.show');
+        Route::post('/gsu-reports/{report}/status', [OTPReservationController::class, 'updateGsuReportStatus'])->name('gsu-reports.update-status');
         Route::resource('reservations', OTPReservationController::class);
         Route::post('reservations/{id}/approve', [OTPReservationController::class, 'approve'])->name('reservations.approve');
         Route::post('reservations/{id}/reject', [OTPReservationController::class, 'reject'])->name('reservations.reject');

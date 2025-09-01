@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Reservation;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Models\Report;
 
 class MhadelController extends Controller
 {
@@ -369,6 +370,14 @@ class MhadelController extends Controller
 
 		$results = $query->orderByDesc('start_date')->paginate(10)->withQueryString();
 
+		// Get venues for filter dropdown
+		$venues = \App\Models\Venue::orderBy('name')->get();
+
+		// Add stats for view compatibility
+		$stats = [
+			'total' => $kpis['total']
+		];
+
 		return view('mhadel.reports.index', [
 			'kpis' => $kpis,
 			'results' => $results,
@@ -379,6 +388,160 @@ class MhadelController extends Controller
 				'venue_id' => $venueId,
 				'department' => $department,
 			],
+			'venues' => $venues,
+			'stats' => $stats,
+		]);
+	}
+
+	/**
+	 * Show a specific report.
+	 */
+	public function showReport(Reservation $report)
+	{
+		$report->load(['user', 'venue']);
+		
+		return view('mhadel.reports.show', compact('report'));
+	}
+
+	/**
+	 * Export reports to Excel.
+	 */
+	public function exportReports(Request $request)
+	{
+		$filters = [];
+		
+		// Check if we should include current page filters
+		if ($request->query('include_filters') == '1') {
+			$filters = [
+				'start_date' => $request->query('start_date'),
+				'end_date' => $request->query('end_date'),
+				'status' => $request->query('status'),
+				'venue_id' => $request->query('venue_id'),
+				'department' => $request->query('department'),
+			];
+		}
+		
+		// Add export-specific date range (overrides page filters if provided)
+		if ($request->query('export_start_date')) {
+			$filters['start_date'] = $request->query('export_start_date');
+		}
+		if ($request->query('export_end_date')) {
+			$filters['end_date'] = $request->query('export_end_date');
+		}
+		
+		// Add export-specific statuses (overrides page filters if provided)
+		if ($request->query('export_statuses')) {
+			$filters['export_statuses'] = explode(',', $request->query('export_statuses'));
+		}
+		
+		// Clean up empty filters
+		$filters = array_filter($filters, function($value) {
+			return $value !== null && $value !== '';
+		});
+
+		return \Maatwebsite\Excel\Facades\Excel::download(
+			new \App\Exports\MhadelReportsExport($filters),
+			'mhadel_reports_' . now()->format('Y-m-d_H-i-s') . '.xlsx'
+		);
+	}
+
+	/**
+	 * Display reports filed by GSU.
+	 */
+	public function gsuReports(Request $request)
+	{
+		$query = Report::with(['reporter', 'reportedUser', 'reservation', 'event'])
+			->orderBy('created_at', 'desc');
+
+		// Apply filters
+		if ($request->filled('type')) {
+			$query->where('type', $request->type);
+		}
+		
+		if ($request->filled('severity')) {
+			$query->where('severity', $request->severity);
+		}
+		
+		if ($request->filled('status')) {
+			$query->where('status', $request->status);
+		}
+		
+		if ($request->filled('start_date')) {
+			$query->whereDate('created_at', '>=', $request->start_date);
+		}
+		
+		if ($request->filled('end_date')) {
+			$query->whereDate('created_at', '<=', $request->end_date);
+		}
+
+		// Get statistics
+		$stats = [
+			'total' => Report::count(),
+			'pending' => Report::where('status', 'pending')->count(),
+			'investigating' => Report::where('status', 'investigating')->count(),
+			'resolved' => Report::where('status', 'resolved')->count(),
+			'critical' => Report::where('severity', 'critical')->count(),
+			'high' => Report::where('severity', 'high')->count(),
+		];
+
+		// Get reports by type
+		$reportsByType = Report::selectRaw('type, COUNT(*) as count')
+			->groupBy('type')
+			->orderBy('count', 'desc')
+			->get();
+
+		// Get reports by severity
+		$reportsBySeverity = Report::selectRaw('severity, COUNT(*) as count')
+			->groupBy('severity')
+			->orderBy('count', 'desc')
+			->get();
+
+		// Get recent reports
+		$recentReports = Report::with(['reporter', 'reportedUser', 'reservation', 'event'])
+			->orderBy('created_at', 'desc')
+			->limit(5)
+			->get();
+
+		$reports = $query->paginate(15)->withQueryString();
+
+		return view('mhadel.gsu-reports.index', compact(
+			'reports',
+			'stats',
+			'reportsByType',
+			'reportsBySeverity',
+			'recentReports'
+		));
+	}
+
+	/**
+	 * Show a specific report.
+	 */
+	public function showGsuReport(Report $report)
+	{
+		$report->load(['reporter', 'reportedUser', 'reservation', 'event']);
+		
+		return view('mhadel.gsu-reports.show', compact('report'));
+	}
+
+	/**
+	 * Update report status.
+	 */
+	public function updateGsuReportStatus(Request $request, Report $report)
+	{
+		$request->validate([
+			'status' => 'required|in:pending,investigating,resolved',
+			'admin_notes' => 'nullable|string|max:1000'
+		]);
+
+		$report->update([
+			'status' => $request->status,
+			'admin_notes' => $request->admin_notes,
+			'resolved_at' => $request->status === 'resolved' ? now() : null
+		]);
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Report status updated successfully'
 		]);
 	}
 } 

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ReservationStatusChanged;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Report;
 
 class ReservationController extends Controller
 {
@@ -253,6 +254,106 @@ class ReservationController extends Controller
 		return response($reservation->activity_grid, 200, [
 			'Content-Type' => 'text/plain',
 			'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+		]);
+	}
+
+	/**
+	 * Display reports filed by GSU.
+	 */
+	public function gsuReports(Request $request)
+	{
+		$query = Report::with(['reporter', 'reportedUser', 'reservation', 'event'])
+			->orderBy('created_at', 'desc');
+
+		// Apply filters
+		if ($request->filled('type')) {
+			$query->where('type', $request->type);
+		}
+		
+		if ($request->filled('severity')) {
+			$query->where('severity', $request->severity);
+		}
+		
+		if ($request->filled('status')) {
+			$query->where('status', $request->status);
+		}
+		
+		if ($request->filled('start_date')) {
+			$query->whereDate('created_at', '>=', $request->start_date);
+		}
+		
+		if ($request->filled('end_date')) {
+			$query->whereDate('created_at', '<=', $request->end_date);
+		}
+
+		// Get statistics
+		$stats = [
+			'total' => Report::count(),
+			'pending' => Report::where('status', 'pending')->count(),
+			'investigating' => Report::where('status', 'investigating')->count(),
+			'resolved' => Report::where('status', 'resolved')->count(),
+			'critical' => Report::where('severity', 'critical')->count(),
+			'high' => Report::where('severity', 'high')->count(),
+		];
+
+		// Get reports by type
+		$reportsByType = Report::selectRaw('type, COUNT(*) as count')
+			->groupBy('type')
+			->orderBy('count', 'desc')
+			->get();
+
+		// Get reports by severity
+		$reportsBySeverity = Report::selectRaw('severity, COUNT(*) as count')
+			->groupBy('severity')
+			->orderBy('count', 'desc')
+			->get();
+
+		// Get recent reports
+		$recentReports = Report::with(['reporter', 'reportedUser', 'reservation', 'event'])
+			->orderBy('created_at', 'desc')
+			->limit(5)
+			->get();
+
+		$reports = $query->paginate(15)->withQueryString();
+
+		return view('drjavier.gsu-reports.index', compact(
+			'reports',
+			'stats',
+			'reportsByType',
+			'reportsBySeverity',
+			'recentReports'
+		));
+	}
+
+	/**
+	 * Show a specific report.
+	 */
+	public function showGsuReport(Report $report)
+	{
+		$report->load(['reporter', 'reportedUser', 'reservation', 'event']);
+		
+		return view('drjavier.gsu-reports.show', compact('report'));
+	}
+
+	/**
+	 * Update report status.
+	 */
+	public function updateGsuReportStatus(Request $request, Report $report)
+	{
+		$request->validate([
+			'status' => 'required|in:pending,investigating,resolved',
+			'admin_notes' => 'nullable|string|max:1000'
+		]);
+
+		$report->update([
+			'status' => $request->status,
+			'admin_notes' => $request->admin_notes,
+			'resolved_at' => $request->status === 'resolved' ? now() : null
+		]);
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Report status updated successfully'
 		]);
 	}
 } 

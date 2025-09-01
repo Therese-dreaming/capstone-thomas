@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Ms. Mhadel Dashboard') - PCC Venue Reservation</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -115,6 +116,15 @@
                            class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('mhadel.reports') ? 'active-maroon' : 'text-gray-700' }}">
                             <i class="fas fa-chart-bar w-5 h-5"></i>
                             <span class="font-medium">Reports</span>
+                        </a>
+                    </li>
+
+                    <!-- GSU Reports -->
+                    <li>
+                        <a href="{{ route('mhadel.gsu-reports') }}" 
+                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('mhadel.gsu-reports*') ? 'active-maroon' : 'text-gray-700' }}">
+                            <i class="fas fa-exclamation-triangle w-5 h-5"></i>
+                            <span class="font-medium">GSU Reports</span>
                         </a>
                     </li>
 

@@ -426,34 +426,48 @@ function confirmComplete() {
         ? `{{ route('gsu.events.complete', ':id') }}`.replace(':id', id)
         : `{{ route('gsu.reservations.complete', ':id') }}`.replace(':id', id);
     
-    // Send request
-    fetch(route, {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Show success message
-            let message = 'Item marked as completed successfully!';
-            if (hasReport) {
-                message += ' Issue has also been reported.';
-            }
-            showNotification(message, 'success');
-            closeCompleteModal();
-            
-            // Reload the page to reflect changes
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
-        } else {
-            showNotification(data.message || 'Error marking item as complete', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showNotification('Error marking item as complete', 'error');
-    });
+    	// Send request
+	fetch(route, {
+		method: 'POST',
+		body: formData,
+		headers: {
+			'X-Requested-With': 'XMLHttpRequest',
+			'Accept': 'application/json'
+		}
+	})
+	.then(response => {
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+		return response.json();
+	})
+	.then(data => {
+		if (data.success) {
+			// Show success message
+			let message = 'Item marked as completed successfully!';
+			if (hasReport) {
+				message += ' Issue has also been reported.';
+			}
+			showNotification(message, 'success');
+			closeCompleteModal();
+			
+			// Reload the page to reflect changes
+			setTimeout(() => {
+				window.location.reload();
+			}, 1500);
+		} else {
+			showNotification(data.message || 'Error marking item as complete', 'error');
+		}
+	})
+	.catch(error => {
+		console.error('Error:', error);
+		// Check if it's a JSON parsing error
+		if (error.message.includes('JSON')) {
+			showNotification('Server returned an invalid response. Please try again.', 'error');
+		} else {
+			showNotification('Error marking item as complete. Please try again.', 'error');
+		}
+	});
 }
 
 function toggleReportSection() {

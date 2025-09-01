@@ -278,7 +278,7 @@
                     <p class="text-gray-600 mb-6 max-w-md mx-auto text-sm">There are currently no final approved reservations to display. New approvals will appear here automatically.</p>
                     <div class="flex items-center justify-center space-x-3">
                         <button onclick="refreshData()" 
-                                class="inline-flex items-center px-4 py-2 bg-maroon-500 text-white rounded-lg hover:bg-maroon-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-1 font-medium text-sm">
+                                class="inline-flex items-center px-4 py-2 bg-maroon text-white rounded-lg hover:bg-maroon-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-1 font-medium text-sm">
                             <i class="fas fa-sync-alt mr-1.5"></i> Refresh Data
                         </button>
                         <a href="{{ route('gsu.reservations.index') }}" 

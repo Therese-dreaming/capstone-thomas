@@ -578,9 +578,18 @@ function confirmComplete() {
 	// Send request
 	fetch(route, {
 		method: 'POST',
-		body: formData
+		body: formData,
+		headers: {
+			'X-Requested-With': 'XMLHttpRequest',
+			'Accept': 'application/json'
+		}
 	})
-	.then(response => response.json())
+	.then(response => {
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+		return response.json();
+	})
 	.then(data => {
 		if (data.success) {
 			// Show success message
@@ -601,7 +610,12 @@ function confirmComplete() {
 	})
 	.catch(error => {
 		console.error('Error:', error);
-		showNotification('Error marking event as complete', 'error');
+		// Check if it's a JSON parsing error
+		if (error.message.includes('JSON')) {
+			showNotification('Server returned an invalid response. Please try again.', 'error');
+		} else {
+			showNotification('Error marking event as complete. Please try again.', 'error');
+		}
 	});
 }
 

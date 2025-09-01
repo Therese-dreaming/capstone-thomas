@@ -87,7 +87,6 @@ class ReservationController extends Controller
             ->get(['id','user_id','venue_id','event_title','start_date','end_date','status','final_price','capacity','purpose']);
 
         $events = Event::with(['venue'])
-            ->whereIn('status', ['upcoming','ongoing'])
             ->orderBy('start_date')
             ->get(['id','venue_id','title','organizer','start_date','end_date','status','max_participants']);
 
@@ -275,5 +274,299 @@ class ReservationController extends Controller
         return response($reservation->activity_grid)
             ->header('Content-Type', 'text/plain')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+
+    /**
+     * Show the form for editing the specified reservation.
+     */
+    public function edit(string $id)
+    {
+        $reservation = Reservation::with(['user', 'venue'])->findOrFail($id);
+        
+        // Check if reservation can be edited (not rejected or cancelled)
+        if (in_array($reservation->status, ['rejected_IOSA', 'rejected_mhadel', 'rejected_OTP', 'cancelled'])) {
+            return redirect()->back()->with('error', 'Cannot edit rejected or cancelled reservations.');
+        }
+        
+        $venues = \App\Models\Venue::where('is_available', true)->orderBy('name')->get();
+        
+        return view('mhadel.reservations.edit', compact('reservation', 'venues'));
+    }
+
+    /**
+     * Update the specified reservation.
+     */
+    public function update(Request $request, string $id)
+    {
+        $reservation = Reservation::findOrFail($id);
+        
+        // Check if reservation can be edited (not rejected or cancelled)
+        if (in_array($reservation->status, ['rejected_IOSA', 'rejected_mhadel', 'rejected_OTP', 'cancelled'])) {
+            return redirect()->back()->with('error', 'Cannot edit rejected or cancelled reservations.');
+        }
+        
+        $request->validate([
+            'event_title' => 'required|string|max:255',
+            'purpose' => 'nullable|string',
+            'capacity' => 'nullable|integer|min:1',
+            'department' => 'nullable|string|max:255',
+            'venue_id' => 'required|exists:venues,id',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date',
+            'discount_percentage' => 'nullable|numeric|min:0|max:100',
+            'status' => 'required|in:pending,approved_IOSA,approved_mhadel,approved_OTP,completed,rejected_IOSA,rejected_mhadel,rejected_OTP,cancelled',
+            'notes' => 'nullable|string',
+        ]);
+        
+        // Check for conflicts with other reservations/events at the same venue
+        $conflicts = Reservation::where('id', '!=', $id)
+            ->where('venue_id', $request->venue_id)
+            ->whereIn('status', ['pending', 'approved_IOSA', 'approved_mhadel', 'approved_OTP'])
+            ->where(function($query) use ($request) {
+                $query->where(function($q) use ($request) {
+                    $q->where('start_date', '<', $request->end_date)
+                      ->where('end_date', '>', $request->start_date);
+                });
+            })
+            ->get();
+        
+        $eventConflicts = Event::where('venue_id', $request->venue_id)
+            ->where('status', '!=', 'cancelled')
+            ->where(function($query) use ($request) {
+                $query->where(function($q) use ($request) {
+                    $q->where('start_date', '<', $request->end_date)
+                      ->where('end_date', '>', $request->start_date);
+                });
+            })
+            ->get();
+        
+        if ($conflicts->count() > 0 || $eventConflicts->count() > 0) {
+            return redirect()->back()->with('error', 'Schedule conflict detected with existing reservations/events. Please choose a different time or venue.')->withInput();
+        }
+        
+        // Calculate pricing
+        $venue = \App\Models\Venue::find($request->venue_id);
+        $startDate = \Carbon\Carbon::parse($request->start_date);
+        $endDate = \Carbon\Carbon::parse($request->end_date);
+        $durationHours = $startDate->diffInHours($endDate);
+        
+        $basePrice = $venue->price_per_hour * $durationHours;
+        $discount = $request->discount_percentage ?? 0;
+        $finalPrice = $basePrice * (1 - $discount / 100);
+        
+        // Update the reservation
+        $reservation->update([
+            'event_title' => $request->event_title,
+            'purpose' => $request->purpose,
+            'capacity' => $request->capacity,
+            'department' => $request->department,
+            'venue_id' => $request->venue_id,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'duration_hours' => $durationHours,
+            'base_price' => $basePrice,
+            'discount_percentage' => $discount,
+            'final_price' => $finalPrice,
+            'status' => $request->status,
+            'notes' => $request->notes,
+        ]);
+        
+        // Create notification for the user
+        Notification::create([
+            'user_id' => $reservation->user_id,
+            'title' => 'Your reservation has been updated',
+            'body' => 'Reservation "' . $reservation->event_title . '" has been updated by Ms. Mhadel.',
+            'type' => 'reservation_updated',
+            'related_id' => $reservation->id,
+            'related_type' => Reservation::class,
+        ]);
+        
+        // Self notification for Ms. Mhadel
+        Notification::create([
+            'user_id' => Auth::id(),
+            'title' => 'You updated a reservation',
+            'body' => 'You updated "' . $reservation->event_title . '".',
+            'type' => 'self_info',
+            'related_id' => $reservation->id,
+            'related_type' => Reservation::class,
+        ]);
+        
+        return redirect()->route('mhadel.reservations.show', $reservation->id)
+            ->with('success', 'Reservation updated successfully!');
+    }
+
+    /**
+     * Update reservation schedule (date/time).
+     */
+    public function updateSchedule(Request $request, string $id)
+    {
+        $reservation = Reservation::findOrFail($id);
+        
+        // Check if reservation can be edited (not rejected or cancelled)
+        if (in_array($reservation->status, ['rejected_IOSA', 'rejected_mhadel', 'rejected_OTP', 'cancelled'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot edit rejected or cancelled reservations.'
+            ], 400);
+        }
+        
+        $request->validate([
+            'start_datetime' => 'required|date',
+            'end_datetime' => 'required|date|after:start_datetime',
+        ]);
+        
+        $newStartDate = $request->start_datetime;
+        $newEndDate = $request->end_datetime;
+        
+        // Check for conflicts with other reservations/events at the same venue
+        $conflicts = Reservation::where('id', '!=', $id)
+            ->where('venue_id', $reservation->venue_id)
+            ->whereIn('status', ['pending', 'approved_IOSA', 'approved_mhadel', 'approved_OTP'])
+            ->where(function($query) use ($newStartDate, $newEndDate) {
+                $query->where(function($q) use ($newStartDate, $newEndDate) {
+                    $q->where('start_date', '<', $newEndDate)
+                      ->where('end_date', '>', $newStartDate);
+                });
+            })
+            ->get();
+        
+        $eventConflicts = Event::where('venue_id', $reservation->venue_id)
+            ->where('status', '!=', 'cancelled')
+            ->where(function($query) use ($newStartDate, $newEndDate) {
+                $query->where(function($q) use ($newStartDate, $newEndDate) {
+                    $q->where('start_date', '<', $newEndDate)
+                      ->where('end_date', '>', $newStartDate);
+                });
+            })
+            ->get();
+        
+        if ($conflicts->count() > 0 || $eventConflicts->count() > 0) {
+            $conflictDetails = [];
+            
+            foreach ($conflicts as $conflict) {
+                $conflictDetails[] = [
+                    'type' => 'Reservation',
+                    'title' => $conflict->event_title,
+                    'start' => $conflict->start_date,
+                    'end' => $conflict->end_date,
+                    'user' => $conflict->user->name ?? 'Unknown'
+                ];
+            }
+            
+            foreach ($eventConflicts as $conflict) {
+                $conflictDetails[] = [
+                    'type' => 'Event',
+                    'title' => $conflict->title,
+                    'start' => $conflict->start_date,
+                    'end' => $conflict->end_date,
+                    'user' => $conflict->organizer ?? 'Official Event'
+                ];
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Schedule conflict detected with existing reservations/events.',
+                'conflicts' => $conflictDetails
+            ], 409);
+        }
+        
+        // Update the reservation
+        $reservation->update([
+            'start_date' => $newStartDate,
+            'end_date' => $newEndDate,
+        ]);
+        
+        // Create notification for the user
+        Notification::create([
+            'user_id' => $reservation->user_id,
+            'title' => 'Your reservation schedule has been updated',
+            'body' => 'Reservation "' . $reservation->event_title . '" schedule has been updated by Ms. Mhadel.',
+            'type' => 'reservation_updated',
+            'related_id' => $reservation->id,
+            'related_type' => Reservation::class,
+        ]);
+        
+        // Self notification for Ms. Mhadel
+        Notification::create([
+            'user_id' => Auth::id(),
+            'title' => 'You updated a reservation schedule',
+            'body' => 'You updated the schedule for "' . $reservation->event_title . '".',
+            'type' => 'self_info',
+            'related_id' => $reservation->id,
+            'related_type' => Reservation::class,
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Reservation schedule updated successfully.'
+        ]);
+    }
+
+    /**
+     * Check for schedule conflicts without updating.
+     */
+    public function checkConflicts(Request $request, string $id)
+    {
+        $reservation = Reservation::findOrFail($id);
+        
+        $request->validate([
+            'venue_id' => 'required|exists:venues,id',
+            'start_datetime' => 'required|date',
+            'end_datetime' => 'required|date|after:start_datetime',
+        ]);
+        
+        $newStartDate = $request->start_datetime;
+        $newEndDate = $request->end_datetime;
+        $newVenueId = $request->venue_id;
+        
+        // Check for conflicts with other reservations at the same venue
+        $conflicts = Reservation::where('id', '!=', $id)
+            ->where('venue_id', $newVenueId)
+            ->whereIn('status', ['pending', 'approved_IOSA', 'approved_mhadel', 'approved_OTP'])
+            ->where(function($query) use ($newStartDate, $newEndDate) {
+                $query->where(function($q) use ($newStartDate, $newEndDate) {
+                    $q->where('start_date', '<', $newEndDate)
+                      ->where('end_date', '>', $newStartDate);
+                });
+            })
+            ->get();
+        
+        // Check for conflicts with events at the same venue
+        $eventConflicts = Event::where('venue_id', $newVenueId)
+            ->where('status', '!=', 'cancelled')
+            ->where(function($query) use ($newStartDate, $newEndDate) {
+                $query->where(function($q) use ($newStartDate, $newEndDate) {
+                    $q->where('start_date', '<', $newEndDate)
+                      ->where('end_date', '>', $newStartDate);
+                });
+            })
+            ->get();
+        
+        $allConflicts = [];
+        
+        foreach ($conflicts as $conflict) {
+            $allConflicts[] = [
+                'type' => 'Reservation',
+                'title' => $conflict->event_title,
+                'start' => $conflict->start_date->format('M d, Y g:i A'),
+                'end' => $conflict->end_date->format('M d, Y g:i A'),
+                'user' => $conflict->user->name ?? 'Unknown'
+            ];
+        }
+        
+        foreach ($eventConflicts as $conflict) {
+            $allConflicts[] = [
+                'type' => 'Event',
+                'title' => $conflict->title,
+                'start' => $conflict->start_date->format('M d, Y g:i A'),
+                'end' => $conflict->end_date->format('M d, Y g:i A'),
+                'user' => $conflict->organizer ?? 'Official Event'
+            ];
+        }
+        
+        return response()->json([
+            'success' => true,
+            'conflicts' => $allConflicts
+        ]);
     }
 } 

@@ -1,8 +1,8 @@
 @extends('layouts.mhadel')
 
-@section('title', 'Edit Event')
-@section('page-title', 'Edit Event')
-@section('page-subtitle', 'Modify event details and schedule')
+@section('title', 'Edit Reservation')
+@section('page-title', 'Edit Reservation')
+@section('page-subtitle', 'Modify reservation details and schedule')
 
 @section('content')
 <!-- Google Fonts Import -->
@@ -51,17 +51,17 @@
                 <div>
                     <h2 class="text-2xl font-bold text-gray-800 font-poppins flex items-center">
                         <i class="fas fa-edit mr-3 text-maroon"></i>
-                        Edit Event
+                        Edit Reservation
                     </h2>
-                    <p class="text-sm text-gray-600 font-medium mt-1">Modify event details, schedule, and venue</p>
+                    <p class="text-sm text-gray-600 font-medium mt-1">Modify reservation details, schedule, and pricing</p>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <a href="{{ route('mhadel.events.show', $event->id) }}" 
+                    <a href="{{ route('mhadel.reservations.show', $reservation->id) }}" 
                        class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-2">
                         <i class="fas fa-eye"></i>
                         <span>View Details</span>
                     </a>
-                    <a href="{{ route('mhadel.events.index') }}" 
+                    <a href="{{ route('mhadel.reservations.index') }}" 
                        class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-2">
                         <i class="fas fa-arrow-left"></i>
                         <span>Back to List</span>
@@ -72,7 +72,7 @@
     </div>
 
     <!-- Edit Form -->
-    <form action="{{ route('mhadel.events.update', $event->id) }}" method="POST" class="space-y-6">
+    <form action="{{ route('mhadel.reservations.update', $reservation->id) }}" method="POST" class="space-y-6">
         @csrf
         @method('PUT')
         
@@ -85,21 +85,30 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="input-group">
-                    <label for="title" class="block text-sm font-medium text-gray-700 mb-2">Event Title *</label>
-                    <input type="text" id="title" name="title" 
-                           value="{{ old('title', $event->title) }}" required
+                    <label for="event_title" class="block text-sm font-medium text-gray-700 mb-2">Event Title *</label>
+                    <input type="text" id="event_title" name="event_title" 
+                           value="{{ old('event_title', $reservation->event_title) }}" required
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200">
-                    @error('title')
+                    @error('event_title')
                         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
                 
                 <div class="input-group">
-                    <label for="organizer" class="block text-sm font-medium text-gray-700 mb-2">Organizer *</label>
-                    <input type="text" id="organizer" name="organizer" 
-                           value="{{ old('organizer', $event->organizer) }}" required
+                    <label for="purpose" class="block text-sm font-medium text-gray-700 mb-2">Purpose</label>
+                    <textarea id="purpose" name="purpose" rows="3"
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200">{{ old('purpose', $reservation->purpose) }}</textarea>
+                    @error('purpose')
+                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+                
+                <div class="input-group">
+                    <label for="capacity" class="block text-sm font-medium text-gray-700 mb-2">Expected Attendees</label>
+                    <input type="number" id="capacity" name="capacity" min="1"
+                           value="{{ old('capacity', $reservation->capacity) }}"
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200">
-                    @error('organizer')
+                    @error('capacity')
                         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
@@ -107,31 +116,9 @@
                 <div class="input-group">
                     <label for="department" class="block text-sm font-medium text-gray-700 mb-2">Department</label>
                     <input type="text" id="department" name="department"
-                           value="{{ old('department', $event->department) }}"
+                           value="{{ old('department', $reservation->department) }}"
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200">
                     @error('department')
-                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-                
-                <div class="input-group">
-                    <label for="max_participants" class="block text-sm font-medium text-gray-700 mb-2">Max Participants</label>
-                    <input type="number" id="max_participants" name="max_participants" min="1"
-                           value="{{ old('max_participants', $event->max_participants) }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200">
-                    @error('max_participants')
-                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div>
-            
-            <div class="mt-6">
-                <div class="input-group">
-                    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                    <textarea id="description" name="description" rows="4"
-                              placeholder="Provide a detailed description of the event..."
-                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200">{{ old('description', $event->description) }}</textarea>
-                    @error('description')
                         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
@@ -153,8 +140,9 @@
                         <option value="">Select a venue</option>
                         @foreach($venues as $venue)
                             <option value="{{ $venue->id }}" 
-                                    {{ old('venue_id', $event->venue_id) == $venue->id ? 'selected' : '' }}>
-                                {{ $venue->name }}
+                                    {{ old('venue_id', $reservation->venue_id) == $venue->id ? 'selected' : '' }}
+                                    data-price="{{ $venue->price_per_hour }}">
+                                {{ $venue->name }} - ₱{{ number_format($venue->price_per_hour, 2) }}/hour
                             </option>
                         @endforeach
                     </select>
@@ -166,7 +154,7 @@
                 <div class="input-group">
                     <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">Start Date & Time *</label>
                     <input type="datetime-local" id="start_date" name="start_date" required
-                           value="{{ old('start_date', $event->start_date ? $event->start_date->format("Y-m-d\TH:i") : '') }}"
+                           value="{{ old('start_date', $reservation->start_date ? $reservation->start_date->format('Y-m-d\TH:i') : '') }}"
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200">
                     @error('start_date')
                         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
@@ -176,7 +164,7 @@
                 <div class="input-group">
                     <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">End Date & Time *</label>
                     <input type="datetime-local" id="end_date" name="end_date" required
-                           value="{{ old('end_date', $event->end_date ? $event->end_date->format("Y-m-d\TH:i") : '') }}"
+                           value="{{ old('end_date', $reservation->end_date ? $reservation->end_date->format('Y-m-d\TH:i') : '') }}"
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200">
                     @error('end_date')
                         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
@@ -186,7 +174,7 @@
                 <div class="input-group">
                     <label for="duration_hours" class="block text-sm font-medium text-gray-700 mb-2">Duration (Hours)</label>
                     <input type="number" id="duration_hours" name="duration_hours" min="0.5" step="0.5" readonly
-                           value="{{ old('duration_hours', $event->duration_hours ?? 0) }}"
+                           value="{{ old('duration_hours', $reservation->duration_hours) }}"
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600">
                     <p class="text-xs text-gray-500 mt-1">Automatically calculated from start and end times</p>
                 </div>
@@ -206,11 +194,53 @@
             </div>
         </div>
 
-        <!-- Status Section -->
+        <!-- Pricing Section -->
+        <div class="form-section rounded-xl shadow-md p-6 border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-tag mr-2 text-maroon"></i>
+                Pricing & Discounts
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="input-group">
+                    <label for="price_per_hour" class="block text-sm font-medium text-gray-700 mb-2">Price per Hour</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₱</span>
+                        <input type="number" id="price_per_hour" name="price_per_hour" min="0" step="0.01" readonly
+                               value="{{ old('price_per_hour', $reservation->price_per_hour) }}"
+                               class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600">
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Based on selected venue</p>
+                </div>
+                
+                <div class="input-group">
+                    <label for="discount_percentage" class="block text-sm font-medium text-gray-700 mb-2">Discount (%)</label>
+                    <input type="number" id="discount_percentage" name="discount_percentage" min="0" max="100" step="0.01"
+                           value="{{ old('discount_percentage', $reservation->discount_percentage ?? 0) }}"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200">
+                    @error('discount_percentage')
+                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+                
+                <div class="input-group">
+                    <label for="final_price" class="block text-sm font-medium text-gray-700 mb-2">Final Price</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₱</span>
+                        <input type="number" id="final_price" name="final_price" min="0" step="0.01" readonly
+                               value="{{ old('final_price', $reservation->final_price) }}"
+                               class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600">
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Automatically calculated</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status & Notes Section -->
         <div class="form-section rounded-xl shadow-md p-6 border border-gray-100">
             <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <i class="fas fa-clipboard-list mr-2 text-maroon"></i>
-                Status & Management
+                Status & Notes
             </h3>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -218,10 +248,15 @@
                     <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
                     <select id="status" name="status" required
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200">
-                        <option value="upcoming" {{ $event->status === 'upcoming' ? 'selected' : '' }}>Upcoming</option>
-                        <option value="ongoing" {{ $event->status === 'ongoing' ? 'selected' : '' }}>Ongoing</option>
-                        <option value="completed" {{ $event->status === 'completed' ? 'selected' : '' }}>Completed</option>
-                        <option value="cancelled" {{ $event->status === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                        <option value="pending" {{ $reservation->status === 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="approved_IOSA" {{ $reservation->status === 'approved_IOSA' ? 'selected' : '' }}>IOSA Approved</option>
+                        <option value="approved_mhadel" {{ $reservation->status === 'approved_mhadel' ? 'selected' : '' }}>Mhadel Approved</option>
+                        <option value="approved_OTP" {{ $reservation->status === 'approved_OTP' ? 'selected' : '' }}>Final Approved</option>
+                        <option value="completed" {{ $reservation->status === 'completed' ? 'selected' : '' }}>Completed</option>
+                        <option value="rejected_IOSA" {{ $reservation->status === 'rejected_IOSA' ? 'selected' : '' }}>Rejected by IOSA</option>
+                        <option value="rejected_mhadel" {{ $reservation->status === 'rejected_mhadel' ? 'selected' : '' }}>Rejected by Mhadel</option>
+                        <option value="rejected_OTP" {{ $reservation->status === 'rejected_OTP' ? 'selected' : '' }}>Rejected by OTP</option>
+                        <option value="cancelled" {{ $reservation->status === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                     </select>
                     @error('status')
                         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
@@ -229,16 +264,11 @@
                 </div>
                 
                 <div class="input-group">
-                    <label for="event_type" class="block text-sm font-medium text-gray-700 mb-2">Event Type</label>
-                    <select id="event_type" name="event_type"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200">
-                        <option value="academic" {{ ($event->event_type ?? '') === 'academic' ? 'selected' : '' }}>Academic</option>
-                        <option value="administrative" {{ ($event->event_type ?? '') === 'administrative' ? 'selected' : '' }}>Administrative</option>
-                        <option value="student_activity" {{ ($event->event_type ?? '') === 'student_activity' ? 'selected' : '' }}>Student Activity</option>
-                        <option value="community_service" {{ ($event->event_type ?? '') === 'community_service' ? 'selected' : '' }}>Community Service</option>
-                        <option value="other" {{ ($event->event_type ?? '') === 'other' ? 'selected' : '' }}>Other</option>
-                    </select>
-                    @error('event_type')
+                    <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">Admin Notes</label>
+                    <textarea id="notes" name="notes" rows="4"
+                              placeholder="Add any administrative notes or comments..."
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200">{{ old('notes', $reservation->notes) }}</textarea>
+                    @error('notes')
                         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
@@ -261,35 +291,128 @@
             </div>
             
             <div class="flex items-center space-x-3">
-                <a href="{{ route('mhadel.events.show', $event->id) }}" 
+                <a href="{{ route('mhadel.reservations.show', $reservation->id) }}" 
                    class="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
                     Cancel
                 </a>
                 <button type="submit" id="submitBtn"
                         class="px-8 py-3 bg-maroon text-white rounded-lg hover:bg-red-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center space-x-2">
                     <i class="fas fa-save"></i>
-                    <span>Update Event</span>
+                    <span>Update Reservation</span>
                 </button>
             </div>
         </div>
     </form>
 </div>
 
+<!-- Check Conflicts Results Modal -->
+<div id="conflictsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full font-poppins">
+            <div class="p-6 border-b border-gray-200 bg-maroon">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-white font-montserrat">
+                        <i class="fas fa-search mr-2 text-white"></i>
+                        <span id="conflictsModalTitle">Schedule Conflict Check</span>
+                    </h3>
+                    <button onclick="closeConflictsModal()" class="text-white hover:text-gray-200 bg-white bg-opacity-20 rounded-full p-2 hover:bg-opacity-30 transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div id="conflictsModalContent">
+                    <!-- Content will be populated here -->
+                </div>
+            </div>
+            <div class="p-6 border-t border-gray-200 flex justify-end">
+                <button onclick="closeConflictsModal()" class="px-4 py-2 bg-maroon text-white rounded-lg hover:bg-red-800 transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Confirmation Modal -->
+<div id="resetModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full font-poppins">
+            <div class="p-6 border-b border-gray-200 bg-maroon">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-white font-montserrat">
+                        <i class="fas fa-exclamation-triangle mr-2 text-white"></i>
+                        Confirm Reset
+                    </h3>
+                    <button onclick="closeResetModal()" class="text-amber-400 hover:text-white bg-white rounded-full p-2 hover:bg-amber-50 transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="flex items-start">
+                    <i class="fas fa-exclamation-triangle text-amber-500 mr-3 mt-1 text-xl"></i>
+                    <div>
+                        <p class="text-gray-800 font-medium mb-2">Are you sure you want to reset all changes?</p>
+                        <p class="text-sm text-gray-600">This will restore all fields to their original values and cannot be undone.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+                <button onclick="closeResetModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    Cancel
+                </button>
+                <button onclick="confirmReset()" class="px-4 py-2 bg-maroon text-white rounded-lg hover:bg-red-800 transition-colors">
+                    Reset All Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
     // Global variables
-    let currentVenueId = {{ $event->venue_id }};
-    let currentStartDate = '{{ $event->start_date ? $event->start_date->format("Y-m-d\TH:i") : "" }}';
-    let currentEndDate = '{{ $event->end_date ? $event->end_date->format("Y-m-d\TH:i") : "" }}';
+    let currentVenueId = {{ $reservation->venue_id }};
+    let currentStartDate = '{{ $reservation->start_date ? $reservation->start_date->format("Y-m-d\TH:i") : "" }}';
+    let currentEndDate = '{{ $reservation->end_date ? $reservation->end_date->format("Y-m-d\TH:i") : "" }}';
     
     // Initialize form
     document.addEventListener('DOMContentLoaded', function() {
+        updatePricing();
         calculateDuration();
         
         // Add event listeners
+        document.getElementById('venue_id').addEventListener('change', updatePricing);
         document.getElementById('start_date').addEventListener('change', calculateDuration);
         document.getElementById('end_date').addEventListener('change', calculateDuration);
+        document.getElementById('discount_percentage').addEventListener('input', updatePricing);
     });
+    
+    // Update pricing when venue or discount changes
+    function updatePricing() {
+        const venueSelect = document.getElementById('venue_id');
+        const discountInput = document.getElementById('discount_percentage');
+        const pricePerHourInput = document.getElementById('price_per_hour');
+        const finalPriceInput = document.getElementById('final_price');
+        
+        if (venueSelect.value) {
+            const selectedOption = venueSelect.options[venueSelect.selectedIndex];
+            const pricePerHour = parseFloat(selectedOption.dataset.price);
+            pricePerHourInput.value = pricePerHour.toFixed(2);
+            
+            // Calculate final price
+            const duration = parseFloat(document.getElementById('duration_hours').value) || 0;
+            const basePrice = pricePerHour * duration;
+            const discount = parseFloat(discountInput.value) || 0;
+            const finalPrice = basePrice * (1 - discount / 100);
+            
+            finalPriceInput.value = finalPrice.toFixed(2);
+        } else {
+            pricePerHourInput.value = '0.00';
+            finalPriceInput.value = '0.00';
+        }
+    }
     
     // Calculate duration from start and end times
     function calculateDuration() {
@@ -305,6 +428,7 @@
             
             if (diffHours > 0) {
                 durationInput.value = diffHours.toFixed(1);
+                updatePricing();
             }
         }
     }
@@ -314,7 +438,7 @@
         const venueId = document.getElementById('venue_id').value;
         const startDate = document.getElementById('start_date').value;
         const endDate = document.getElementById('end_date').value;
-        const eventId = {{ $event->id }};
+        const reservationId = {{ $reservation->id }};
         
         if (!venueId || !startDate || !endDate) {
             alert('Please fill in venue and schedule details first.');
@@ -328,7 +452,7 @@
         checkBtn.disabled = true;
         
         // Send conflict check request
-        fetch(`/mhadel/events/${eventId}/check-conflicts`, {
+        fetch(`/mhadel/reservations/${reservationId}/check-conflicts`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -436,21 +560,22 @@
     
     // Confirm reset action
     function confirmReset() {
-        document.getElementById('title').value = '{{ $event->title }}';
-        document.getElementById('organizer').value = '{{ $event->organizer }}';
-        document.getElementById('department').value = '{{ $event->department }}';
-        document.getElementById('max_participants').value = '{{ $event->max_participants }}';
-        document.getElementById('description').value = '{{ $event->description }}';
-        document.getElementById('venue_id').value = '{{ $event->venue_id }}';
-        document.getElementById('start_date').value = '{{ $event->start_date ? $event->start_date->format("Y-m-d\TH:i") : "" }}';
-        document.getElementById('end_date').value = '{{ $event->end_date ? $event->end_date->format("Y-m-d\TH:i") : "" }}';
-        document.getElementById('status').value = '{{ $event->status }}';
-        document.getElementById('event_type').value = '{{ $event->event_type ?? "" }}';
+        document.getElementById('event_title').value = '{{ $reservation->event_title }}';
+        document.getElementById('purpose').value = '{{ $reservation->purpose }}';
+        document.getElementById('capacity').value = '{{ $reservation->capacity }}';
+        document.getElementById('department').value = '{{ $reservation->department }}';
+        document.getElementById('venue_id').value = '{{ $reservation->venue_id }}';
+        document.getElementById('start_date').value = '{{ $reservation->start_date ? $reservation->start_date->format("Y-m-d\TH:i") : "" }}';
+        document.getElementById('end_date').value = '{{ $reservation->end_date ? $reservation->end_date->format("Y-m-d\TH:i") : "" }}';
+        document.getElementById('discount_percentage').value = '{{ $reservation->discount_percentage ?? 0 }}';
+        document.getElementById('status').value = '{{ $reservation->status }}';
+        document.getElementById('notes').value = '{{ $reservation->notes }}';
         
         // Hide conflict warning
         document.getElementById('conflictWarning').classList.add('hidden');
         
-        // Update duration
+        // Update pricing and duration
+        updatePricing();
         calculateDuration();
         
         // Close modal and show success message
@@ -531,70 +656,4 @@
     });
 </script>
 @endpush
-
-<!-- Check Conflicts Results Modal -->
-<div id="conflictsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full font-poppins">
-            <div class="p-6 border-b border-gray-200 bg-maroon">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-bold text-white font-montserrat">
-                        <i class="fas fa-search mr-2 text-white"></i>
-                        <span id="conflictsModalTitle">Schedule Conflict Check</span>
-                    </h3>
-                    <button onclick="closeConflictsModal()" class="text-white hover:text-gray-200 bg-white bg-opacity-20 rounded-full p-2 hover:bg-opacity-30 transition-colors">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="p-6">
-                <div id="conflictsModalContent">
-                    <!-- Content will be populated here -->
-                </div>
-            </div>
-            <div class="p-6 border-t border-gray-200 flex justify-end">
-                <button onclick="closeConflictsModal()" class="px-4 py-2 bg-maroon text-white rounded-lg hover:bg-red-800 transition-colors">
-                    Close
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Reset Confirmation Modal -->
-<div id="resetModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full font-poppins">
-            <div class="p-6 border-b border-gray-200 bg-maroon">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-bold text-white font-montserrat">
-                        <i class="fas fa-exclamation-triangle mr-2 text-white"></i>
-                        Confirm Reset
-                    </h3>
-                    <button onclick="closeResetModal()" class="text-amber-400 hover:text-white bg-white rounded-full p-2 hover:bg-amber-50 transition-colors">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="p-6">
-                <div class="flex items-start">
-                    <i class="fas fa-exclamation-triangle text-amber-500 mr-3 mt-1 text-xl"></i>
-                    <div>
-                        <p class="text-gray-800 font-medium mb-2">Are you sure you want to reset all changes?</p>
-                        <p class="text-sm text-gray-600">This will restore all fields to their original values and cannot be undone.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
-                <button onclick="closeResetModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                    Cancel
-                </button>
-                <button onclick="confirmReset()" class="px-4 py-2 bg-maroon text-white rounded-lg hover:bg-red-800 transition-colors">
-                    Reset All Changes
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 @endsection 

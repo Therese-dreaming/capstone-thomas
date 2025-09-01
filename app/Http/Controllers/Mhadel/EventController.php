@@ -127,7 +127,8 @@ class EventController extends Controller
      */
     public function edit(Event $event)
     {
-        return view('mhadel.events.edit', compact('event'));
+        $venues = \App\Models\Venue::where('is_available', true)->orderBy('name')->get();
+        return view('mhadel.events.edit', compact('event', 'venues'));
     }
 
     /**
@@ -144,19 +145,24 @@ class EventController extends Controller
             'organizer' => 'required|string|max:255',
             'department' => 'nullable|string|max:255',
             'max_participants' => 'nullable|integer|min:1',
+            'status' => 'required|in:upcoming,ongoing,completed,cancelled',
+            'event_type' => 'nullable|in:academic,administrative,student_activity,community_service,other',
         ]);
 
-        // Automatically determine event status based on scheduled date
-        $now = now();
-        $startDate = \Carbon\Carbon::parse($request->start_date);
-        $endDate = \Carbon\Carbon::parse($request->end_date);
+        // Use the status from the request instead of auto-determining
+        $status = $request->status;
         
-        $status = 'upcoming'; // Default status
-        
-        if ($startDate <= $now && $endDate >= $now) {
-            $status = 'ongoing';
-        } elseif ($startDate < $now && $endDate < $now) {
-            $status = 'completed';
+        // Only auto-determine status if it's not explicitly set
+        if ($status === 'upcoming') {
+            $now = now();
+            $startDate = \Carbon\Carbon::parse($request->start_date);
+            $endDate = \Carbon\Carbon::parse($request->end_date);
+            
+            if ($startDate <= $now && $endDate >= $now) {
+                $status = 'ongoing';
+            } elseif ($startDate < $now && $endDate < $now) {
+                $status = 'completed';
+            }
         }
         
         // If event was previously cancelled, keep it cancelled unless explicitly changed
@@ -198,6 +204,7 @@ class EventController extends Controller
             'department' => $request->department,
             'status' => $status,
             'max_participants' => $request->max_participants,
+            'event_type' => $request->event_type,
         ]);
 
         return redirect()->route('mhadel.events.index')
@@ -272,5 +279,157 @@ class EventController extends Controller
         $event->update(['status' => 'completed']);
 
         return back()->with('success', "Event '{$event->title}' has been marked as completed successfully!");
+    }
+
+    /**
+     * Update event schedule (date/time).
+     */
+    public function updateSchedule(Request $request, Event $event)
+    {
+        // Check if event can be edited (not cancelled)
+        if ($event->status === 'cancelled') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot edit cancelled events.'
+            ], 400);
+        }
+        
+        $request->validate([
+            'start_datetime' => 'required|date',
+            'end_datetime' => 'required|date|after:start_datetime',
+        ]);
+        
+        $newStartDate = $request->start_datetime;
+        $newEndDate = $request->end_datetime;
+        
+        // Check for conflicts with other events at the same venue
+        $eventConflicts = Event::where('id', '!=', $event->id)
+            ->where('venue_id', $event->venue_id)
+            ->where('status', '!=', 'cancelled')
+            ->where(function($query) use ($newStartDate, $newEndDate) {
+                $query->where(function($q) use ($newStartDate, $newEndDate) {
+                    $q->where('start_date', '<', $newEndDate)
+                      ->where('end_date', '>', $newStartDate);
+                });
+            })
+            ->get();
+        
+        // Check for conflicts with reservations at the same venue
+        $reservationConflicts = Reservation::where('venue_id', $event->venue_id)
+            ->whereIn('status', ['pending', 'approved_IOSA', 'approved_mhadel', 'approved_OTP'])
+            ->where(function($query) use ($newStartDate, $newEndDate) {
+                $query->where(function($q) use ($newStartDate, $newEndDate) {
+                    $q->where('start_date', '<', $newEndDate)
+                      ->where('end_date', '>', $newStartDate);
+                });
+            })
+            ->get();
+        
+        if ($eventConflicts->count() > 0 || $reservationConflicts->count() > 0) {
+            $conflictDetails = [];
+            
+            foreach ($eventConflicts as $conflict) {
+                $conflictDetails[] = [
+                    'type' => 'Event',
+                    'title' => $conflict->title,
+                    'start' => $conflict->start_date,
+                    'end' => $conflict->end_date,
+                    'user' => $conflict->organizer ?? 'Official Event'
+                ];
+            }
+            
+            foreach ($reservationConflicts as $conflict) {
+                $conflictDetails[] = [
+                    'type' => 'Reservation',
+                    'title' => $conflict->event_title,
+                    'start' => $conflict->start_date,
+                    'end' => $conflict->end_date,
+                    'user' => $conflict->user->name ?? 'Unknown'
+                ];
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Schedule conflict detected with existing events/reservations.',
+                'conflicts' => $conflictDetails
+            ], 409);
+        }
+        
+        // Update the event
+        $event->update([
+            'start_date' => $newStartDate,
+            'end_date' => $newEndDate,
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Event schedule updated successfully.'
+        ]);
+    }
+
+    /**
+     * Check for schedule conflicts without updating.
+     */
+    public function checkConflicts(Request $request, Event $event)
+    {
+        $request->validate([
+            'venue_id' => 'required|exists:venues,id',
+            'start_datetime' => 'required|date',
+            'end_datetime' => 'required|date|after:start_datetime',
+        ]);
+        
+        $newStartDate = $request->start_datetime;
+        $newEndDate = $request->end_datetime;
+        $newVenueId = $request->venue_id;
+        
+        // Check for conflicts with other events at the same venue
+        $eventConflicts = Event::where('id', '!=', $event->id)
+            ->where('venue_id', $newVenueId)
+            ->where('status', '!=', 'cancelled')
+            ->where(function($query) use ($newStartDate, $newEndDate) {
+                $query->where(function($q) use ($newStartDate, $newEndDate) {
+                    $q->where('start_date', '<', $newEndDate)
+                      ->where('end_date', '>', $newStartDate);
+                });
+            })
+            ->get();
+        
+        // Check for conflicts with reservations at the same venue
+        $reservationConflicts = Reservation::where('venue_id', $newVenueId)
+            ->whereIn('status', ['pending', 'approved_IOSA', 'approved_mhadel', 'approved_OTP'])
+            ->where(function($query) use ($newStartDate, $newEndDate) {
+                $query->where(function($q) use ($newStartDate, $newEndDate) {
+                    $q->where('start_date', '<', $newEndDate)
+                      ->where('end_date', '>', $newStartDate);
+                });
+            })
+            ->get();
+        
+        $allConflicts = [];
+        
+        foreach ($eventConflicts as $conflict) {
+            $allConflicts[] = [
+                'type' => 'Event',
+                'title' => $conflict->title,
+                'start' => $conflict->start_date->format('M d, Y g:i A'),
+                'end' => $conflict->end_date->format('M d, Y g:i A'),
+                'user' => $conflict->organizer ?? 'Official Event'
+            ];
+        }
+        
+        foreach ($reservationConflicts as $conflict) {
+            $allConflicts[] = [
+                'type' => 'Reservation',
+                'title' => $conflict->event_title,
+                'start' => $conflict->start_date->format('M d, Y g:i A'),
+                'end' => $conflict->end_date->format('M d, Y g:i A'),
+                'user' => $conflict->user->name ?? 'Unknown'
+            ];
+        }
+        
+        return response()->json([
+            'success' => true,
+            'conflicts' => $allConflicts
+        ]);
     }
 }

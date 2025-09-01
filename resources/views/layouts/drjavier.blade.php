@@ -70,12 +70,12 @@
 						</a>
 					</li>
 
-					<!-- Reports -->
+					<!-- GSU Reports -->
 					<li>
-						<a href="#" 
-							class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon text-gray-700">
-							<i class="fas fa-chart-bar w-5 h-5"></i>
-							<span class="font-medium">Reports</span>
+						<a href="{{ route('drjavier.gsu-reports') }}" 
+							class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('drjavier.gsu-reports*') ? 'active-maroon' : 'text-gray-700' }}">
+							<i class="fas fa-exclamation-triangle w-5 h-5"></i>
+							<span class="font-medium">GSU Reports</span>
 						</a>
 					</li>
 

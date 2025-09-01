@@ -138,7 +138,7 @@
                     <div class="p-6 border-b border-gray-200 flex items-center justify-between">
                         <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
                             <i class="fas fa-history text-maroon mr-3"></i>
-                            Recent IOSA Approved Reservations
+                            Recent Reservations
                         </h2>
                         <a href="{{ route('mhadel.reservations.index') }}" class="text-maroon hover:text-red-800 text-sm font-bold font-inter transition-colors">
                             View All <i class="fas fa-arrow-right ml-1"></i>
@@ -151,7 +151,32 @@
                                     <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-300 border border-gray-100">
                                         <div class="flex-1">
                                             <div class="flex items-center mb-3">
-                                                <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-bold mr-3">Pending Review</span>
+                                                @php
+                                                    $status = $reservation->status;
+                                                    $statusClass = 'bg-yellow-100 text-yellow-800';
+                                                    $statusText = 'Pending Review';
+                                                    
+                                                    if ($status === 'approved_IOSA') {
+                                                        $statusClass = 'bg-blue-100 text-blue-800';
+                                                        $statusText = 'IOSA Approved';
+                                                    } elseif ($status === 'approved_mhadel') {
+                                                        $statusClass = 'bg-green-100 text-green-800';
+                                                        $statusText = 'Mhadel Approved';
+                                                    } elseif ($status === 'approved_OTP') {
+                                                        $statusClass = 'bg-purple-100 text-purple-800';
+                                                        $statusText = 'OTP Approved';
+                                                    } elseif ($status === 'rejected_mhadel') {
+                                                        $statusClass = 'bg-red-100 text-red-800';
+                                                        $statusText = 'Mhadel Rejected';
+                                                    } elseif ($status === 'rejected_OTP') {
+                                                        $statusClass = 'bg-red-100 text-red-800';
+                                                        $statusText = 'OTP Rejected';
+                                                    } elseif ($status === 'completed') {
+                                                        $statusClass = 'bg-indigo-100 text-indigo-800';
+                                                        $statusText = 'Completed';
+                                                    }
+                                                @endphp
+                                                <span class="px-3 py-1 {{ $statusClass }} rounded-full text-xs font-bold mr-3">{{ $statusText }}</span>
                                                 <span class="text-sm text-gray-500 font-inter">{{ $reservation->created_at->diffForHumans() }}</span>
                                             </div>
                                             <div class="text-base font-bold text-gray-800 font-poppins mb-2">{{ $reservation->event_title }}</div>
@@ -176,8 +201,8 @@
                                 <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <i class="fas fa-calendar-check text-3xl text-gray-400"></i>
                                 </div>
-                                <h3 class="text-lg font-bold text-gray-600 font-poppins mb-2">No Pending Reservations</h3>
-                                <p class="text-gray-500 font-inter">All reservations have been reviewed</p>
+                                <h3 class="text-lg font-bold text-gray-600 font-poppins mb-2">No Recent Reservations</h3>
+                                <p class="text-gray-500 font-inter">No reservations found in the recent activity</p>
                             </div>
                         @endif
                     </div>

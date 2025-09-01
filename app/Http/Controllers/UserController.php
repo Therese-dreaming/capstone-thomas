@@ -283,7 +283,7 @@ class UserController extends Controller
 			];
 		});
 
-		return response()->json(['slots' => $slots->merge($eventSlots)->values()]);
+		return response()->json(['slots' => $slots->concat($eventSlots)->values()]);
 	}
 
 	public function edit($id)
