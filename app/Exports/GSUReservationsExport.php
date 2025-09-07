@@ -81,7 +81,7 @@ class GSUReservationsExport implements FromCollection, WithHeadings, WithMapping
         }
 
         return [
-            '#' . $r->id,
+            $r->reservation_id ?? '#' . $r->id,
             $r->event_title ?? 'N/A',
             optional($r->user)->name ?? 'N/A',
             $r->department ?? optional($r->user)->department ?? 'N/A',

@@ -251,9 +251,14 @@
                             @endswitch
                             
                             <div class="flex flex-col h-full">
-                                <h4 class="font-bold text-gray-800 text-lg leading-tight group-hover:text-blue-600 transition-colors duration-200 mb-3">
-                                    {{ $reservation->event_title }}
-                                </h4>
+                                <div class="mb-3">
+                                    <h4 class="font-bold text-gray-800 text-lg leading-tight group-hover:text-blue-600 transition-colors duration-200">
+                                        {{ $reservation->event_title }}
+                                    </h4>
+                                    <div class="text-xs text-gray-500 font-mono mt-1">
+                                        ID: {{ $reservation->reservation_id ?? 'N/A' }}
+                                    </div>
+                                </div>
                                 
                                 <div class="space-y-2 mb-4">
                                     <div class="text-sm text-gray-600 flex items-center">

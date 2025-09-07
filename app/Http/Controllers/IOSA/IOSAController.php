@@ -332,6 +332,23 @@ class IOSAController extends Controller
         if ($request->filled('department')) {
             $query->where('department', $request->department);
         }
+        
+        // Add search functionality
+        if ($request->filled('search')) {
+            $searchQuery = $request->search;
+            $query->where(function ($q) use ($searchQuery) {
+                $q->where('event_title', 'like', "%{$searchQuery}%")
+                  ->orWhere('reservation_id', 'like', "%{$searchQuery}%")
+                  ->orWhere('purpose', 'like', "%{$searchQuery}%")
+                  ->orWhereHas('user', function ($userQuery) use ($searchQuery) {
+                      $userQuery->where('name', 'like', "%{$searchQuery}%")
+                                ->orWhere('email', 'like', "%{$searchQuery}%");
+                  })
+                  ->orWhereHas('venue', function ($venueQuery) use ($searchQuery) {
+                      $venueQuery->where('name', 'like', "%{$searchQuery}%");
+                  });
+            });
+        }
 
         // Get results
         $results = $query->paginate(15)->withQueryString();
@@ -344,13 +361,74 @@ class IOSAController extends Controller
             'revenue' => Reservation::where('status', 'completed')->sum('final_price') ?? 0,
         ];
 
+        // Revenue trend data for completed reservations only
+        $startOfYear = Carbon::now()->startOfYear();
+        
+        // Monthly revenue data (completed reservations only)
+        $monthlyRevenueRaw = Reservation::where('status', 'completed')
+            ->where('updated_at', '>=', $startOfYear)
+            ->whereNotNull('final_price')
+            ->selectRaw('MONTH(updated_at) as month, SUM(final_price) as revenue')
+            ->groupBy('month')
+            ->pluck('revenue', 'month');
+        
+        $revenueTrendData = [];
+        $monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        for ($i = 1; $i <= 12; $i++) {
+            $revenueTrendData[] = (float) ($monthlyRevenueRaw[$i] ?? 0);
+        }
+        
+        // Quarterly revenue data (completed reservations only)
+        $quarterlyRevenueRaw = Reservation::where('status', 'completed')
+            ->where('updated_at', '>=', $startOfYear)
+            ->whereNotNull('final_price')
+            ->selectRaw('QUARTER(updated_at) as quarter, SUM(final_price) as revenue')
+            ->groupBy('quarter')
+            ->pluck('revenue', 'quarter');
+        
+        $quarterlyRevenueData = [];
+        $quarterLabels = ['Q1', 'Q2', 'Q3', 'Q4'];
+        
+        for ($i = 1; $i <= 4; $i++) {
+            $quarterlyRevenueData[] = (float) ($quarterlyRevenueRaw[$i] ?? 0);
+        }
+        
+        // Revenue statistics
+        $totalRevenue = Reservation::where('status', 'completed')
+            ->whereNotNull('final_price')
+            ->sum('final_price');
+        
+        $averageRevenue = Reservation::where('status', 'completed')
+            ->whereNotNull('final_price')
+            ->avg('final_price');
+
+        // Status distribution data
+        $statusDistribution = [
+            'pending' => Reservation::where('status', 'pending')->count(),
+            'approved_IOSA' => Reservation::where('status', 'approved_IOSA')->count(),
+            'approved_mhadel' => Reservation::where('status', 'approved_mhadel')->count(),
+            'approved_OTP' => Reservation::where('status', 'approved_OTP')->count(),
+            'rejected_IOSA' => Reservation::where('status', 'rejected_IOSA')->count(),
+            'rejected_mhadel' => Reservation::where('status', 'rejected_mhadel')->count(),
+            'rejected_OTP' => Reservation::where('status', 'rejected_OTP')->count(),
+            'completed' => Reservation::where('status', 'completed')->count(),
+        ];
+
         // Get venues for filter
         $venues = \App\Models\Venue::where('is_available', true)->get();
 
         return view('iosa.reports.reservation-reports', compact(
             'results',
             'kpis',
-            'venues'
+            'venues',
+            'revenueTrendData',
+            'monthLabels',
+            'quarterlyRevenueData',
+            'quarterLabels',
+            'totalRevenue',
+            'averageRevenue',
+            'statusDistribution'
         ));
     }
 
@@ -498,5 +576,61 @@ class IOSAController extends Controller
             'success' => true,
             'message' => 'Report status updated successfully'
         ]);
+    }
+
+    /**
+     * Show profile edit page for the authenticated IOSA user.
+     */
+    public function profile()
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+        return view('iosa.profile', compact('user'));
+    }
+
+    /**
+     * Update profile information for the authenticated IOSA user.
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+        $request->validate([
+            'first_name' => 'nullable|string|max:255',
+            'last_name' => 'nullable|string|max:255',
+            'name' => 'nullable|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:50',
+        ]);
+
+        $user->first_name = $request->first_name ?? $user->first_name;
+        $user->last_name = $request->last_name ?? $user->last_name;
+        $user->name = $request->name ?? trim(($request->first_name ?? $user->first_name).' '.($request->last_name ?? $user->last_name)) ?: $user->name;
+        $user->email = $request->email;
+        if ($request->filled('phone')) { 
+            $user->phone = $request->phone; 
+        }
+        $user->save();
+
+        return redirect()->route('iosa.profile')->with('success', 'Profile updated successfully.');
+    }
+
+    /**
+     * Update password for the authenticated IOSA user.
+     */
+    public function updatePassword(Request $request)
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+        $request->validate([
+            'current_password' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if (!\Illuminate\Support\Facades\Hash::check($request->current_password, $user->password)) {
+            return back()->with('error', 'Current password is incorrect.');
+        }
+
+        $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
+        $user->save();
+
+        return redirect()->route('iosa.profile')->with('success', 'Password updated successfully.');
     }
 } 

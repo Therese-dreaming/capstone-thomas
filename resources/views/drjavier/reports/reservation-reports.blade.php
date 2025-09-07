@@ -1,6 +1,6 @@
-@extends('layouts.iosa')
+@extends('layouts.drjavier')
 
-@section('title', 'Reservation Reports & Analytics - IOSA')
+@section('title', 'Reservation Reports & Analytics - OTP')
 @section('page-title', 'Reservation Reports & Analytics')
 
 @section('header-actions')
@@ -163,7 +163,7 @@
             <div class="flex items-center justify-between">
                 <h2 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
                     <i class="fas fa-chart-bar text-maroon mr-3"></i>
-                    Reservation Reports & Analytics - IOSA
+                    Reservation Reports & Analytics - OTP
                 </h2>
                 <div class="flex items-center space-x-2">
                     <div class="relative">
@@ -184,14 +184,8 @@
             <button onclick="filterByStatus('pending')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'pending' ? 'tab-active' : '' }}">
                 Pending Review
             </button>
-            <button onclick="filterByStatus('approved_IOSA')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'approved_IOSA' ? 'tab-active' : '' }}">
-                IOSA Approved
-            </button>
             <button onclick="filterByStatus('approved_OTP')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'approved_OTP' ? 'tab-active' : '' }}">
                 OTP Approved
-            </button>
-            <button onclick="filterByStatus('rejected_IOSA')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'rejected_IOSA' ? 'tab-active' : '' }}">
-                IOSA Rejected
             </button>
             <button onclick="filterByStatus('rejected_OTP')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'rejected_OTP' ? 'tab-active' : '' }}">
                 OTP Rejected

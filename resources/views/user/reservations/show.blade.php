@@ -117,7 +117,10 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between">
             <div>
                 <h1 class="text-xl text-white font-black text-gray-800">{{ $reservation->event_title }}</h1>
-                <p class="text-sm text-white mt-1">Requested on {{ $reservation->created_at?->format('M d, Y g:i A') }}</p>
+                <div class="text-sm text-white mt-1">
+                    <div>Requested on {{ $reservation->created_at?->format('M d, Y g:i A') }}</div>
+                    <div class="font-mono text-xs mt-1">Reservation ID: {{ $reservation->reservation_id ?? 'N/A' }}</div>
+                </div>
             </div>
             <div class="mt-3 md:mt-0">
                 <span class="status-badge inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $badge['class'] }} border">

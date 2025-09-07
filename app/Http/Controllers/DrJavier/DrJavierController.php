@@ -258,4 +258,133 @@ class DrJavierController extends Controller
             'monthlyComparison' => $monthlyComparison,
         ]);
     }
+
+    /**
+     * Display reservation reports and analytics for OTP.
+     */
+    public function reservationReports(Request $request)
+    {
+        $start = $request->query('start_date');
+        $end = $request->query('end_date');
+        $status = $request->query('status');
+        $venueId = $request->query('venue_id');
+        $department = $request->query('department');
+
+        $query = Reservation::query()->with(['user', 'venue']);
+        if ($start) { $query->whereDate('start_date', '>=', $start); }
+        if ($end) { $query->whereDate('end_date', '<=', $end); }
+        if ($status) { $query->where('status', $status); }
+        if ($venueId) { $query->where('venue_id', $venueId); }
+        if ($department) { $query->where('department', $department); }
+        
+        // Add search functionality
+        if ($request->filled('search')) {
+            $searchQuery = $request->search;
+            $query->where(function ($q) use ($searchQuery) {
+                $q->where('event_title', 'like', "%{$searchQuery}%")
+                  ->orWhere('reservation_id', 'like', "%{$searchQuery}%")
+                  ->orWhere('purpose', 'like', "%{$searchQuery}%")
+                  ->orWhereHas('user', function ($userQuery) use ($searchQuery) {
+                      $userQuery->where('name', 'like', "%{$searchQuery}%")
+                                ->orWhere('email', 'like', "%{$searchQuery}%");
+                  })
+                  ->orWhereHas('venue', function ($venueQuery) use ($searchQuery) {
+                      $venueQuery->where('name', 'like', "%{$searchQuery}%");
+                  });
+            });
+        }
+
+        $cloneForAgg = (clone $query);
+        $kpis = [
+            'total' => (clone $cloneForAgg)->count(),
+            'approved' => (clone $cloneForAgg)->whereIn('status', ['approved_OTP','approved'])->count(),
+            'rejected' => (clone $cloneForAgg)->whereIn('status', ['rejected_OTP','rejected'])->count(),
+            'revenue' => (float) ((clone $cloneForAgg)->whereNotNull('final_price')->sum('final_price')),
+        ];
+
+        $results = $query->orderByDesc('start_date')->paginate(10)->withQueryString();
+
+        // Revenue trend data for completed reservations only
+        $startOfYear = Carbon::now()->startOfYear();
+        
+        // Monthly revenue data (completed reservations only)
+        $monthlyRevenueRaw = Reservation::where('status', 'completed')
+            ->where('updated_at', '>=', $startOfYear)
+            ->whereNotNull('final_price')
+            ->selectRaw('MONTH(updated_at) as month, SUM(final_price) as revenue')
+            ->groupBy('month')
+            ->pluck('revenue', 'month');
+        
+        $revenueTrendData = [];
+        $monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        for ($i = 1; $i <= 12; $i++) {
+            $revenueTrendData[] = (float) ($monthlyRevenueRaw[$i] ?? 0);
+        }
+        
+        // Quarterly revenue data (completed reservations only)
+        $quarterlyRevenueRaw = Reservation::where('status', 'completed')
+            ->where('updated_at', '>=', $startOfYear)
+            ->whereNotNull('final_price')
+            ->selectRaw('QUARTER(updated_at) as quarter, SUM(final_price) as revenue')
+            ->groupBy('quarter')
+            ->pluck('revenue', 'quarter');
+        
+        $quarterlyRevenueData = [];
+        $quarterLabels = ['Q1', 'Q2', 'Q3', 'Q4'];
+        
+        for ($i = 1; $i <= 4; $i++) {
+            $quarterlyRevenueData[] = (float) ($quarterlyRevenueRaw[$i] ?? 0);
+        }
+        
+        // Revenue statistics
+        $totalRevenue = Reservation::where('status', 'completed')
+            ->whereNotNull('final_price')
+            ->sum('final_price');
+        
+        $averageRevenue = Reservation::where('status', 'completed')
+            ->whereNotNull('final_price')
+            ->avg('final_price');
+
+        // Status distribution data
+        $statusDistribution = [
+            'pending' => Reservation::where('status', 'pending')->count(),
+            'approved_IOSA' => Reservation::where('status', 'approved_IOSA')->count(),
+            'approved_mhadel' => Reservation::where('status', 'approved_mhadel')->count(),
+            'approved_OTP' => Reservation::where('status', 'approved_OTP')->count(),
+            'rejected_IOSA' => Reservation::where('status', 'rejected_IOSA')->count(),
+            'rejected_mhadel' => Reservation::where('status', 'rejected_mhadel')->count(),
+            'rejected_OTP' => Reservation::where('status', 'rejected_OTP')->count(),
+            'completed' => Reservation::where('status', 'completed')->count(),
+        ];
+
+        // Get venues for filter dropdown
+        $venues = \App\Models\Venue::orderBy('name')->get();
+
+        // Add stats for view compatibility
+        $stats = [
+            'total' => $kpis['total']
+        ];
+
+        return view('drjavier.reports.reservation-reports', [
+            'kpis' => $kpis,
+            'results' => $results,
+            'filters' => [
+                'start_date' => $start,
+                'end_date' => $end,
+                'status' => $status,
+                'venue_id' => $venueId,
+                'department' => $department,
+            ],
+            'venues' => $venues,
+            'stats' => $stats,
+            'revenueTrendData' => $revenueTrendData,
+            'monthLabels' => $monthLabels,
+            'quarterlyRevenueData' => $quarterlyRevenueData,
+            'quarterLabels' => $quarterLabels,
+            'totalRevenue' => $totalRevenue,
+            'averageRevenue' => $averageRevenue,
+            'statusDistribution' => $statusDistribution,
+        ]);
+    }
 } 

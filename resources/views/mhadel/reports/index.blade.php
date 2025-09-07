@@ -367,15 +367,31 @@
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <!-- Revenue Chart -->
                         <div class="bg-gray-50 rounded-lg p-4">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Revenue Trend</h3>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Revenue Trend (Completed Reservations Only)</h3>
+                                <div class="flex space-x-2">
+                                    <button onclick="updateRevenueChart('monthly')" id="monthlyBtn" class="px-3 py-1 text-xs font-medium bg-maroon text-white rounded-lg">Monthly</button>
+                                    <button onclick="updateRevenueChart('quarterly')" id="quarterlyBtn" class="px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Quarterly</button>
+                                </div>
+                            </div>
                             <div class="h-64 bg-white rounded-lg border border-gray-200 p-4">
                                 <canvas id="revenueChart" width="400" height="200"></canvas>
+                            </div>
+                            <div class="mt-4 grid grid-cols-2 gap-4">
+                                <div class="bg-white rounded-lg p-3 text-center">
+                                    <div class="text-lg font-bold text-gray-800">₱{{ number_format($totalRevenue ?? 0, 2) }}</div>
+                                    <div class="text-xs text-gray-600">Total Revenue</div>
+                                </div>
+                                <div class="bg-white rounded-lg p-3 text-center">
+                                    <div class="text-lg font-bold text-gray-800">₱{{ number_format($averageRevenue ?? 0, 2) }}</div>
+                                    <div class="text-xs text-gray-600">Average per Reservation</div>
+                                </div>
                             </div>
                         </div>
                         
                         <!-- Status Distribution -->
                         <div class="bg-gray-50 rounded-lg p-4">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Status Distribution</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Reservation Status Distribution</h3>
                             <div class="h-64 bg-white rounded-lg border border-gray-200 p-4">
                                 <canvas id="statusChart" width="400" height="200"></canvas>
                             </div>
@@ -942,6 +958,13 @@
     let revenueChart = null;
     let statusChart = null;
     
+    // Chart data from backend
+    const revenueTrendData = @json($revenueTrendData ?? []);
+    const monthLabels = @json($monthLabels ?? []);
+    const quarterlyRevenueData = @json($quarterlyRevenueData ?? []);
+    const quarterLabels = @json($quarterLabels ?? []);
+    const statusDistribution = @json($statusDistribution ?? []);
+    
     // Initialize charts
     function initializeCharts() {
         // Revenue Chart
@@ -950,14 +973,20 @@
             revenueChart = new Chart(revenueCtx, {
                 type: 'line',
                 data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    labels: monthLabels,
                     datasets: [{
                         label: 'Revenue (₱)',
-                        data: [12000, 19000, 15000, 25000, 22000, 30000],
+                        data: revenueTrendData,
                         borderColor: '#800000',
                         backgroundColor: 'rgba(128, 0, 0, 0.1)',
                         tension: 0.4,
-                        fill: true
+                        fill: true,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#800000',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2
                     }]
                 },
                 options: {
@@ -965,18 +994,62 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            display: false
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                font: {
+                                    size: 12,
+                                    family: 'Inter'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                            titleColor: '#E5E7EB',
+                            bodyColor: '#E5E7EB',
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Revenue: ₱' + context.parsed.y.toLocaleString();
+                                }
+                            }
                         }
                     },
                     scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#6B7280',
+                                font: {
+                                    size: 11,
+                                    family: 'Inter'
+                                }
+                            }
+                        },
                         y: {
                             beginAtZero: true,
+                            grid: {
+                                color: '#F3F4F6'
+                            },
                             ticks: {
+                                color: '#6B7280',
+                                font: {
+                                    size: 11,
+                                    family: 'Inter'
+                                },
                                 callback: function(value) {
                                     return '₱' + value.toLocaleString();
                                 }
                             }
                         }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
                     }
                 }
             });
@@ -985,22 +1058,52 @@
         // Status Distribution Chart
         const statusCtx = document.getElementById('statusChart');
         if (statusCtx) {
+            // Prepare status data
+            const statusLabels = [
+                'Pending',
+                'IOSA Approved', 
+                'Mhadel Approved',
+                'OTP Approved',
+                'IOSA Rejected',
+                'Mhadel Rejected',
+                'OTP Rejected',
+                'Completed'
+            ];
+            
+            const statusData = [
+                statusDistribution.pending || 0,
+                statusDistribution.approved_IOSA || 0,
+                statusDistribution.approved_mhadel || 0,
+                statusDistribution.approved_OTP || 0,
+                statusDistribution.rejected_IOSA || 0,
+                statusDistribution.rejected_mhadel || 0,
+                statusDistribution.rejected_OTP || 0,
+                statusDistribution.completed || 0
+            ];
+            
+            const statusColors = [
+                '#F59E0B', // Pending - Yellow
+                '#3B82F6', // IOSA Approved - Blue
+                '#10B981', // Mhadel Approved - Green
+                '#8B5CF6', // OTP Approved - Purple
+                '#EF4444', // IOSA Rejected - Red
+                '#DC2626', // Mhadel Rejected - Dark Red
+                '#991B1B', // OTP Rejected - Darker Red
+                '#6366F1'  // Completed - Indigo
+            ];
+            
             statusChart = new Chart(statusCtx, {
-                type: 'doughnut',
+                type: 'bar',
                 data: {
-                    labels: ['Pending', 'Mhadel Approved', 'OTP Approved', 'Mhadel Rejected', 'OTP Rejected', 'Completed'],
+                    labels: statusLabels,
                     datasets: [{
-                        data: [30, 25, 20, 10, 5, 10],
-                        backgroundColor: [
-                            '#F59E0B',
-                            '#10B981',
-                            '#3B82F6',
-                            '#EF4444',
-                            '#DC2626',
-                            '#6366F1'
-                        ],
+                        label: 'Number of Reservations',
+                        data: statusData,
+                        backgroundColor: statusColors,
+                        borderColor: statusColors,
                         borderWidth: 2,
-                        borderColor: '#ffffff'
+                        borderRadius: 4,
+                        borderSkipped: false
                     }]
                 },
                 options: {
@@ -1008,68 +1111,108 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 20,
-                                usePointStyle: true
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                            titleColor: '#E5E7EB',
+                            bodyColor: '#E5E7EB',
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y + ' reservations';
+                                }
                             }
                         }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#6B7280',
+                                font: {
+                                    size: 10,
+                                    family: 'Inter'
+                                },
+                                maxRotation: 45,
+                                minRotation: 0
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#F3F4F6'
+                            },
+                            ticks: {
+                                color: '#6B7280',
+                                font: {
+                                    size: 11,
+                                    family: 'Inter'
+                                },
+                                precision: 0
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
                     }
                 }
             });
         }
     }
     
+    // Update revenue chart based on period selection
+    function updateRevenueChart(period) {
+        if (!revenueChart) return;
+        
+        // Update button styles
+        document.getElementById('monthlyBtn').className = period === 'monthly' 
+            ? 'px-3 py-1 text-xs font-medium bg-maroon text-white rounded-lg'
+            : 'px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg';
+        
+        document.getElementById('quarterlyBtn').className = period === 'quarterly'
+            ? 'px-3 py-1 text-xs font-medium bg-maroon text-white rounded-lg'
+            : 'px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg';
+        
+        // Update chart data
+        if (period === 'monthly') {
+            revenueChart.data.labels = monthLabels;
+            revenueChart.data.datasets[0].data = revenueTrendData;
+        } else {
+            revenueChart.data.labels = quarterLabels;
+            revenueChart.data.datasets[0].data = quarterlyRevenueData;
+        }
+        
+        revenueChart.update();
+    }
+    
     // Update charts with real data
     function updateCharts() {
-        // Get data from the current results
-        const results = @json($results);
-        
-        // Update status distribution
+        // Update status distribution with real data from backend
         if (statusChart) {
-            const statusCounts = {
-                'pending': 0,
-                'approved_mhadel': 0,
-                'approved_OTP': 0,
-                'rejected_mhadel': 0,
-                'rejected_OTP': 0,
-                'completed': 0
-            };
-            
-            results.forEach(item => {
-                const status = item.status;
-                if (statusCounts.hasOwnProperty(status)) {
-                    statusCounts[status]++;
-                }
-            });
-            
-            statusChart.data.datasets[0].data = [
-                statusCounts.pending,
-                statusCounts.approved_mhadel,
-                statusCounts.approved_OTP,
-                statusCounts.rejected_mhadel,
-                statusCounts.rejected_OTP,
-                statusCounts.completed
+            const statusData = [
+                statusDistribution.pending || 0,
+                statusDistribution.approved_IOSA || 0,
+                statusDistribution.approved_mhadel || 0,
+                statusDistribution.approved_OTP || 0,
+                statusDistribution.rejected_IOSA || 0,
+                statusDistribution.rejected_mhadel || 0,
+                statusDistribution.rejected_OTP || 0,
+                statusDistribution.completed || 0
             ];
             
+            statusChart.data.datasets[0].data = statusData;
             statusChart.update();
         }
         
-        // Update revenue chart with monthly data
+        // Update revenue chart with real data from backend
         if (revenueChart) {
-            const monthlyRevenue = {};
-            results.forEach(item => {
-                if (item.start_date) {
-                    const month = new Date(item.start_date).toLocaleDateString('en-US', { month: 'short' });
-                    const revenue = parseFloat(item.final_price) || 0;
-                    monthlyRevenue[month] = (monthlyRevenue[month] || 0) + revenue;
-                }
-            });
-            
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const revenueData = months.map(month => monthlyRevenue[month] || 0);
-            
-            revenueChart.data.datasets[0].data = revenueData;
+            // Use the real revenue data from backend (completed reservations only)
+            revenueChart.data.labels = monthLabels;
+            revenueChart.data.datasets[0].data = revenueTrendData;
             revenueChart.update();
         }
     }

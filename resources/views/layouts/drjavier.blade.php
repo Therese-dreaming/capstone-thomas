@@ -79,6 +79,15 @@
 						</a>
 					</li>
 
+					<!-- Reports -->
+					<li>
+						<a href="{{ route('drjavier.reports.reservation-reports') }}" 
+							class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('drjavier.reports*') ? 'active-maroon' : 'text-gray-700' }}">
+							<i class="fas fa-chart-bar w-5 h-5"></i>
+							<span class="font-medium">Reports</span>
+						</a>
+					</li>
+
 					<!-- Settings -->
 					<li>
 						<a href="#" 

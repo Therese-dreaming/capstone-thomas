@@ -5,6 +5,7 @@ namespace App\Http\Controllers\IOSA;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Reservation;
+use App\Models\Event;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -47,7 +48,24 @@ class ReservationController extends Controller
             $query->where('department', $request->department);
         }
         
-        $reservations = $query->orderBy('created_at', 'desc')->paginate(10);
+        // Add search functionality
+        if ($request->filled('search')) {
+            $searchQuery = $request->search;
+            $query->where(function ($q) use ($searchQuery) {
+                $q->where('event_title', 'like', "%{$searchQuery}%")
+                  ->orWhere('reservation_id', 'like', "%{$searchQuery}%")
+                  ->orWhere('purpose', 'like', "%{$searchQuery}%")
+                  ->orWhereHas('user', function ($userQuery) use ($searchQuery) {
+                      $userQuery->where('name', 'like', "%{$searchQuery}%")
+                                ->orWhere('email', 'like', "%{$searchQuery}%");
+                  })
+                  ->orWhereHas('venue', function ($venueQuery) use ($searchQuery) {
+                      $venueQuery->where('name', 'like', "%{$searchQuery}%");
+                  });
+            });
+        }
+        
+        $reservations = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
         
         $stats = [
             'total' => Reservation::whereIn('status', ['pending', 'approved_IOSA', 'rejected_IOSA'])->count(),
@@ -59,6 +77,26 @@ class ReservationController extends Controller
         $venues = \App\Models\Venue::orderBy('name')->get();
         
         return view('iosa.reservations.index', compact('reservations', 'stats', 'venues'));
+    }
+
+    /**
+     * Calendar view: show all reservations (regardless of status) and official events.
+     */
+    public function calendar(Request $request)
+    {
+        // Get all reservations for calendar view (regardless of status)
+        $reservations = Reservation::with(['user','venue'])
+            ->orderBy('start_date')
+            ->get(['id','user_id','venue_id','event_title','start_date','end_date','status','final_price','capacity','purpose']);
+
+        $events = Event::with(['venue'])
+            ->orderBy('start_date')
+            ->get(['id','venue_id','title','organizer','start_date','end_date','status','max_participants']);
+
+        return view('iosa.reservations.calendar', [
+            'reservations' => $reservations,
+            'events' => $events,
+        ]);
     }
 
     /**

@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\VenueController;
 use App\Http\Controllers\IOSA\IOSAController;
 use App\Http\Controllers\IOSA\ReservationController as IOSAReservationController;
+use App\Http\Controllers\IOSA\EventController as IOSAEventController;
 
 use App\Http\Controllers\Admin\EventController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
@@ -98,10 +99,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/reservation-reports-export', [IOSAController::class, 'exportReservationReports'])->name('reservation-reports.export');
         
         // Reservations Routes
+        Route::get('reservations/calendar', [IOSAReservationController::class, 'calendar'])->name('reservations.calendar');
         Route::resource('reservations', IOSAReservationController::class);
         Route::post('reservations/{id}/approve', [IOSAReservationController::class, 'approve'])->name('reservations.approve');
         Route::post('reservations/{id}/reject', [IOSAReservationController::class, 'reject'])->name('reservations.reject');
         Route::get('reservations/{id}/download-activity-grid', [IOSAReservationController::class, 'downloadActivityGrid'])->name('reservations.download-activity-grid');
+        
+        // IOSA Events Routes
+        Route::get('events', [IOSAEventController::class, 'index'])->name('events.index');
+        Route::get('events/{event}', [IOSAEventController::class, 'show'])->name('events.show');
+        Route::get('events-calendar', [IOSAEventController::class, 'calendar'])->name('events.calendar');
+        
+        // IOSA Profile Routes
+        Route::get('profile', [IOSAController::class, 'profile'])->name('profile');
+        Route::put('profile', [IOSAController::class, 'updateProfile'])->name('profile.update');
+        Route::put('password', [IOSAController::class, 'updatePassword'])->name('password.update');
     });
 
     // Mhadel Routes
@@ -147,6 +159,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/gsu-reports', [OTPReservationController::class, 'gsuReports'])->name('gsu-reports');
         Route::get('/gsu-reports/{report}', [OTPReservationController::class, 'showGsuReport'])->name('gsu-reports.show');
         Route::post('/gsu-reports/{report}/status', [OTPReservationController::class, 'updateGsuReportStatus'])->name('gsu-reports.update-status');
+        Route::get('/reports/reservation-reports', [DrJavierController::class, 'reservationReports'])->name('reports.reservation-reports');
         Route::resource('reservations', OTPReservationController::class);
         Route::post('reservations/{id}/approve', [OTPReservationController::class, 'approve'])->name('reservations.approve');
         Route::post('reservations/{id}/reject', [OTPReservationController::class, 'reject'])->name('reservations.reject');

@@ -156,7 +156,7 @@
 				</div>
 				<div class="search-container">
 					<form method="GET" action="{{ route('gsu.events.index') }}">
-						<input type="text" name="q" value="{{ request('q') }}" placeholder="Search events by title, description, or organizer..." class="search-input">
+						<input type="text" name="search" value="{{ request('search') }}" placeholder="Search by title, ID, description, organizer, or venue..." class="search-input">
 						@if(request('status') && request('status') !== 'all')
 							<input type="hidden" name="status" value="{{ request('status') }}">
 						@endif
@@ -236,7 +236,7 @@
 			<div class="flex flex-wrap gap-2">
 				@php
 					$current = request('status', 'all');
-					$searchQuery = request('q');
+					$searchQuery = request('search');
 					$baseUrl = route('gsu.events.index');
 				@endphp
 				
@@ -279,10 +279,10 @@
 						</a>
 					</span>
 					@endif
-					@if(request('q'))
+					@if(request('search'))
 					<span class="inline-flex items-center px-2 py-1 bg-blue-600 text-white text-xs rounded-full">
-						Search: "{{ request('q') }}"
-						<a href="{{ $baseUrl }}?{{ http_build_query(request()->except(['page', 'q'])) }}" class="ml-2 hover:text-blue-200">
+						Search: "{{ request('search') }}"
+						<a href="{{ $baseUrl }}?{{ http_build_query(request()->except(['page', 'search'])) }}" class="ml-2 hover:text-blue-200">
 							<i class="fas fa-times"></i>
 						</a>
 					</span>
@@ -327,6 +327,9 @@
 									</div>
 									<div class="flex-1 min-w-0">
 										<h3 class="font-bold text-gray-900 text-xl mb-2 line-clamp-2">{{ $event->title }}</h3>
+										<div class="text-xs text-gray-500 font-mono mb-2">
+											ID: {{ $event->event_id ?? 'N/A' }}
+										</div>
 										@if($event->description)
 											<p class="text-sm text-gray-600 line-clamp-2">{{ $event->description }}</p>
 										@endif
@@ -414,17 +417,17 @@
 					</div>
 					<h3 class="text-xl font-semibold text-gray-700 mb-2">No events found</h3>
 					<p class="text-gray-500 mb-6">
-						@if(request('q') && request('status') && request('status') !== 'all')
-							No {{ request('status') }} events match your search for "{{ request('q') }}".
-						@elseif(request('q'))
-							No events match your search for "{{ request('q') }}".
+						@if(request('search') && request('status') && request('status') !== 'all')
+							No {{ request('status') }} events match your search for "{{ request('search') }}".
+						@elseif(request('search'))
+							No events match your search for "{{ request('search') }}".
 						@elseif(request('status') && request('status') !== 'all')
 							No {{ request('status') }} events at the moment.
 						@else
 							No events have been created yet.
 						@endif
 					</p>
-					@if(request('q') || (request('status') && request('status') !== 'all'))
+					@if(request('search') || (request('status') && request('status') !== 'all'))
 						<a href="{{ route('gsu.events.index') }}" 
 						   class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
 							<i class="fas fa-times mr-2"></i>Clear Filters

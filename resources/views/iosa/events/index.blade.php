@@ -1,22 +1,8 @@
-@extends('layouts.mhadel')
+@extends('layouts.iosa')
 
 @section('title', 'Events Management')
 @section('page-title', 'Events Management')
-@section('page-subtitle', 'Create, manage, and monitor all your events')
-
-@section('header-actions')
-	<div class="flex items-center space-x-3">
-		<form action="{{ route('mhadel.events.update-statuses') }}" method="POST" class="inline">
-			@csrf
-			<button type="submit" class="bg-blue-600 text-white px-4 py-3 rounded-xl hover:bg-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center">
-				<i class="fas fa-sync-alt mr-2"></i>Update to Ongoing
-			</button>
-		</form>
-		<a href="{{ route('mhadel.events.create') }}" class="bg-maroon text-white px-6 py-3 rounded-xl hover:bg-red-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center">
-			<i class="fas fa-plus mr-2"></i>Create New Event
-		</a>
-	</div>
-@endsection
+@section('page-subtitle', 'View all events in the system')
 
 @section('content')
 <!-- Google Fonts Import -->
@@ -57,15 +43,6 @@
 		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 		transform: translateY(-4px);
 		border-color: #e5e7eb;
-	}
-	
-	/* Ensure status badge container is always visible */
-	.event-card .absolute {
-		position: absolute;
-		top: 1rem;
-		right: 1rem;
-		z-index: 30;
-		pointer-events: none;
 	}
 	
 	.tab-button {
@@ -155,33 +132,6 @@
 		color: #64748b;
 		font-weight: 500;
 	}
-	
-	.modal {
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		background: rgba(0, 0, 0, 0.5);
-		display: none;
-		justify-content: center;
-		align-items: center;
-		z-index: 1000;
-	}
-	
-	.modal.show {
-		display: flex;
-	}
-	
-	.modal-content {
-		background: white;
-		border-radius: 1rem;
-		padding: 2rem;
-		max-width: 400px;
-		width: 90%;
-		text-align: center;
-		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-	}
 </style>
 
 <div class="space-y-8 font-inter">
@@ -191,10 +141,10 @@
 			<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
 				<div>
 					<h1 class="text-3xl font-bold text-gray-800 font-poppins mb-2">Events Management</h1>
-					<p class="text-gray-600 text-lg">Create, organize, and monitor all your events in one place</p>
+					<p class="text-gray-600 text-lg">View all events in the system</p>
 				</div>
 				<div class="search-container">
-					<form method="GET" action="{{ route('mhadel.events.index') }}">
+					<form method="GET" action="{{ route('iosa.events.index') }}">
 						<input type="text" name="search" value="{{ request('search') }}" placeholder="Search by title, ID, description, organizer, or venue..." class="search-input">
 						@if(request('status') && request('status') !== 'all')
 							<input type="hidden" name="status" value="{{ request('status') }}">
@@ -276,7 +226,7 @@
 				@php
 					$current = request('status', 'all');
 					$searchQuery = request('search');
-					$baseUrl = route('mhadel.events.index');
+					$baseUrl = route('iosa.events.index');
 				@endphp
 				
 				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'all'])) }}" 
@@ -422,38 +372,10 @@
 										Created {{ $event->created_at->diffForHumans() }}
 									</div>
 									<div class="flex space-x-2">
-										<a href="{{ route('mhadel.events.show', $event) }}" 
+										<a href="{{ route('iosa.events.show', $event) }}" 
 										   class="action-button bg-blue-50 text-blue-600 hover:bg-blue-100" title="View Details">
 											<i class="fas fa-eye"></i>
 										</a>
-										<a href="{{ route('mhadel.events.edit', $event) }}" 
-										   class="action-button bg-green-50 text-green-600 hover:bg-green-100" title="Edit Event">
-											<i class="fas fa-edit"></i>
-										</a>
-										@if($event->status !== 'cancelled' && $event->status !== 'completed')
-										<button type="button" 
-												onclick="openCancelModal({{ $event->id }}, '{{ $event->title }}')"
-												class="action-button bg-yellow-50 text-yellow-600 hover:bg-yellow-100" title="Cancel Event">
-											<i class="fas fa-ban"></i>
-										</button>
-										@endif
-										
-										@if($event->status !== 'cancelled' && $event->status !== 'completed')
-										<form action="{{ route('mhadel.events.complete', $event) }}" method="POST" class="inline">
-											@csrf
-											<button type="submit" 
-													class="action-button bg-green-50 text-green-600 hover:bg-green-100" 
-													title="Mark as Complete"
-													onclick="return confirm('Are you sure you want to mark \"{{ $event->title }}\" as completed?')">
-												<i class="fas fa-check-circle"></i>
-											</button>
-										</form>
-										@endif
-										<button type="button" 
-												onclick="openDeleteModal({{ $event->id }}, '{{ $event->title }}')"
-												class="action-button bg-red-50 text-red-600 hover:bg-red-100" title="Delete Event">
-											<i class="fas fa-trash"></i>
-										</button>
 									</div>
 								</div>
 							</div>
@@ -483,118 +405,19 @@
 						@elseif(request('status') && request('status') !== 'all')
 							No {{ request('status') }} events at the moment.
 						@else
-							Get started by creating your first event.
+							No events have been created yet.
 						@endif
 					</p>
-					<div class="flex flex-col sm:flex-row gap-3 justify-center">
-						@if(request('search') || (request('status') && request('status') !== 'all'))
-							<a href="{{ route('mhadel.events.index') }}" 
-							   class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
-								<i class="fas fa-times mr-2"></i>Clear Filters
-							</a>
-						@endif
-						<a href="{{ route('mhadel.events.create') }}" 
-						   class="inline-flex items-center px-6 py-3 bg-maroon text-white rounded-xl hover:bg-red-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105">
-							<i class="fas fa-plus mr-2"></i>Create New Event
+					@if(request('search') || (request('status') && request('status') !== 'all'))
+						<a href="{{ route('iosa.events.index') }}" 
+						   class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+							<i class="fas fa-times mr-2"></i>Clear Filters
 						</a>
-					</div>
+					@endif
 				</div>
 			@endif
 		</div>
 	</div>
 </div>
-
-<!-- Delete Confirmation Modal -->
-<div id="deleteModal" class="modal">
-	<div class="modal-content">
-		<div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-			<i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
-		</div>
-		<h3 class="text-xl font-bold text-gray-800 mb-2">Delete Event</h3>
-		<p class="text-gray-600 mb-6">Are you sure you want to delete "<span id="eventTitle" class="font-semibold"></span>"? This action cannot be undone.</p>
-		
-		<div class="flex justify-center space-x-3">
-			<button onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-				Cancel
-			</button>
-			<form id="deleteForm" method="POST" class="inline">
-				@csrf
-				@method('DELETE')
-				<button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-					Delete Event
-				</button>
-			</form>
-		</div>
-	</div>
-</div>
-
-<!-- Cancel Event Modal -->
-<div id="cancelModal" class="modal">
-	<div class="modal-content">
-		<div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-			<i class="fas fa-exclamation-triangle text-yellow-600 text-2xl"></i>
-		</div>
-		<h3 class="text-xl font-bold text-gray-800 mb-2">Cancel Event</h3>
-		<p class="text-gray-600 mb-6">Are you sure you want to cancel "<span id="cancelEventTitle" class="font-semibold"></span>"? This will mark the event as cancelled but preserve all information.</p>
-		
-		<div class="flex justify-center space-x-3">
-			<button onclick="closeCancelModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-				Keep Event
-			</button>
-			<form id="cancelForm" method="POST" class="inline">
-				@csrf
-				<button type="submit" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors">
-					Cancel Event
-				</button>
-			</form>
-		</div>
-	</div>
-</div>
-
-<script>
-function openDeleteModal(eventId, eventTitle) {
-	document.getElementById('eventTitle').textContent = eventTitle;
-	document.getElementById('deleteForm').action = `/mhadel/events/${eventId}`;
-	document.getElementById('deleteModal').classList.add('show');
-	document.body.style.overflow = 'hidden';
-}
-
-function closeDeleteModal() {
-	document.getElementById('deleteModal').classList.remove('show');
-	document.body.style.overflow = 'auto';
-}
-
-function openCancelModal(eventId, eventTitle) {
-	document.getElementById('cancelEventTitle').textContent = eventTitle;
-	document.getElementById('cancelForm').action = `/mhadel/events/${eventId}/cancel`;
-	document.getElementById('cancelModal').classList.add('show');
-	document.body.style.overflow = 'hidden';
-}
-
-function closeCancelModal() {
-	document.getElementById('cancelModal').classList.remove('show');
-	document.body.style.overflow = 'auto';
-}
-
-// Close modal when clicking outside
-document.getElementById('deleteModal').addEventListener('click', function(e) {
-	if (e.target === this) {
-		closeDeleteModal();
-	}
-});
-
-document.getElementById('cancelModal').addEventListener('click', function(e) {
-	if (e.target === this) {
-		closeCancelModal();
-	}
-});
-
-// Close modal with Escape key
-document.addEventListener('keydown', function(e) {
-	if (e.key === 'Escape') {
-		closeDeleteModal();
-		closeCancelModal();
-	}
-});
-</script>
 @endsection
+

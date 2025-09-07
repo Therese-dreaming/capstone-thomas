@@ -31,7 +31,7 @@
             <div>
                 <label for="search" class="block text-sm font-semibold text-gray-700 mb-1">Search</label>
                 <div class="relative">
-                    <input type="text" id="search" name="q" placeholder="Search by event title..." value="{{ request('q') }}" class="w-full border border-gray-300 rounded-lg p-2 pl-8 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                    <input type="text" id="search" name="q" placeholder="Search by title, ID, purpose, or venue..." value="{{ request('q') }}" class="w-full border border-gray-300 rounded-lg p-2 pl-8 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
                     <div class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400">
                         <i class="fas fa-search"></i>
                     </div>
@@ -200,7 +200,7 @@
                     <form method="GET" action="{{ route('user.reservations.index') }}" class="flex items-center space-x-2">
                         <input type="hidden" name="status" value="{{ $currentStatus ?? 'all' }}" />
                         <div class="relative">
-                            <input type="text" name="q" placeholder="Search reservations..." value="{{ request('q') }}" 
+                            <input type="text" name="q" placeholder="Search by title, ID, purpose, or venue..." value="{{ request('q') }}" 
                                    class="w-64 pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm bg-white/80 backdrop-blur-sm">
                             <div class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
                                 <i class="fas fa-search"></i>
@@ -283,9 +283,14 @@
                                 <!-- Event Header -->
                                 <div class="mb-4">
                                     <div class="flex items-start justify-between mb-2">
-                                        <h3 class="font-bold text-gray-800 text-lg leading-tight group-hover:text-blue-600 transition-colors duration-200">
-                                            {{ $reservation->event_title }}
-                                        </h3>
+                                        <div>
+                                            <h3 class="font-bold text-gray-800 text-lg leading-tight group-hover:text-blue-600 transition-colors duration-200">
+                                                {{ $reservation->event_title }}
+                                            </h3>
+                                            <div class="text-xs text-gray-500 font-mono mt-1">
+                                                ID: {{ $reservation->reservation_id ?? 'N/A' }}
+                                            </div>
+                                        </div>
                                     </div>
                                     
                                     <!-- Venue Info -->

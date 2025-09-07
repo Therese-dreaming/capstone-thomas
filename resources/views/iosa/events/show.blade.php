@@ -1,4 +1,4 @@
-@extends('layouts.gsu')
+@extends('layouts.iosa')
 
 @section('title', $event->title)
 @section('page-title', 'Event Details')
@@ -90,26 +90,26 @@
 					@endif
 				</div>
 				<div class="flex flex-col space-y-3">
-					<a href="{{ route('gsu.events.index') }}" 
+					<a href="{{ route('iosa.events.index') }}" 
 					   class="bg-gray-600 text-white px-6 py-3 rounded-xl hover:bg-gray-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center">
 						<i class="fas fa-arrow-left mr-2"></i>
 						<span>Back to Events</span>
 					</a>
 					
-					@if($event->status !== 'cancelled' && $event->status !== 'completed')
-					<form action="{{ route('gsu.events.complete', $event) }}" method="POST" class="w-full">
-						@csrf
-						<button type="submit" 
-								class="w-full bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center"
-								onclick="return confirm('Are you sure you want to mark this event as completed?')">
-							<i class="fas fa-check-circle mr-2"></i>
-							<span>Mark as Complete</span>
-						</button>
-					</form>
-					@elseif($event->status === 'completed')
+					@if($event->status === 'completed')
 					<div class="w-full bg-green-100 text-green-800 px-6 py-3 rounded-xl flex items-center justify-center font-medium">
 						<i class="fas fa-check-circle mr-2"></i>
 						<span>Event Completed</span>
+					</div>
+					@elseif($event->status === 'cancelled')
+					<div class="w-full bg-red-100 text-red-800 px-6 py-3 rounded-xl flex items-center justify-center font-medium">
+						<i class="fas fa-times-circle mr-2"></i>
+						<span>Event Cancelled</span>
+					</div>
+					@else
+					<div class="w-full bg-blue-100 text-blue-800 px-6 py-3 rounded-xl flex items-center justify-center font-medium">
+						<i class="fas fa-info-circle mr-2"></i>
+						<span>Event {{ ucfirst($event->status) }}</span>
 					</div>
 					@endif
 				</div>
@@ -331,4 +331,5 @@
 		</div>
 	</div>
 </div>
-@endsection 
+@endsection
+

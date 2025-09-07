@@ -26,7 +26,24 @@ class ReservationController extends Controller
 			$query->where('venue_id', $request->venue);
 		}
 		
-		$reservations = $query->orderByDesc('created_at')->paginate(10);
+		// Add search functionality
+		if ($request->filled('search')) {
+			$searchQuery = $request->search;
+			$query->where(function ($q) use ($searchQuery) {
+				$q->where('event_title', 'like', "%{$searchQuery}%")
+				  ->orWhere('reservation_id', 'like', "%{$searchQuery}%")
+				  ->orWhere('purpose', 'like', "%{$searchQuery}%")
+				  ->orWhereHas('user', function ($userQuery) use ($searchQuery) {
+					  $userQuery->where('name', 'like', "%{$searchQuery}%")
+								->orWhere('email', 'like', "%{$searchQuery}%");
+				  })
+				  ->orWhereHas('venue', function ($venueQuery) use ($searchQuery) {
+					  $venueQuery->where('name', 'like', "%{$searchQuery}%");
+				  });
+			});
+		}
+		
+		$reservations = $query->orderByDesc('created_at')->paginate(10)->withQueryString();
 		$venues = \App\Models\Venue::orderBy('name')->get();
 		
 		return view('gsu.reservations.index', compact('reservations','venues'));

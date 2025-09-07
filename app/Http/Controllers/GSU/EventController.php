@@ -24,13 +24,17 @@ class EventController extends Controller
         }
 
         // Apply search filter
-        if ($request->filled('q')) {
-            $search = $request->q;
+        if ($request->filled('search')) {
+            $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('event_id', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%")
                   ->orWhere('organizer', 'like', "%{$search}%")
-                  ->orWhere('department', 'like', "%{$search}%");
+                  ->orWhere('department', 'like', "%{$search}%")
+                  ->orWhereHas('venue', function ($venueQuery) use ($search) {
+                      $venueQuery->where('name', 'like', "%{$search}%");
+                  });
             });
         }
 
@@ -42,7 +46,7 @@ class EventController extends Controller
             $query->where('start_date', '<=', $request->end_date . ' 23:59:59');
         }
 
-        $events = $query->orderByDesc('created_at')->paginate(12);
+        $events = $query->orderByDesc('created_at')->paginate(12)->withQueryString();
         $venues = Venue::orderBy('name')->get();
 
         return view('gsu.events.index', compact('events', 'venues'));

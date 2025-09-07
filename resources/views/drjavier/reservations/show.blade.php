@@ -157,6 +157,9 @@ use Illuminate\Support\Facades\Storage;
                 <div class="flex-1">
                     <h1 class="text-3xl font-bold text-gray-800 font-poppins mb-2">{{ $reservation->event_title }}</h1>
                     <p class="text-gray-600 text-lg">Submitted by {{ $reservation->user->name }}</p>
+                    <div class="text-sm text-gray-500 font-mono mt-2">
+                        Reservation ID: {{ $reservation->reservation_id ?? 'N/A' }}
+                    </div>
                     <div class="flex items-center mt-3 space-x-4">
                         <div class="flex items-center text-sm text-gray-500">
                             <i class="fas fa-calendar mr-2 text-maroon"></i>

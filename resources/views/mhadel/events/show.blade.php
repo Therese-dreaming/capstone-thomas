@@ -175,6 +175,9 @@
                         </div>
                         <div>
                             <h1 class="text-3xl font-bold text-gray-800 font-poppins mb-2">{{ $event->title }}</h1>
+                            <div class="text-sm text-gray-500 font-mono mb-2">
+                                Event ID: {{ $event->event_id ?? 'N/A' }}
+                            </div>
                             @if($event->description)
                                 <p class="text-gray-600 text-lg max-w-2xl">{{ $event->description }}</p>
                             @endif

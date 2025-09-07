@@ -69,9 +69,23 @@ class UserController extends Controller
 	public function index()
 	{
 		$currentStatus = request()->query('status', 'all');
+		$searchQuery = request()->query('q');
+		
 		$query = Reservation::where('user_id', Auth::id())
 			->with(['venue'])
 			->latest();
+
+		// Add search functionality
+		if ($searchQuery) {
+			$query->where(function ($q) use ($searchQuery) {
+				$q->where('event_title', 'like', "%{$searchQuery}%")
+				  ->orWhere('reservation_id', 'like', "%{$searchQuery}%")
+				  ->orWhere('purpose', 'like', "%{$searchQuery}%")
+				  ->orWhereHas('venue', function ($venueQuery) use ($searchQuery) {
+					  $venueQuery->where('name', 'like', "%{$searchQuery}%");
+				  });
+			});
+		}
 
 		switch ($currentStatus) {
 			case 'pending':

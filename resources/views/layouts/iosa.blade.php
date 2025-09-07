@@ -54,9 +54,27 @@
 					<!-- Reservations -->
 					<li>
 						<a href="{{ route('iosa.reservations.index') }}"
-						   class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('iosa.reservations*') ? 'active-maroon' : 'text-gray-700' }}">
+						   class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('iosa.reservations*') && !request()->routeIs('iosa.reservations.calendar') ? 'active-maroon' : 'text-gray-700' }}">
 							<i class="fas fa-calendar-check w-5 h-5"></i>
 							<span class="font-medium">Reservations</span>
+						</a>
+					</li>
+
+					<!-- Events -->
+					<li>
+						<a href="{{ route('iosa.events.index') }}"
+						   class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('iosa.events*') ? 'active-maroon' : 'text-gray-700' }}">
+							<i class="fas fa-calendar-alt w-5 h-5"></i>
+							<span class="font-medium">Events</span>
+						</a>
+					</li>
+
+					<!-- Calendar -->
+					<li>
+						<a href="{{ route('iosa.reservations.calendar') }}"
+						   class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('iosa.reservations.calendar') ? 'active-maroon' : 'text-gray-700' }}">
+							<i class="fas fa-calendar w-5 h-5"></i>
+							<span class="font-medium">Calendar</span>
 						</a>
 					</li>
 
@@ -80,8 +98,8 @@
 
 					<!-- Settings -->
 					<li>
-						<a href="#" 
-						   class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon text-gray-700">
+						<a href="{{ route('iosa.profile') }}" 
+						   class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('iosa.profile*') ? 'active-maroon' : 'text-gray-700' }}">
 							<i class="fas fa-cog w-5 h-5"></i>
 							<span class="font-medium">Settings</span>
 						</a>

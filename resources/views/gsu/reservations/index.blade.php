@@ -133,14 +133,26 @@
                 
                 <!-- Search and Actions -->
                 <div class="flex items-center space-x-3">
-                    <div class="relative">
-                        <input type="text" 
-                               placeholder="Search reservations..." 
-                               class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 text-sm w-64">
-                        <div class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                            <i class="fas fa-search"></i>
+                    <form method="GET" action="{{ route('gsu.reservations.index') }}" class="flex items-center space-x-2">
+                        <div class="relative">
+                            <input type="text" 
+                                   name="search"
+                                   placeholder="Search by title, ID, purpose, or venue..." 
+                                   value="{{ request('search') }}"
+                                   class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 text-sm w-64">
+                            <div class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                <i class="fas fa-search"></i>
+                            </div>
                         </div>
-                    </div>
+                        <button type="submit" class="px-3 py-2 bg-maroon text-white rounded-lg hover:bg-red-700 transition-all duration-200 text-sm">
+                            <i class="fas fa-search mr-1"></i>Search
+                        </button>
+                        @if(request('search'))
+                            <a href="{{ route('gsu.reservations.index', request()->except('search')) }}" class="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 text-sm">
+                                <i class="fas fa-times mr-1"></i>Clear
+                            </a>
+                        @endif
+                    </form>
                     
                     <!-- Date Filter -->
                     <form method="GET" action="{{ route('gsu.reservations.index') }}" class="flex items-center space-x-2">
@@ -240,7 +252,12 @@
                             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                                 <!-- Event Details -->
                                 <div class="space-y-3">
-                                    <h3 class="font-bold text-gray-800 text-lg mb-3">{{ $reservation->event_title }}</h3>
+                                    <div class="mb-3">
+                                        <h3 class="font-bold text-gray-800 text-lg">{{ $reservation->event_title }}</h3>
+                                        <div class="text-xs text-gray-500 font-mono mt-1">
+                                            ID: {{ $reservation->reservation_id ?? 'N/A' }}
+                                        </div>
+                                    </div>
                                     <div class="space-y-2 text-sm text-gray-600">
                                         <div class="flex items-center">
                                             <i class="fas fa-user mr-2 text-maroon w-4"></i>

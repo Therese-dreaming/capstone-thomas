@@ -22,17 +22,22 @@ class EventController extends Controller
         }
 
         // Apply search filter
-        if ($request->filled('q')) {
-            $searchTerm = $request->q;
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
             $query->where(function($q) use ($searchTerm) {
                 $q->where('title', 'like', "%{$searchTerm}%")
+                  ->orWhere('event_id', 'like', "%{$searchTerm}%")
                   ->orWhere('description', 'like', "%{$searchTerm}%")
-                  ->orWhere('organizer', 'like', "%{$searchTerm}%");
+                  ->orWhere('organizer', 'like', "%{$searchTerm}%")
+                  ->orWhere('department', 'like', "%{$searchTerm}%")
+                  ->orWhereHas('venue', function ($venueQuery) use ($searchTerm) {
+                      $venueQuery->where('name', 'like', "%{$searchTerm}%");
+                  });
             });
         }
 
         // Get paginated results
-        $events = $query->latest()->paginate(10);
+        $events = $query->latest()->paginate(10)->withQueryString();
 
         return view('mhadel.events.index', compact('events'));
     }

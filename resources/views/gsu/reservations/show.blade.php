@@ -68,9 +68,12 @@
                         <div class="w-10 h-10 bg-maroon rounded-lg flex items-center justify-center mr-3">
                             <i class="fas fa-calendar-check text-white text-lg"></i>
                         </div>
-                        Reservation Details
+                        {{ $reservation->event_title }}
                     </h1>
                     <p class="text-gray-600 font-medium">Final approved reservation information and details</p>
+                    <div class="text-sm text-gray-500 font-mono mt-2">
+                        Reservation ID: {{ $reservation->reservation_id ?? 'N/A' }}
+                    </div>
                 </div>
                 
                 <!-- Action Buttons -->

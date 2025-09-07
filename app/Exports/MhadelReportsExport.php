@@ -91,7 +91,7 @@ class MhadelReportsExport implements FromCollection, WithHeadings, WithMapping, 
         $duration = $startDate && $endDate ? $startDate->diffInHours($endDate) : 0;
 
         return [
-            $reservation->id,
+            $reservation->reservation_id ?? $reservation->id,
             $reservation->event_title ?? 'N/A',
             $reservation->purpose ?? 'N/A',
             optional($reservation->user)->name ?? 'N/A',

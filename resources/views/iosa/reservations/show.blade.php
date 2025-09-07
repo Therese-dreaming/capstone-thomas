@@ -168,6 +168,9 @@ use Illuminate\Support\Facades\Storage;
                 <div>
                     <h1 class="text-xl font-bold font-poppins">{{ $reservation->event_title }}</h1>
                     <p class="text-gray-200 text-sm mt-1">Submitted by {{ $reservation->user->name }}</p>
+                    <div class="text-xs text-gray-300 font-mono mt-1">
+                        Reservation ID: {{ $reservation->reservation_id ?? 'N/A' }}
+                    </div>
                 </div>
                 <div class="flex items-center space-x-3">
                     @if($reservation->status === 'pending')

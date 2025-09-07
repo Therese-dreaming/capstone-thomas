@@ -53,11 +53,28 @@ class ReservationController extends Controller
 			});
 		}
 		
+		// Add search functionality
+		if ($request->filled('search')) {
+			$searchQuery = $request->search;
+			$query->where(function ($q) use ($searchQuery) {
+				$q->where('event_title', 'like', "%{$searchQuery}%")
+				  ->orWhere('reservation_id', 'like', "%{$searchQuery}%")
+				  ->orWhere('purpose', 'like', "%{$searchQuery}%")
+				  ->orWhereHas('user', function ($userQuery) use ($searchQuery) {
+					  $userQuery->where('name', 'like', "%{$searchQuery}%")
+								->orWhere('email', 'like', "%{$searchQuery}%");
+				  })
+				  ->orWhereHas('venue', function ($venueQuery) use ($searchQuery) {
+					  $venueQuery->where('name', 'like', "%{$searchQuery}%");
+				  });
+			});
+		}
+		
 		$reservations = $query->select([
 			'id', 'user_id', 'venue_id', 'event_title', 'start_date', 'end_date', 
 			'purpose', 'status', 'notes', 'base_price', 'discount_percentage', 'final_price', 
 			'price_per_hour', 'duration_hours', 'equipment_details', 'capacity', 'created_at'
-		])->with(['user', 'venue'])->orderBy('created_at', 'desc')->paginate(10);
+		])->with(['user', 'venue'])->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
 		
 		$stats = [
 			'total' => Reservation::whereIn('status', ['approved_mhadel', 'approved_OTP', 'rejected_OTP'])->count(),
