@@ -23,6 +23,7 @@
                     <option value="all" {{ ($currentStatus ?? request('status','all'))=='all' ? 'selected' : '' }}>All Reservations</option>
                     <option value="pending" {{ ($currentStatus ?? request('status'))=='pending' ? 'selected' : '' }}>Pending / In Review</option>
                     <option value="approved" {{ ($currentStatus ?? request('status'))=='approved' ? 'selected' : '' }}>Approved</option>
+                    <option value="completed" {{ ($currentStatus ?? request('status'))=='completed' ? 'selected' : '' }}>Completed</option>
                     <option value="rejected" {{ ($currentStatus ?? request('status'))=='rejected' ? 'selected' : '' }}>Rejected</option>
                 </select>
             </div>
@@ -96,6 +97,11 @@
         color: #991B1B; 
         border-color: #EF4444;
     }
+    .status-completed { 
+        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); 
+        color: #374151; 
+        border-color: #9CA3AF;
+    }
     
     .stats-card {
         background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
@@ -128,7 +134,7 @@
 
 <div class="space-y-6 font-inter animate-fadeIn">
     <!-- Enhanced Stats Overview -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="stats-card rounded-xl shadow-md p-4 border border-gray-100 flex items-center group">
             <div class="rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 p-3 mr-3 group-hover:scale-110 transition-transform duration-300">
                 <i class="fas fa-calendar-check text-white text-xl"></i>
@@ -159,6 +165,17 @@
                 <p class="text-xs text-gray-500 font-medium mb-1">Pending</p>
                 <h3 class="text-2xl font-bold text-gray-800">{{ $counts['pending'] ?? 0 }}</h3>
                 <p class="text-xs text-amber-600 font-medium mt-1">Under review</p>
+            </div>
+        </div>
+        
+        <div class="stats-card rounded-xl shadow-md p-4 border border-gray-100 flex items-center group">
+            <div class="rounded-xl bg-gradient-to-br from-gray-500 to-gray-600 p-3 mr-3 group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-check-double text-white text-xl"></i>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 font-medium mb-1">Completed</p>
+                <h3 class="text-2xl font-bold text-gray-800">{{ $counts['completed'] ?? 0 }}</h3>
+                <p class="text-xs text-gray-600 font-medium mt-1">Successfully finished</p>
             </div>
         </div>
     </div>
@@ -220,6 +237,12 @@
                 <span>Rejected</span>
                 <span class="bg-red-200 text-red-700 text-xs px-2 py-0.5 rounded-full">{{ $counts['rejected'] ?? 0 }}</span>
             </a>
+            <a href="{{ route('user.reservations.index', ['status' => 'completed'] + request()->except('page','status')) }}" 
+               class="px-6 py-3 transition-all duration-200 border-b-2 {{ ($currentStatus ?? '')=='completed' ? 'border-gray-500 text-gray-600 font-semibold bg-white' : 'text-gray-500 hover:text-gray-700 border-transparent hover:bg-white/50' }} flex items-center space-x-2 text-sm">
+                <i class="fas fa-check-double"></i>
+                <span>Completed</span>
+                <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full">{{ $counts['completed'] ?? 0 }}</span>
+            </a>
         </div>
         
         <!-- Reservations Grid -->
@@ -241,6 +264,11 @@
                                 @case('approved_OTP')
                                     <div class="status-badge status-approved">
                                         <i class="fas fa-check-circle mr-1"></i> Approved
+                                    </div>
+                                    @break
+                                @case('completed')
+                                    <div class="status-badge status-completed">
+                                        <i class="fas fa-check-double mr-1"></i> Completed
                                     </div>
                                     @break
                                 @case('rejected')

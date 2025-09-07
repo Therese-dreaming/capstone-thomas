@@ -103,6 +103,9 @@
         if (in_array($status, ['approved','approved_OTP'])) { 
             $badge = ['class' => 'bg-green-100 text-green-800 border-green-300', 'icon' => 'fa-check-circle', 'label' => 'Approved']; 
         }
+        if ($status === 'completed') { 
+            $badge = ['class' => 'bg-gray-100 text-gray-800 border-gray-300', 'icon' => 'fa-check-double', 'label' => 'Completed']; 
+        }
         if (in_array($status, ['rejected','rejected_OTP'])) { 
             $badge = ['class' => 'bg-red-100 text-red-800 border-red-300', 'icon' => 'fa-times-circle', 'label' => 'Rejected']; 
         }
@@ -272,7 +275,8 @@
                     ['key' => 'submitted', 'label' => 'Submitted', 'icon' => 'fa-paper-plane'],
                     ['key' => 'iosa', 'label' => 'IOSA Review', 'icon' => 'fa-eye'],
                     ['key' => 'mhadel', 'label' => 'Ms. Mhadel Review', 'icon' => 'fa-user-check'],
-                    ['key' => 'otp', 'label' => 'Final Approval (OTP)', 'icon' => 'fa-shield-check'],
+                    ['key' => 'otp', 'label' => 'Final Approval (OTP)', 'icon' => 'fa-shield-alt'],
+                    ['key' => 'gsu', 'label' => 'GSU Completion', 'icon' => 'fa-tools'],
                 ];
                 $currentIndex = 0; $failed = false; $doneSteps = 1;
                 switch ($reservation->status) {
@@ -284,7 +288,9 @@
                         $currentIndex = 3; $doneSteps = 3; break;
                     case 'approved':
                     case 'approved_OTP':
-                        $currentIndex = 3; $doneSteps = 4; break;
+                        $currentIndex = 4; $doneSteps = 4; break;
+                    case 'completed':
+                        $currentIndex = 4; $doneSteps = 5; break;
                     case 'rejected':
                     case 'rejected_OTP':
                         $currentIndex = 3; $doneSteps = 3; $failed = true; break;
@@ -356,6 +362,9 @@
                             @if($i === 0 && $reservation->created_at)
                                 <div class="text-xs text-gray-500 mb-2">{{ $reservation->created_at->format('M d, Y g:i A') }}</div>
                             @endif
+                            @if($i === 4 && $reservation->status === 'completed' && $reservation->completion_date)
+                                <div class="text-xs text-gray-500 mb-2">Completed on {{ $reservation->completion_date->format('M d, Y g:i A') }}</div>
+                            @endif
                             <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
                                 {{ $state === 'done' ? 'bg-green-100 text-green-800' : '' }}
                                 {{ $state === 'current' ? 'bg-blue-100 text-blue-800' : '' }}
@@ -375,6 +384,21 @@
                         </div>
                     </div>
                 @endforeach
+                
+                @if($reservation->status === 'completed' && $reservation->reports && $reservation->reports->count() > 0)
+                    <div class="relative flex items-start mb-6">
+                        <div class="w-6 h-6 rounded-full flex items-center justify-center border-2 timeline-dot bg-orange-500 border-orange-500 text-white">
+                            <i class="fas fa-exclamation-triangle text-xs"></i>
+                        </div>
+                        <div class="ml-4 flex-1">
+                            <div class="text-sm font-medium text-gray-800 mb-1">Reported Issues</div>
+                            <div class="text-xs text-gray-500 mb-2">{{ $reservation->reports->count() }} issue(s) reported</div>
+                            <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                <i class="fas fa-exclamation-triangle mr-1"></i> Issues Found
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

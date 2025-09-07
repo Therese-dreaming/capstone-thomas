@@ -60,6 +60,15 @@
 						</a>
 					</li>
 
+					<!-- Reservation Reports -->
+					<li>
+						<a href="{{ route('iosa.reservation-reports') }}" 
+						   class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('iosa.reservation-reports*') ? 'active-maroon' : 'text-gray-700' }}">
+							<i class="fas fa-chart-bar w-5 h-5"></i>
+							<span class="font-medium">Reservation Reports</span>
+						</a>
+					</li>
+
 					<!-- Reports -->
 					<li>
 						<a href="{{ route('iosa.reports') }}" 

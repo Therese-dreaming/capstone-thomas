@@ -67,35 +67,37 @@
 		</div>
 		<!-- View Toggle and Calendar Status Filter -->
 		<div class="p-4 border-b border-gray-200 bg-gray-50">
-			<div class="flex items-center justify-between mb-4">
-				<h3 class="text-lg font-medium text-gray-800">View:</h3>
-				<div class="flex items-center space-x-2">
-					<button onclick="showCalendarView()" id="calendar-view-btn" class="px-4 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn active">
-						<i class="fas fa-calendar-alt mr-2"></i>Calendar
-					</button>
-					<button onclick="showScheduleView()" id="schedule-view-btn" class="px-4 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn">
-						<i class="fas fa-clock mr-2"></i>Schedule
-					</button>
+			<div class="flex items-center justify-between">
+				<div class="flex items-center space-x-4">
+					<h3 class="text-lg font-medium text-gray-800">View:</h3>
+					<div class="flex items-center space-x-2">
+						<button onclick="showCalendarView()" id="calendar-view-btn" class="px-4 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn active">
+							<i class="fas fa-calendar-alt mr-2"></i>Calendar
+						</button>
+						<button onclick="showScheduleView()" id="schedule-view-btn" class="px-4 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn">
+							<i class="fas fa-clock mr-2"></i>Schedule
+						</button>
+					</div>
 				</div>
-			</div>
-							<div class="flex items-center justify-between">
-				<h3 class="text-lg font-medium text-gray-800">Filter by Status:</h3>
-				<div class="flex items-center space-x-2">
-					<button onclick="filterCalendarByStatus('all')" id="filter-all" class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn active">
-						All
-					</button>
-					<button onclick="filterCalendarByStatus('pending')" id="filter-pending" class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn">
-						Pending
-					</button>
-					<button onclick="filterCalendarByStatus('approved')" id="filter-approved" class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn">
-						Approved
-					</button>
-					<button onclick="filterCalendarByStatus('completed')" id="filter-completed" class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn">
-						Completed
-					</button>
-					<button onclick="filterCalendarByStatus('rejected')" id="filter-rejected" class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn">
-						Rejected
-					</button>
+				<div class="flex items-center space-x-4">
+					<h3 class="text-lg font-medium text-gray-800">Filter by Status:</h3>
+					<div class="flex items-center space-x-2">
+						<button onclick="filterCalendarByStatus('all')" id="filter-all" class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn active">
+							All
+						</button>
+						<button onclick="filterCalendarByStatus('pending')" id="filter-pending" class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn">
+							Pending
+						</button>
+						<button onclick="filterCalendarByStatus('approved')" id="filter-approved" class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn">
+							Approved
+						</button>
+						<button onclick="filterCalendarByStatus('completed')" id="filter-completed" class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn">
+							Completed
+						</button>
+						<button onclick="filterCalendarByStatus('rejected')" id="filter-rejected" class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors calendar-filter-btn">
+							Rejected
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>

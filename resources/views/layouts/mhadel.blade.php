@@ -7,30 +7,58 @@
     <title>@yield('title', 'Ms. Mhadel Dashboard') - PCC Venue Reservation</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        .bg-maroon {
-            background-color: #8B1818;
+        :root { --maroon: #8B1818; --maroon-dark: #6f1313; --bg: #F4F5F7; }
+        body { font-family: 'Poppins', sans-serif; }
+        .font-poppins { font-family: 'Poppins', sans-serif; }
+        .font-montserrat { font-family: 'Montserrat', sans-serif; }
+        .bg-maroon { background-color: var(--maroon); }
+        .text-maroon { color: var(--maroon); }
+        .border-maroon { border-color: var(--maroon); }
+        .sidebar-transition { transition: all 0.2s ease; }
+        .sidebar { background: #ffffff; color: #111827; }
+        .sidebar a { color: #374151; }
+        .sidebar a:hover { background: #F3F4F6; color: #111827; }
+        .nav-active { background: var(--maroon); color: white !important; }
+        .nav-active i { color: white !important; }
+        .header { background: #ffffff; }
+        .badge { background: #f3f4f6; color: #374151; }
+        
+        /* Profile page input styling - override Tailwind defaults */
+        .profile-page input[type="text"],
+        .profile-page input[type="email"],
+        .profile-page input[type="password"],
+        .profile-page input[type="tel"],
+        .profile-page input[type="number"],
+        .profile-page select,
+        .profile-page textarea {
+            border-width: 2px !important;
+            border-color: rgb(237, 239, 241) !important; /* gray-300 */
+            height: 44px !important; /* ~ h-11 */
+            padding-left: 0.75rem !important; /* pl-3 */
+            padding-right: 0.75rem !important; /* pr-3 */
+            border-radius: 0.5rem !important; /* rounded-lg */
+            background-color: white !important;
         }
-        .text-maroon {
-            color: #8B1818;
+        .profile-page textarea { 
+            height: auto !important; 
+            min-height: 120px !important; 
+            padding-top: 0.5rem !important; 
+            padding-bottom: 0.5rem !important; 
         }
-        .border-maroon {
-            border-color: #8B1818;
-        }
-        .hover-bg-maroon:hover {
-            background-color: rgba(139, 24, 24, 0.1);
-        }
-        .active-maroon {
-            background-color: #8B1818;
-            color: white;
-        }
-        .sidebar-transition {
-            transition: all 0.3s ease;
+        .profile-page input:focus,
+        .profile-page select:focus,
+        .profile-page textarea:focus {
+            outline: none !important;
+            border-color: #8B1818 !important; /* maroon */
+            box-shadow: 0 0 0 3px rgba(139,24,24,0.15) !important;
         }
         /* Loading Overlay */
         .loading-overlay { position: fixed; inset: 0; background: rgba(17,24,39,0.55); backdrop-filter: blur(3px); z-index: 9999; display: none; align-items: center; justify-content: center; }
         .loading-card { background: #fff; border-radius: 1rem; padding: 1.25rem 1.5rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); width: 92%; max-width: 360px; text-align: center; }
-        .spinner { width: 2rem; height: 2rem; border: 3px solid #eee; border-top-color: #8B1818; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 0.75rem; }
+        .spinner { width: 2rem; height: 2rem; border: 3px solid #eee; border-top-color: var(--maroon); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 0.75rem; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
@@ -48,15 +76,13 @@
     
     <div class="flex h-screen">
         <!-- Sidebar -->
-        <div class="w-64 bg-white shadow-lg flex flex-col">
+        <div class="w-64 shadow-lg flex flex-col sidebar">
             <!-- Logo and Brand -->
             <div class="p-6 border-b border-gray-200">
                 <div class="flex items-center space-x-3">
-                    <div class="w-8 h-8 bg-maroon rounded flex items-center justify-center">
-                        <i class="fas fa-user-tie text-white text-sm"></i>
-                    </div>
+                    <img src="{{ asset('images/pcclogo.png') }}" alt="PCC Logo" class="w-10 h-10 object-contain rounded bg-white p-1">
                     <div>
-                        <h1 class="text-lg font-bold text-gray-800">Ms. Mhadel</h1>
+                        <h1 class="text-lg font-semibold text-gray-800">Ms. Mhadel</h1>
                         <p class="text-xs text-gray-500">PCC Venue System</p>
                     </div>
                 </div>
@@ -64,11 +90,11 @@
 
             <!-- Navigation Menu -->
             <nav class="flex-1 p-4">
-                <ul class="space-y-2">
+                <ul class="space-y-1">
                     <!-- Dashboard -->
                     <li>
                         <a href="{{ route('mhadel.dashboard') }}" 
-                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('mhadel.dashboard') ? 'active-maroon' : 'text-gray-700' }}">
+                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition {{ request()->routeIs('mhadel.dashboard') ? 'nav-active' : '' }}">
                             <i class="fas fa-tachometer-alt w-5 h-5"></i>
                             <span class="font-medium">Dashboard</span>
                         </a>
@@ -77,7 +103,7 @@
                     <!-- Reservations -->
                     <li>
                         <a href="{{ route('mhadel.reservations.index') }}"
-                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('mhadel.reservations.index') ? 'active-maroon' : 'text-gray-700' }}">
+                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition {{ request()->routeIs('mhadel.reservations.index') ? 'nav-active' : '' }}">
                             <i class="fas fa-calendar-check w-5 h-5"></i>
                             <span class="font-medium">Reservations</span>
                         </a>
@@ -86,7 +112,7 @@
                     <!-- Calendar -->
                     <li>
                         <a href="{{ route('mhadel.reservations.calendar') }}"
-                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('mhadel.reservations.calendar') ? 'active-maroon' : 'text-gray-700' }}">
+                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition {{ request()->routeIs('mhadel.reservations.calendar') ? 'nav-active' : '' }}">
                             <i class="fas fa-calendar-alt w-5 h-5"></i>
                             <span class="font-medium">Calendar</span>
                         </a>
@@ -95,7 +121,7 @@
                     <!-- Venues -->
                     <li>
                         <a href="{{ route('mhadel.venues.index') }}"
-                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('mhadel.venues*') ? 'active-maroon' : 'text-gray-700' }}">
+                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition {{ request()->routeIs('mhadel.venues*') ? 'nav-active' : '' }}">
                             <i class="fas fa-building w-5 h-5"></i>
                             <span class="font-medium">Venues</span>
                         </a>
@@ -104,7 +130,7 @@
                     <!-- Events -->
                     <li>
                         <a href="{{ route('mhadel.events.index') }}"
-                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('mhadel.events*') ? 'active-maroon' : 'text-gray-700' }}">
+                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition {{ request()->routeIs('mhadel.events*') ? 'nav-active' : '' }}">
                             <i class="fas fa-calendar-alt w-5 h-5"></i>
                             <span class="font-medium">Events</span>
                         </a>
@@ -113,7 +139,7 @@
                     <!-- Reports -->
                     <li>
                         <a href="{{ route('mhadel.reports') }}" 
-                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('mhadel.reports') ? 'active-maroon' : 'text-gray-700' }}">
+                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition {{ request()->routeIs('mhadel.reports') ? 'nav-active' : '' }}">
                             <i class="fas fa-chart-bar w-5 h-5"></i>
                             <span class="font-medium">Reports</span>
                         </a>
@@ -122,7 +148,7 @@
                     <!-- GSU Reports -->
                     <li>
                         <a href="{{ route('mhadel.gsu-reports') }}" 
-                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('mhadel.gsu-reports*') ? 'active-maroon' : 'text-gray-700' }}">
+                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition {{ request()->routeIs('mhadel.gsu-reports*') ? 'nav-active' : '' }}">
                             <i class="fas fa-exclamation-triangle w-5 h-5"></i>
                             <span class="font-medium">GSU Reports</span>
                         </a>
@@ -130,8 +156,8 @@
 
                     <!-- Settings -->
                     <li>
-                        <a href="#" 
-                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon text-gray-700">
+                        <a href="{{ route('mhadel.profile') }}" 
+                           class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition {{ request()->routeIs('mhadel.profile') ? 'nav-active' : '' }}">
                             <i class="fas fa-cog w-5 h-5"></i>
                             <span class="font-medium">Settings</span>
                         </a>
@@ -143,11 +169,11 @@
             <div class="border-t border-gray-200 p-4">
                 <!-- User Info -->
                 <div class="flex items-center space-x-3 mb-4">
-                    <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
                         <i class="fas fa-user-tie text-gray-600 text-sm"></i>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-gray-700 truncate">
+                        <p class="text-sm font-medium text-gray-800 truncate">
                             {{ Auth::user()->name ?? 'Ms. Mhadel' }}
                         </p>
                         <p class="text-xs text-gray-500 truncate">
@@ -157,10 +183,10 @@
                 </div>
 
                 <!-- Logout Button -->
-                <form action="{{ route('logout') }}" method="POST" class="w-full">
+                <form action="{{ route('logout') }}" method="POST">
                     @csrf
                     <button type="submit" 
-                            class="w-full flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon text-gray-700">
+                            class="w-full flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover:bg-gray-100 text-gray-700">
                         <i class="fas fa-sign-out-alt w-5 h-5"></i>
                         <span class="font-medium">Logout</span>
                     </button>
@@ -170,15 +196,12 @@
 
         <!-- Main Content -->
         <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Header -->
-            <header class="bg-white shadow-sm border-b border-gray-200">
-                <div class="flex items-center justify-between px-6 py-4">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-800">@yield('page-title', 'Dashboard')</h2>
-                        @hasSection('page-subtitle')
-                            <p class="text-gray-600">@yield('page-subtitle')</p>
-                        @endif
-                    </div>
+            <!-- Top Header -->
+            <header class="header shadow-sm border-b border-gray-200 p-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-semibold text-gray-800">
+                        @yield('page-title', 'Dashboard')
+                    </h2>
                     
                     <div class="flex items-center space-x-3">
                         @hasSection('header-actions')
@@ -227,32 +250,63 @@
                 </div>
             </header>
 
-            <!-- Content -->
+            <!-- Main Content Area -->
             <main class="flex-1 overflow-y-auto p-6">
-                <!-- Toast Notifications -->
+                <!-- Success/Error Messages -->
                 @if(session('success'))
-                    <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                        <span class="block sm:inline">{{ session('success') }}</span>
+                    <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                            <p class="text-green-700 text-sm">{{ session('success') }}</p>
+                        </div>
                     </div>
                 @endif
-                
+
                 @if(session('error'))
-                    <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                        <span class="block sm:inline">{{ session('error') }}</span>
+                    <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                            <p class="text-red-700 text-sm">{{ session('error') }}</p>
+                        </div>
                     </div>
                 @endif
-                
+
                 @if(session('info'))
-                    <div class="mb-4 bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative">
-                        <span class="block sm:inline">{{ session('info') }}</span>
+                    <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                            <p class="text-blue-700 text-sm">{{ session('info') }}</p>
+                        </div>
                     </div>
                 @endif
-                
-                				@yield('content')
-			</main>
+
+                @if($errors->any())
+                    @foreach($errors->all() as $error)
+                        <div class="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center">
+                            <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+                            <p class="text-red-700 text-sm">{{ $error }}</p>
+                        </div>
+                    @endforeach
+                @endif
+
+                <!-- Page Content -->
+                @yield('content')
+            </main>
 		</div>
 	</div>
     <script>
+        // Add active state handling (no gradient; solid colors)
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('nav a');
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('nav-active');
+                }
+            });
+        });
+
+        // Notifications dropdown toggle
         document.addEventListener('DOMContentLoaded', function(){
             const bell=document.getElementById('notifBell');
             const dd=document.getElementById('notifDropdown');
@@ -272,8 +326,10 @@
         function hideLoading(){ document.getElementById('globalLoading').style.display='none'; }
 
         // Auto-show for forms with data-loading attribute
-        document.querySelectorAll('form[data-loading]')?.forEach(frm=>{
-            frm.addEventListener('submit', function(){ showLoading(frm.getAttribute('data-loading')||'Processing…'); });
+        document.addEventListener('DOMContentLoaded', function(){
+            document.querySelectorAll('form[data-loading]')?.forEach(frm=>{
+                frm.addEventListener('submit', function(){ showLoading(frm.getAttribute('data-loading')||'Processing…'); });
+            });
         });
     </script>
     @stack('scripts')

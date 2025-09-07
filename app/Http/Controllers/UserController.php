@@ -12,19 +12,58 @@ use App\Models\User;
 use App\Models\Notification;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ReservationSubmitted;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
 	public function dashboard()
 	{
 		$user = Auth::user();
+		
+		// Get recent reservations
 		$reservations = Reservation::where('user_id', $user->id)
 			->with(['venue'])
 			->latest()
 			->take(5)
 			->get();
 
-		return view('user.dashboard', compact('reservations'));
+		// Calculate stats
+		$stats = [
+			'total' => Reservation::where('user_id', $user->id)->count(),
+			'approved' => Reservation::where('user_id', $user->id)->whereIn('status', ['approved', 'approved_OTP'])->count(),
+			'pending' => Reservation::where('user_id', $user->id)->whereIn('status', ['pending', 'approved_IOSA', 'approved_mhadel'])->count(),
+			'completed' => Reservation::where('user_id', $user->id)->where('status', 'completed')->count(),
+			'rejected' => Reservation::where('user_id', $user->id)->whereIn('status', ['rejected', 'rejected_OTP'])->count(),
+		];
+
+		// Get monthly data for the last 6 months
+		$monthlyData = $this->getMonthlyData($user->id);
+
+		return view('user.dashboard', compact('reservations', 'stats', 'monthlyData'));
+	}
+
+	private function getMonthlyData($userId)
+	{
+		$months = [];
+		$data = [];
+		
+		// Get last 6 months
+		for ($i = 5; $i >= 0; $i--) {
+			$date = Carbon::now()->subMonths($i);
+			$months[] = $date->format('M Y');
+			
+			$count = Reservation::where('user_id', $userId)
+				->whereYear('created_at', $date->year)
+				->whereMonth('created_at', $date->month)
+				->count();
+			
+			$data[] = $count;
+		}
+
+		return [
+			'labels' => $months,
+			'data' => $data
+		];
 	}
 
 	public function index()
@@ -41,6 +80,9 @@ class UserController extends Controller
 			case 'approved':
 				$query->whereIn('status', ['approved', 'approved_OTP']);
 				break;
+			case 'completed':
+				$query->where('status', 'completed');
+				break;
 			case 'rejected':
 				$query->whereIn('status', ['rejected', 'rejected_OTP']);
 				break;
@@ -56,6 +98,7 @@ class UserController extends Controller
 			'all' => Reservation::where('user_id', Auth::id())->count(),
 			'pending' => Reservation::where('user_id', Auth::id())->whereIn('status', ['pending', 'approved_IOSA', 'approved_mhadel'])->count(),
 			'approved' => Reservation::where('user_id', Auth::id())->whereIn('status', ['approved', 'approved_OTP'])->count(),
+			'completed' => Reservation::where('user_id', Auth::id())->where('status', 'completed')->count(),
 			'rejected' => Reservation::where('user_id', Auth::id())->whereIn('status', ['rejected', 'rejected_OTP'])->count(),
 		];
 
@@ -233,6 +276,45 @@ class UserController extends Controller
 	{
 		$user = Auth::user();
 		return view('user.profile', compact('user'));
+	}
+
+	public function updateProfile(Request $request)
+	{
+		$user = Auth::user();
+		$request->validate([
+			'first_name' => 'nullable|string|max:255',
+			'last_name' => 'nullable|string|max:255',
+			'name' => 'nullable|string|max:255',
+			'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+			'phone' => 'nullable|string|max:50',
+		]);
+
+		$user->first_name = $request->first_name ?? $user->first_name;
+		$user->last_name = $request->last_name ?? $user->last_name;
+		$user->name = $request->name ?? trim(($request->first_name ?? $user->first_name).' '.($request->last_name ?? $user->last_name)) ?: $user->name;
+		$user->email = $request->email;
+		if ($request->filled('phone')) { $user->phone = $request->phone; }
+		$user->save();
+
+		return redirect()->route('user.profile')->with('success', 'Profile updated successfully.');
+	}
+
+	public function updatePassword(Request $request)
+	{
+		$user = Auth::user();
+		$request->validate([
+			'current_password' => 'required|string',
+			'password' => 'required|string|min:8|confirmed',
+		]);
+
+		if (!Hash::check($request->current_password, $user->password)) {
+			return back()->with('error', 'Current password is incorrect.');
+		}
+
+		$user->password = Hash::make($request->password);
+		$user->save();
+
+		return redirect()->route('user.profile')->with('success', 'Password updated successfully.');
 	}
 
 	// New: API to get unavailable time slots for a venue and date

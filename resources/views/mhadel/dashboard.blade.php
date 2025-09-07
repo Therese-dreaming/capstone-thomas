@@ -238,19 +238,30 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Debug Info (remove this after debugging) -->
-                    <div class="col-span-2 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-                        <h4 class="font-bold text-yellow-800 mb-2">Debug Info:</h4>
-                        <div class="text-sm text-yellow-700 space-y-1">
-                            <div>Total Revenue: ₱{{ number_format($totalRevenue ?? 0) }}</div>
-                            <div>Expected Revenue: ₱{{ number_format($expectedRevenue ?? 0) }}</div>
-                            <div>Expected Revenue Series: {{ json_encode($expectedRevenueSeries ?? []) }}</div>
-                            <div>Current Month: {{ now()->startOfMonth()->format('Y-m-d') }}</div>
-                            <div>Start of Year: {{ now()->startOfYear()->format('Y-m-d') }}</div>
-                            <div>Total Reservations: {{ $totalReservations ?? 0 }}</div>
-                            <div>Recent Reservations Count: {{ $recent_reservations->count() }}</div>
-                            <div>Revenue Series: {{ json_encode($revenueSeries ?? []) }}</div>
+
+                    <div class="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-xl p-6 border border-yellow-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-yellow-700 font-inter font-medium">Avg Price / Reservation</p>
+                                <h3 class="text-2xl font-bold text-yellow-900 font-poppins">₱{{ number_format($averageRevenue ?? 0) }}</h3>
+                                <p class="text-xs text-yellow-700 font-inter">Final Approved</p>
+                            </div>
+                            <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-calculator text-yellow-700 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-purple-50 to-fuchsia-50 rounded-xl p-6 border border-purple-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-purple-700 font-inter font-medium">Revenue Growth</p>
+                                <h3 class="text-2xl font-bold text-purple-900 font-poppins">{{ number_format($revenueGrowth ?? 0, 1) }}%</h3>
+                                <p class="text-xs text-purple-700 font-inter">vs last month</p>
+                            </div>
+                            <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-chart-line text-purple-700 text-xl"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -291,6 +302,7 @@
                             </div>
                         </div>
                         <div style="height: 280px;"><canvas id="chartApprovals"></canvas></div>
+                        <div id="approvalsTotal" class="mt-2 text-xs text-gray-600"></div>
                     </div>
                     
                     <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
@@ -328,7 +340,7 @@
             <!-- Trends Tab -->
             <div id="content-trends" class="tab-content hidden">
                 <!-- Key Metrics -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 text-center">
                         <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <i class="fas fa-users text-blue-600 text-2xl"></i>
@@ -352,14 +364,6 @@
                         <h3 class="text-2xl font-bold text-gray-800 font-poppins">{{ $totalReservations ?? 0 }}</h3>
                         <p class="text-sm text-gray-600 font-inter">Total Reservations</p>
                     </div>
-                    
-                    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 text-center">
-                        <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-clock text-purple-600 text-2xl"></i>
-                        </div>
-                        <h3 class="text-2xl font-bold text-gray-800 font-poppins">{{ $avgProcessingTime ?? 0 }}h</h3>
-                        <p class="text-sm text-gray-600 font-inter">Avg Processing</p>
-                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -372,6 +376,7 @@
                             </div>
                         </div>
                         <div style="height: 280px;"><canvas id="chartDepartments"></canvas></div>
+                        <div id="departmentsTotal" class="mt-2 text-xs text-gray-600"></div>
                     </div>
                     
                     <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
@@ -410,6 +415,7 @@
 
 <!-- Chart.js for Finance and Trends tabs -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
 <style>
 .font-inter {
@@ -736,29 +742,22 @@ function initializeCharts() {
     var appr = prepareCanvas('chartApprovals', 280);
     if (appr) {
         new Chart(appr, { 
-            type: 'doughnut', 
+            type: 'bar', 
             data: { 
                 labels: ['Approved','Rejected'], 
                 datasets: [{ 
                     data: [approvals, rejections], 
-                    backgroundColor: ['#10B981','#EF4444'], 
-                    borderColor: ['#ffffff', '#ffffff'],
-                    borderWidth: 3,
-                    hoverOffset: 4
+                    backgroundColor: ['#065F46','#991B1B'],
+                    borderColor: ['#064E3B','#7F1D1D'],
+                    borderWidth: 2
                 }] 
             }, 
             options: { 
                 responsive: true, 
                 maintainAspectRatio: false, 
+                indexAxis: 'y',
                 plugins: { 
-                    legend: { 
-                        position: 'bottom',
-                        labels: {
-                            padding: 20,
-                            usePointStyle: true,
-                            font: { size: 12 }
-                        }
-                    },
+                    legend: { display: false },
                     tooltip: {
                         backgroundColor: 'rgba(17,24,39,0.95)',
                         titleColor: '#E5E7EB',
@@ -766,7 +765,10 @@ function initializeCharts() {
                         padding: 12
                     }
                 }, 
-                cutout: '60%' 
+                scales: {
+                    x: { beginAtZero: true, ticks: { precision: 0 } },
+                    y: { ticks: { font: { size: 12 } } }
+                }
             } 
         });
     }
@@ -823,42 +825,36 @@ function initializeCharts() {
             dept.parentNode.appendChild(emptyDiv);
         } else {
             new Chart(dept, { 
-                type: 'doughnut', 
+                type: 'bar', 
                 data: { 
                     labels: byDepartment.map(function(d){ return d.department; }), 
                     datasets: [{ 
                         data: byDepartment.map(function(d){ return d.count; }), 
-                        backgroundColor: ['#2563EB','#10B981','#8B1818','#F59E0B','#6B7280','#A855F7'],
-                        borderColor: '#ffffff',
-                        borderWidth: 2,
-                        hoverOffset: 4
+                        backgroundColor: '#1E3A8A',
+                        borderColor: '#1E40AF',
+                        borderWidth: 2
                     }] 
                 }, 
                 options: { 
                     responsive: true, 
                     maintainAspectRatio: false, 
                     plugins: { 
-                        legend: { 
-                            position: 'bottom',
-                            labels: {
-                                padding: 20,
-                                usePointStyle: true,
-                                font: { size: 11 }
-                            }
-                        },
+                        legend: { display: false },
                         tooltip: {
                             backgroundColor: 'rgba(17,24,39,0.95)',
                             titleColor: '#E5E7EB',
                             bodyColor: '#E5E7EB',
                             padding: 12,
                             callbacks: {
-                                label: function(context) {
-                                    return 'Count: ' + context.parsed;
-                                }
+                                label: function(context) { return 'Count: ' + context.parsed.x; }
                             }
                         }
                     }, 
-                    cutout: '60%' 
+                    indexAxis: 'y',
+                    scales: {
+                        x: { beginAtZero: true, ticks: { precision: 0 } },
+                        y: { ticks: { font: { size: 11 } } }
+                    }
                 } 
             }); 
         }
@@ -877,7 +873,7 @@ function initializeCharts() {
             new Chart(util, { 
                 type: 'line', 
                 data: { 
-                    labels: utilizationWeeks.map(function(u){ return 'W'+u.week; }), 
+                    labels: utilizationWeeks.map(function(u){ return (u.label || ('W'+u.week)); }), 
                     datasets: [{ 
                         data: utilizationWeeks.map(function(u){ return u.hours; }), 
                         borderColor: '#2563EB', 

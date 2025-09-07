@@ -1,7 +1,7 @@
-@extends('layouts.mhadel')
+@extends('layouts.iosa')
 
-@section('title', 'Reports & Analytics - Ms. Mhadel')
-@section('page-title', 'Reports & Analytics')
+@section('title', 'Reservation Reports & Analytics - IOSA')
+@section('page-title', 'Reservation Reports & Analytics')
 
 @section('header-actions')
     <button id="openFilterBtn" class="bg-white text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 transition shadow-sm mr-2 flex items-center">
@@ -163,7 +163,7 @@
             <div class="flex items-center justify-between">
                 <h2 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
                     <i class="fas fa-chart-bar text-maroon mr-3"></i>
-                    Reports & Analytics - Ms. Mhadel
+                    Reservation Reports & Analytics - IOSA
                 </h2>
                 <div class="flex items-center space-x-2">
                     <div class="relative">
@@ -184,14 +184,14 @@
             <button onclick="filterByStatus('pending')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'pending' ? 'tab-active' : '' }}">
                 Pending Review
             </button>
-            <button onclick="filterByStatus('approved_mhadel')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'approved_mhadel' ? 'tab-active' : '' }}">
-                Mhadel Approved
+            <button onclick="filterByStatus('approved_IOSA')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'approved_IOSA' ? 'tab-active' : '' }}">
+                IOSA Approved
             </button>
             <button onclick="filterByStatus('approved_OTP')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'approved_OTP' ? 'tab-active' : '' }}">
                 OTP Approved
             </button>
-            <button onclick="filterByStatus('rejected_mhadel')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'rejected_mhadel' ? 'tab-active' : '' }}">
-                Mhadel Rejected
+            <button onclick="filterByStatus('rejected_IOSA')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'rejected_IOSA' ? 'tab-active' : '' }}">
+                IOSA Rejected
             </button>
             <button onclick="filterByStatus('rejected_OTP')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'rejected_OTP' ? 'tab-active' : '' }}">
                 OTP Rejected
@@ -311,7 +311,7 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 text-center">
-                                        <a href="{{ route('mhadel.reservations.show', $r->id) }}" class="btn-dark-blue px-3 py-2 rounded-lg text-xs font-medium transition-colors">
+                                        <a href="{{ route('iosa.reservations.show', $r->id) }}" class="btn-dark-blue px-3 py-2 rounded-lg text-xs font-medium transition-colors">
                                             <i class="fas fa-eye mr-1"></i>
                                         </a>
                                     </td>
@@ -873,7 +873,7 @@
         if (document.getElementById('exportStatusCompleted').checked) selectedStatuses.push('completed');
         
         // Build export URL
-        let exportUrl = '{{ route("mhadel.reports.export") }}?';
+        let exportUrl = '{{ route("iosa.reservation-reports.export") }}?';
         const params = new URLSearchParams();
         
         // Add export date range

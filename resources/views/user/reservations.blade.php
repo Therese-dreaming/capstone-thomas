@@ -344,6 +344,15 @@
                                 </div>
                                 
                                 <p class="text-xs text-gray-500 mt-2">Select equipment and specify quantities. Quantities cannot exceed available amounts.</p>
+
+                                <!-- Selected Equipment Summary -->
+                                <div id="selected_equipment_summary" class="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                    <div class="flex items-center text-gray-700 text-sm">
+                                        <i class="fas fa-list-ul text-maroon mr-2"></i>
+                                        <span class="font-medium">Selected:</span>
+                                        <span id="selected_equipment_text" class="ml-2 text-gray-600">None</span>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Base Price Calculation -->
@@ -804,6 +813,8 @@ function attachEquipmentEventListeners() {
                 const container = document.getElementById(containerId);
                 if (container) container.classList.add('hidden');
             }
+
+            updateSelectedEquipmentSummary();
         });
     });
 }
@@ -822,6 +833,8 @@ function attachQuantityValidation() {
             } else if (value < 1) {
                 this.value = 1;
             }
+
+            updateSelectedEquipmentSummary();
         });
     });
 }
@@ -869,6 +882,35 @@ function generateEquipmentOptions(venue) {
     
     // Re-attach quantity validation for new inputs
     attachQuantityValidation();
+
+    // Initialize summary after rendering
+    updateSelectedEquipmentSummary();
+}
+
+// Build the selected equipment summary text
+function updateSelectedEquipmentSummary() {
+    const summaryEl = document.getElementById('selected_equipment_text');
+    if (!summaryEl) return;
+
+    const selected = [];
+    const equipmentCheckboxes = document.querySelectorAll('input[name="equipment[]"]');
+    const noneChecked = document.getElementById('equipment_none')?.checked;
+
+    equipmentCheckboxes.forEach(cb => {
+        if (cb.checked && cb.value !== 'none') {
+            const id = cb.value.toLowerCase().replace(/\s+/g, '_');
+            const qtyInput = document.getElementById(`${id}_quantity`);
+            const qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+            selected.push(`${cb.value} (x${qty})`);
+        }
+    });
+
+    if (noneChecked) {
+        summaryEl.textContent = 'No equipment needed';
+        return;
+    }
+
+    summaryEl.textContent = selected.length ? selected.join(', ') : 'None';
 }
 
 // Calculate base price based on duration and rate

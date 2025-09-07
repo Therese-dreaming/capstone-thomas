@@ -41,6 +41,26 @@ use Illuminate\Support\Facades\Storage;
     }
     .btn-dark-blue:hover { background-color: #2563eb; }
     
+    /* Category card styles to match Ms. Mhadel's design */
+    .category-card {
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        border: 1px solid #f3f4f6;
+        transition: all 0.3s ease;
+    }
+    .category-card:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        transform: translateY(-2px);
+    }
+    .category-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #f3f4f6;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-radius: 1rem 1rem 0 0;
+    }
+    .category-content { padding: 1.5rem; }
+
     .compact-card {
         background: white;
         border-radius: 0.5rem;
@@ -96,6 +116,30 @@ use Illuminate\Support\Facades\Storage;
     .status-pending { background: #fef3c7; color: #92400e; }
     .status-approved { background: #d1fae5; color: #065f46; }
     .status-rejected { background: #fee2e2; color: #991b1b; }
+
+    /* Timeline styles aligned with Mhadel design */
+    .timeline-item { position: relative; padding-left: 2rem; }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0.5rem;
+        width: 12px; height: 12px; border-radius: 50%;
+        border: 3px solid #e5e7eb; background: white;
+    }
+    .timeline-item::after {
+        content: '';
+        position: absolute;
+        left: 5px; top: 1.25rem; width: 2px; height: calc(100% - 0.75rem);
+        background: #e5e7eb;
+    }
+    .timeline-item:last-child::after { display: none; }
+    .timeline-item.completed::before { border-color: #10B981; background: #10B981; }
+    .timeline-item.pending::before { border-color: #F59E0B; background: #F59E0B; }
+    .timeline-item.rejected::before { border-color: #EF4444; background: #EF4444; }
+    .status-badge-inline {
+        display: inline-flex; align-items: center; padding: 0.5rem 1rem; border-radius: 9999px;
+        font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+    }
 </style>
 
 @section('header-actions')
@@ -105,24 +149,43 @@ use Illuminate\Support\Facades\Storage;
 @endsection
 
 @section('content')
-<div class="space-y-6 font-inter">
+<div class="space-y-8 font-inter">
     <!-- Status Banner -->
-    <div class="compact-card animate-fadeIn">
-        <div class="compact-header">
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden animate-fadeIn">
+        <div class="p-8 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
-                    <h1 class="text-2xl font-bold font-poppins">{{ $reservation->event_title }}</h1>
-                    <p class="text-gray-200 text-sm mt-1">Submitted by {{ $reservation->user->name }}</p>
+                    <h1 class="text-3xl font-bold text-gray-800 font-poppins mb-2">{{ $reservation->event_title }}</h1>
+                    <p class="text-gray-600 text-lg">Submitted by {{ $reservation->user->name }}</p>
+                    <div class="flex items-center mt-3 space-x-4">
+                        <div class="flex items-center text-sm text-gray-500">
+                            <i class="fas fa-calendar mr-2 text-maroon"></i>
+                            <span>{{ $reservation->start_date->format('M d, Y g:i A') }}</span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-500">
+                            <i class="fas fa-clock mr-2 text-maroon"></i>
+                            <span>{{ $reservation->start_date->diffInHours($reservation->end_date) }} hours</span>
+                        </div>
+                        @if($reservation->venue)
+                            <div class="flex items-center text-sm text-gray-500">
+                                <i class="fas fa-building mr-2 text-maroon"></i>
+                                <span>{{ $reservation->venue->name }}</span>
+                            </div>
+                        @endif
+                    </div>
                 </div>
-                <div class="flex items-center space-x-3">
+                <div class="text-right">
                     @if($reservation->status === 'approved_mhadel')
-                        <span class="status-badge status-pending">Pending OTP's Final Review</span>
+                        <span class="status-badge-inline bg-yellow-100 text-yellow-800">Pending OTP Final Review</span>
+                        <p class="text-sm text-gray-500 mt-2">Waiting for OTP</p>
                     @elseif($reservation->status === 'approved_OTP')
-                        <span class="status-badge status-approved">Final Approved by OTP</span>
+                        <span class="status-badge-inline bg-blue-100 text-blue-800">Final Approved</span>
+                        <p class="text-sm text-gray-500 mt-2">OTP Confirmed</p>
                     @elseif($reservation->status === 'rejected_OTP')
-                        <span class="status-badge status-rejected">Final Rejected by OTP</span>
+                        <span class="status-badge-inline bg-red-100 text-red-800">Final Rejected</span>
+                        <p class="text-sm text-gray-500 mt-2">Decision Complete</p>
                     @else
-                        <span class="status-badge bg-gray-100 text-gray-800">{{ ucfirst(str_replace('_', ' ', $reservation->status)) }}</span>
+                        <span class="status-badge-inline bg-gray-100 text-gray-800">{{ ucfirst(str_replace('_', ' ', $reservation->status)) }}</span>
                     @endif
                 </div>
             </div>
@@ -130,50 +193,56 @@ use Illuminate\Support\Facades\Storage;
     </div>
 
     <!-- Main Content Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Left Column - Event Details -->
-        <div class="lg:col-span-2 space-y-6">
-            <!-- Event Information -->
-            <div class="compact-card">
-                <div class="compact-header">
-                    <h2 class="text-lg font-semibold font-poppins flex items-center">
-                        <i class="fas fa-calendar-alt mr-2"></i>Event Information
+    <div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
+        <!-- Left Column -->
+        <div class="xl:col-span-3 space-y-8">
+            <!-- Event Details -->
+            <div class="category-card animate-fadeIn">
+                <div class="category-header">
+                    <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
+                        <i class="fas fa-calendar-alt text-maroon mr-3 text-2xl"></i>
+                        Event Details
                     </h2>
                 </div>
-                <div class="compact-content">
+                <div class="category-content">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Event Title</label>
-                            <p class="text-gray-900 font-medium">{{ $reservation->event_title }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Expected Participants</label>
-                            <p class="text-gray-900">{{ $reservation->expected_participants }} attendees</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Start Date & Time</label>
-                            <p class="text-gray-900 font-medium">{{ $reservation->start_date->format('M d, Y g:i A') }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">End Date & Time</label>
-                            <p class="text-gray-900 font-medium">{{ $reservation->end_date->format('M d, Y g:i A') }}</p>
-                        </div>
-                        @if($reservation->venue)
+                        <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Venue</label>
-                                <p class="text-gray-900">{{ $reservation->venue->name }}</p>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Event Title</label>
+                                <p class="text-gray-900 font-semibold text-lg">{{ $reservation->event_title }}</p>
                             </div>
-                        @endif
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-                            <p class="text-gray-900">{{ $reservation->start_date->diffInHours($reservation->end_date) }} hours</p>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Expected Participants</label>
+                                <p class="text-gray-900">{{ $reservation->expected_participants }} attendees</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Start Date & Time</label>
+                                <p class="text-gray-900 font-medium">{{ $reservation->start_date->format('M d, Y g:i A') }}</p>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">End Date & Time</label>
+                                <p class="text-gray-900 font-medium">{{ $reservation->end_date->format('M d, Y g:i A') }}</p>
+                            </div>
+                            @if($reservation->venue)
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Venue</label>
+                                    <p class="text-gray-900 font-medium">{{ $reservation->venue->name }}</p>
+                                </div>
+                            @endif
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Duration</label>
+                                <p class="text-gray-900 font-medium">{{ $reservation->start_date->diffInHours($reservation->end_date) }} hours</p>
+                            </div>
                         </div>
                     </div>
-                    
                     @if($reservation->purpose)
                         <div class="mt-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Purpose</label>
-                            <p class="text-gray-900 bg-gray-50 p-4 rounded-lg">{{ $reservation->purpose }}</p>
+                            <label class="block text-sm font-medium text-gray-700 mb-3">Purpose & Description</label>
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <p class="text-gray-900 leading-relaxed">{{ $reservation->purpose }}</p>
+                            </div>
                         </div>
                     @endif
                 </div>
@@ -181,11 +250,12 @@ use Illuminate\Support\Facades\Storage;
 
             <!-- Activity Grid -->
             @if($reservation->activity_grid)
-                <div class="compact-card">
-                    <div class="compact-header">
+                <div class="category-card animate-fadeIn">
+                    <div class="category-header">
                         <div class="flex items-center justify-between">
-                            <h2 class="text-lg font-semibold font-poppins flex items-center">
-                                <i class="fas fa-table mr-2"></i>Activity Grid
+                            <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
+                                <i class="fas fa-table text-maroon mr-3 text-2xl"></i>
+                                Activity Grid
                             </h2>
                             <div class="flex items-center space-x-2">
                                 @if(Storage::disk('public')->exists($reservation->activity_grid))
@@ -193,6 +263,10 @@ use Illuminate\Support\Facades\Storage;
                                        class="btn-dark-blue px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
                                         <i class="fas fa-eye mr-2"></i>View File
                                     </a>
+                                @else
+                                    <button onclick="openActivityGridModal()" class="btn-dark-blue px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                                        <i class="fas fa-eye mr-2"></i>View Text
+                                    </button>
                                 @endif
                                 <a href="{{ route('drjavier.reservations.download-activity-grid', $reservation->id) }}" 
                                    class="btn-dark-blue px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
@@ -201,7 +275,7 @@ use Illuminate\Support\Facades\Storage;
                             </div>
                         </div>
                     </div>
-                    <div class="compact-content">
+                    <div class="category-content">
                         @if(Storage::disk('public')->exists($reservation->activity_grid))
                             <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
                                 <div class="flex items-center justify-between">
@@ -215,7 +289,7 @@ use Illuminate\Support\Facades\Storage;
                                 </div>
                             </div>
                         @else
-                            <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                                 <pre class="text-sm text-gray-800 whitespace-pre-wrap font-mono">{{ $reservation->activity_grid }}</pre>
                             </div>
                         @endif
@@ -223,48 +297,18 @@ use Illuminate\Support\Facades\Storage;
                 </div>
             @endif
 
-            <!-- Notes -->
+            <!-- Notes & History -->
             @if($reservation->notes)
-                <div class="compact-card">
-                    <div class="compact-header">
-                        <h2 class="text-lg font-semibold font-poppins flex items-center">
-                            <i class="fas fa-sticky-note mr-2"></i>Notes & History
+                <div class="category-card animate-fadeIn">
+                    <div class="category-header">
+                        <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
+                            <i class="fas fa-sticky-note text-maroon mr-3 text-2xl"></i>
+                            Notes & History
                         </h2>
                     </div>
-                    <div class="compact-content">
-                        <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="category-content">
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                             <pre class="text-sm text-gray-800 whitespace-pre-wrap font-mono">{{ $reservation->notes }}</pre>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            <!-- Equipment Details -->
-            @if($reservation->equipment_details && count($reservation->equipment_details) > 0)
-                <div class="compact-card">
-                    <div class="compact-header">
-                        <h2 class="text-lg font-semibold font-poppins flex items-center">
-                            <i class="fas fa-tools mr-2"></i>Equipment Requested
-                        </h2>
-                    </div>
-                    <div class="compact-content">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            @foreach($reservation->equipment_details as $equipment)
-                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <h4 class="font-medium text-gray-800">{{ $equipment['name'] }}</h4>
-                                            @if(isset($equipment['category']))
-                                                <p class="text-sm text-gray-600">{{ $equipment['category'] }}</p>
-                                            @endif
-                                        </div>
-                                        <div class="text-right">
-                                            <span class="text-lg font-bold text-blue-600">{{ $equipment['quantity'] }}</span>
-                                            <p class="text-xs text-gray-500">Quantity</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
                         </div>
                     </div>
                 </div>
@@ -272,60 +316,64 @@ use Illuminate\Support\Facades\Storage;
 
             <!-- Quick Actions -->
             @if($reservation->status === 'approved_mhadel')
-                <div class="compact-card">
-                    <div class="compact-header">
-                        <h2 class="text-lg font-semibold font-poppins flex items-center">
-                            <i class="fas fa-bolt mr-2"></i>Quick Actions
+                <div class="category-card animate-fadeIn">
+                    <div class="category-header">
+                        <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
+                            <i class="fas fa-bolt text-maroon mr-3 text-2xl"></i>
+                            Quick Actions
                         </h2>
                     </div>
-                    <div class="compact-content">
+                    <div class="category-content">
                         <div class="space-y-3">
-                            <button onclick="openApproveModal({{ $reservation->id }}, '{{ $reservation->event_title }}')" 
-                                    class="w-full btn-dark-green px-4 py-3 rounded-lg transition-colors flex items-center justify-center">
+                            <button onclick="openApproveModal({{ $reservation->id }}, '{{ $reservation->event_title }}')" class="w-full btn-dark-green px-4 py-3 rounded-lg transition-colors flex items-center justify-center">
                                 <i class="fas fa-check mr-2"></i>Approve Reservation
                             </button>
-                            <button onclick="openRejectModal({{ $reservation->id }}, '{{ $reservation->event_title }}')" 
-                                    class="w-full btn-dark-red px-4 py-3 rounded-lg transition-colors flex items-center justify-center">
+                            <button onclick="openRejectModal({{ $reservation->id }}, '{{ $reservation->event_title }}')" class="w-full btn-dark-red px-4 py-3 rounded-lg transition-colors flex items-center justify-center">
                                 <i class="fas fa-times mr-2"></i>Reject Reservation
                             </button>
                         </div>
-                        <p class="text-xs text-gray-500 mt-3 text-center">
-                            This is the final approval. The reservation will be confirmed.
-                        </p>
+                        <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p class="text-xs text-blue-700 text-center">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                This is the final step. Your decision will complete the process.
+                            </p>
+                        </div>
                     </div>
                 </div>
             @elseif($reservation->status === 'approved_OTP')
-                <div class="compact-card">
-                    <div class="compact-header">
-                        <h2 class="text-lg font-semibold font-poppins flex items-center">
-                            <i class="fas fa-info-circle text-green-500 mr-2"></i>Status Information
+                <div class="category-card animate-fadeIn">
+                    <div class="category-header">
+                        <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
+                            <i class="fas fa-info-circle text-blue-500 mr-3 text-2xl"></i>
+                            Status Information
                         </h2>
                     </div>
-                    <div class="compact-content">
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="category-content">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                             <div class="flex items-center">
-                                <i class="fas fa-check-circle text-green-500 mr-3 text-xl"></i>
+                                <i class="fas fa-check-circle text-blue-500 mr-3 text-xl"></i>
                                 <div>
-                                    <h3 class="font-medium text-green-800">Reservation Final Approved by OTP</h3>
-                                    <p class="text-sm text-green-600 mt-1">This reservation has been fully approved and confirmed.</p>
+                                    <h3 class="font-semibold text-blue-800">Reservation Final Approved by OTP</h3>
+                                    <p class="text-sm text-blue-600 mt-1">This reservation has been fully approved and confirmed.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             @elseif($reservation->status === 'rejected_OTP')
-                <div class="compact-card">
-                    <div class="compact-header">
-                        <h2 class="text-lg font-semibold font-poppins flex items-center">
-                            <i class="fas fa-info-circle text-red-500 mr-2"></i>Status Information
+                <div class="category-card animate-fadeIn">
+                    <div class="category-header">
+                        <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
+                            <i class="fas fa-info-circle text-red-500 mr-3 text-2xl"></i>
+                            Status Information
                         </h2>
                     </div>
-                    <div class="compact-content">
+                    <div class="category-content">
                         <div class="bg-red-50 border border-red-200 rounded-lg p-4">
                             <div class="flex items-center">
                                 <i class="fas fa-times-circle text-red-500 mr-3 text-xl"></i>
                                 <div>
-                                    <h3 class="font-medium text-red-800">Reservation Final Rejected by OTP</h3>
+                                    <h3 class="font-semibold text-red-800">Reservation Final Rejected by OTP</h3>
                                     <p class="text-sm text-red-600 mt-1">This reservation has been rejected and will not proceed.</p>
                                 </div>
                             </div>
@@ -335,60 +383,126 @@ use Illuminate\Support\Facades\Storage;
             @endif
         </div>
 
-        <!-- Right Column - User Info & Actions -->
-        <div class="space-y-6">
-            <!-- User Information -->
-            <div class="compact-card">
-                <div class="compact-header">
-                    <h2 class="text-lg font-semibold font-poppins flex items-center">
-                        <i class="fas fa-user mr-2"></i>Requester Information
+        <!-- Right Column - Sidebar -->
+        <div class="space-y-8">
+            <!-- Approval Timeline -->
+            <div class="category-card animate-fadeIn">
+                <div class="category-header">
+                    <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
+                        <i class="fas fa-clock text-maroon mr-3 text-2xl"></i>
+                        Approval Timeline
                     </h2>
                 </div>
-                <div class="compact-content">
-                    <div class="flex items-center mb-4">
-                        <div class="w-12 h-12 bg-maroon rounded-full flex items-center justify-center text-white font-medium text-lg">
-                            {{ substr($reservation->user->name, 0, 1) }}
+                <div class="category-content">
+                    <div class="space-y-6">
+                        <!-- Submitted -->
+                        <div class="timeline-item completed">
+                            <div class="ml-4">
+                                <h4 class="font-semibold text-gray-800">Submitted</h4>
+                                <p class="text-sm text-gray-600">{{ $reservation->created_at->format('M d, Y g:i A') }}</p>
+                                <p class="text-xs text-gray-500 mt-1">Reservation created by {{ $reservation->user->name }}</p>
+                            </div>
                         </div>
-                        <div class="ml-4">
-                            <h3 class="font-medium text-gray-800">{{ $reservation->user->name }}</h3>
-                            <p class="text-sm text-gray-600">{{ $reservation->user->email }}</p>
+
+                        <!-- IOSA Review -->
+                        <div class="timeline-item {{ in_array($reservation->status, ['approved_IOSA', 'approved_mhadel', 'approved_OTP', 'rejected_mhadel', 'rejected_OTP']) ? 'completed' : 'pending' }}">
+                            <div class="ml-4">
+                                <h4 class="font-semibold text-gray-800">IOSA Review</h4>
+                                @if(in_array($reservation->status, ['approved_IOSA', 'approved_mhadel', 'approved_OTP', 'rejected_mhadel', 'rejected_OTP']))
+                                    <p class="text-sm text-green-600 font-medium">✓ Approved</p>
+                                    <p class="text-sm text-gray-600">{{ $reservation->updated_at->format('M d, Y g:i A') }}</p>
+                                @else
+                                    <p class="text-sm text-yellow-600 font-medium">⏳ Pending</p>
+                                    <p class="text-xs text-gray-500">Waiting for IOSA review</p>
+                                @endif
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="space-y-3">
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">Submitted</label>
-                            <p class="text-sm text-gray-700">{{ $reservation->created_at->format('M d, Y g:i A') }}</p>
+
+                        <!-- Ms. Mhadel Review -->
+                        <div class="timeline-item {{ in_array($reservation->status, ['approved_mhadel', 'approved_OTP', 'rejected_mhadel', 'rejected_OTP']) ? 'completed' : 'pending' }}">
+                            <div class="ml-4">
+                                <h4 class="font-semibold text-gray-800">Ms. Mhadel Review</h4>
+                                @if($reservation->status === 'approved_mhadel')
+                                    <p class="text-sm text-green-600 font-medium">✓ Approved</p>
+                                    <p class="text-sm text-gray-600">{{ $reservation->updated_at->format('M d, Y g:i A') }}</p>
+                                @elseif($reservation->status === 'rejected_mhadel')
+                                    <p class="text-sm text-red-600 font-medium">✗ Rejected</p>
+                                    <p class="text-sm text-gray-600">{{ $reservation->updated_at->format('M d, Y g:i A') }}</p>
+                                @elseif(in_array($reservation->status, ['approved_OTP', 'rejected_OTP']))
+                                    <p class="text-sm text-green-600 font-medium">✓ Approved</p>
+                                    <p class="text-xs text-gray-500">Previously approved</p>
+                                @else
+                                    <p class="text-sm text-yellow-600 font-medium">⏳ Pending</p>
+                                    <p class="text-xs text-gray-500">Waiting for Ms. Mhadel review</p>
+                                @endif
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">Last Updated</label>
-                            <p class="text-sm text-gray-700">{{ $reservation->updated_at->format('M d, Y g:i A') }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">IOSA Approval</label>
-                            <p class="text-sm text-gray-700 font-medium text-green-600">✓ Approved</p>
-                        </div>
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">Ms. Mhadel Approval</label>
-                            <p class="text-sm text-gray-700 font-medium text-green-600">✓ Approved</p>
+
+                        <!-- OTP Final Review -->
+                        <div class="timeline-item {{ in_array($reservation->status, ['approved_OTP', 'rejected_OTP']) ? 'completed' : 'pending' }}">
+                            <div class="ml-4">
+                                <h4 class="font-semibold text-gray-800">OTP Final Review</h4>
+                                @if($reservation->status === 'approved_OTP')
+                                    <p class="text-sm text-green-600 font-medium">✓ Final Approved</p>
+                                    <p class="text-sm text-gray-600">{{ $reservation->updated_at->format('M d, Y g:i A') }}</p>
+                                @elseif($reservation->status === 'rejected_OTP')
+                                    <p class="text-sm text-red-600 font-medium">✗ Final Rejected</p>
+                                    <p class="text-sm text-gray-600">{{ $reservation->updated_at->format('M d, Y g:i A') }}</p>
+                                @else
+                                    <p class="text-sm text-yellow-600 font-medium">⏳ Pending</p>
+                                    <p class="text-xs text-gray-500">Waiting for your review</p>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Venue Details -->
+            <!-- Requester Details -->
+            <div class="category-card animate-fadeIn">
+                <div class="category-header">
+                    <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
+                        <i class="fas fa-user text-maroon mr-3 text-2xl"></i>
+                        Requester Details
+                    </h2>
+                </div>
+                <div class="category-content">
+                    <div class="flex items-center mb-4">
+                        <div class="w-16 h-16 bg-maroon rounded-full flex items-center justify-center text-white font-bold text-xl">
+                            {{ substr($reservation->user->name, 0, 1) }}
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="font-semibold text-gray-800 text-lg">{{ $reservation->user->name }}</h3>
+                            <p class="text-sm text-gray-600">{{ $reservation->user->email }}</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3 pt-4 border-t border-gray-200">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Submitted</label>
+                            <p class="text-sm text-gray-700 font-medium">{{ $reservation->created_at->format('M d, Y g:i A') }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Last Updated</label>
+                            <p class="text-sm text-gray-700 font-medium">{{ $reservation->updated_at->format('M d, Y g:i A') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Venue Information -->
             @if($reservation->venue)
-                <div class="compact-card">
-                    <div class="compact-header">
-                        <h2 class="text-lg font-semibold font-poppins flex items-center">
-                            <i class="fas fa-building mr-2"></i>Venue Details
+                <div class="category-card animate-fadeIn">
+                    <div class="category-header">
+                        <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
+                            <i class="fas fa-building text-maroon mr-3 text-2xl"></i>
+                            Venue Information
                         </h2>
                     </div>
-                    <div class="compact-content">
-                        <div class="space-y-3">
+                    <div class="category-content">
+                        <div class="space-y-4">
                             <div>
                                 <label class="block text-xs text-gray-500 mb-1">Venue Name</label>
-                                <p class="text-sm text-gray-700 font-medium">{{ $reservation->venue->name }}</p>
+                                <p class="text-sm text-gray-700 font-semibold">{{ $reservation->venue->name }}</p>
                             </div>
                             @if($reservation->venue->description)
                                 <div>
@@ -406,157 +520,6 @@ use Illuminate\Support\Facades\Storage;
                     </div>
                 </div>
             @endif
-
-            <!-- Pricing Information -->
-            <div class="compact-card">
-                <div class="compact-header">
-                    <h2 class="text-lg font-semibold font-poppins flex items-center">
-                        <i class="fas fa-dollar-sign mr-2"></i>Pricing Information
-                    </h2>
-                </div>
-                <div class="compact-content">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Base Price</label>
-                            <p class="text-2xl font-bold text-green-600">₱{{ number_format($reservation->base_price ?? 0, 2) }}</p>
-                            <p class="text-sm text-gray-500">Set by Ms. Mhadel</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Discount Applied</label>
-                            <p class="text-xl font-semibold text-blue-600">{{ $reservation->discount_percentage ?? 0 }}%</p>
-                            @if($reservation->discount_percentage && $reservation->discount_percentage > 0)
-                                <p class="text-sm text-gray-500">Discount amount: ₱{{ number_format(($reservation->base_price * $reservation->discount_percentage / 100), 2) }}</p>
-                            @endif
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Final Price</label>
-                            <p class="text-2xl font-bold text-green-800">₱{{ number_format($reservation->final_price ?? 0, 2) }}</p>
-                            <p class="text-sm text-gray-500">Price after discount</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Rate per Hour</label>
-                            <p class="text-lg font-semibold text-gray-800">₱{{ number_format($reservation->price_per_hour ?? 0, 2) }}</p>
-                            <p class="text-sm text-gray-500">Venue hourly rate</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Approval Timeline -->
-            <div class="compact-card">
-                <div class="compact-header">
-                    <h2 class="text-lg font-semibold font-poppins flex items-center">
-                        <i class="fas fa-clock mr-2"></i>Approval Timeline
-                    </h2>
-                </div>
-                <div class="compact-content">
-                    <div class="relative">
-                        <div class="space-y-4">
-                            <!-- Submitted -->
-                            <div class="relative flex items-start">
-                                <div class="relative z-10 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                                    <i class="fas fa-check text-xs"></i>
-                                </div>
-                                <div class="ml-3 flex-1">
-                                    <div class="bg-green-50 p-2 rounded border border-green-200">
-                                        <div class="flex items-center justify-between mb-1">
-                                            <h4 class="font-semibold text-green-800 text-xs">Reservation Submitted</h4>
-                                            <span class="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">Completed</span>
-                                        </div>
-                                        <p class="text-xs text-green-700">Submitted by {{ $reservation->user->name }}</p>
-                                        <p class="text-xs text-green-600 mt-1">{{ $reservation->created_at->format('M d, Y g:i A') }}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- IOSA Review -->
-                            <div class="relative flex items-start">
-                                <div class="relative z-10 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                                    <i class="fas fa-check text-xs"></i>
-                                </div>
-                                <div class="ml-3 flex-1">
-                                    <div class="bg-blue-50 p-2 rounded border border-blue-200">
-                                        <div class="flex items-center justify-between mb-1">
-                                            <h4 class="font-semibold text-blue-800 text-xs">IOSA Review</h4>
-                                            <span class="text-xs text-blue-600 bg-green-100 px-2 py-1 rounded-full">Completed</span>
-                                        </div>
-                                        <p class="text-xs text-blue-700">Approved by IOSA</p>
-                                        <p class="text-xs text-blue-600 mt-1">{{ $reservation->created_at->format('M d, Y g:i A') }}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Ms. Mhadel Review -->
-                            <div class="relative flex items-start">
-                                <div class="relative z-10 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                                    <i class="fas fa-check text-xs"></i>
-                                </div>
-                                <div class="ml-3 flex-1">
-                                    <div class="bg-purple-50 p-2 rounded border border-purple-200">
-                                        <div class="flex items-center justify-between mb-1">
-                                            <h4 class="font-semibold text-purple-800 text-xs">Ms. Mhadel Review</h4>
-                                            <span class="text-xs text-purple-600 bg-green-100 px-2 py-1 rounded-full">Completed</span>
-                                        </div>
-                                        <p class="text-xs text-purple-700">Approved by Ms. Mhadel</p>
-                                        <p class="text-xs text-purple-600 mt-1">{{ $reservation->created_at->format('M d, Y g:i A') }}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- OTP Final Review -->
-                            <div class="relative flex items-start">
-                                <div class="relative z-10 w-8 h-8 {{ in_array($reservation->status, ['approved_OTP', 'rejected_OTP']) ? 'bg-indigo-500' : 'bg-gray-400' }} rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                                    @if(in_array($reservation->status, ['approved_OTP', 'rejected_OTP']))
-                                        <i class="fas fa-check text-xs"></i>
-                                    @else
-                                        <i class="fas fa-clock text-xs"></i>
-                                    @endif
-                                </div>
-                                <div class="ml-3 flex-1">
-                                    <div class="{{ in_array($reservation->status, ['approved_OTP', 'rejected_OTP']) ? 'bg-indigo-50 border-indigo-200' : 'bg-gray-50 border-gray-200' }} p-2 rounded border">
-                                        <div class="flex items-center justify-between mb-1">
-                                            <h4 class="font-semibold {{ in_array($reservation->status, ['approved_OTP', 'rejected_OTP']) ? 'text-indigo-800' : 'text-gray-600' }} text-xs">OTP Final Review</h4>
-                                            @if(in_array($reservation->status, ['approved_OTP', 'rejected_OTP']))
-                                                <span class="text-xs {{ $reservation->status === 'approved_OTP' ? 'text-indigo-600 bg-indigo-100' : 'text-red-600 bg-red-100' }} px-2 py-1 rounded-full">
-                                                    {{ $reservation->status === 'approved_OTP' ? 'Completed' : 'Rejected' }}
-                                                </span>
-                                            @else
-                                                <span class="text-xs text-gray-600 bg-yellow-100 px-2 py-1 rounded-full">Current Position</span>
-                                            @endif
-                                        </div>
-                                        <p class="text-xs {{ in_array($reservation->status, ['approved_OTP', 'rejected_OTP']) ? 'text-indigo-700' : 'text-gray-600' }}">
-                                            @if($reservation->status === 'approved_OTP')
-                                                Final approval granted by OTP
-                                            @elseif($reservation->status === 'rejected_OTP')
-                                                Final rejection by OTP
-                                            @else
-                                                Waiting for OTP final review
-                                            @endif
-                                        </p>
-                                        @if(in_array($reservation->status, ['approved_OTP', 'rejected_OTP']))
-                                            <p class="text-xs {{ $reservation->status === 'approved_OTP' ? 'text-indigo-600' : 'text-red-600' }} mt-1">{{ $reservation->updated_at->format('M d, Y g:i A') }}</p>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Current Position Indicator -->
-                        @if($reservation->status === 'approved_mhadel')
-                            <div class="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                <div class="flex items-center">
-                                    <i class="fas fa-map-marker-alt text-yellow-600 mr-2 text-xs"></i>
-                                    <div>
-                                        <p class="text-xs font-medium text-yellow-800">Current Position</p>
-                                        <p class="text-xs text-yellow-700">Reservation is waiting for your final review</p>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
         </div>
     </div>
 </div>
@@ -564,11 +527,12 @@ use Illuminate\Support\Facades\Storage;
 <!-- Approve Modal -->
 <div id="approveModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full font-poppins animate-fadeIn">
-            <div class="p-4 border-b border-gray-200 bg-green-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full font-poppins animate-fadeIn">
+            <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-white">
                 <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-bold text-gray-800 flex items-center font-poppins">
-                        <i class="fas fa-check-circle text-green-500 mr-2"></i>Approve Reservation
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
+                        <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                        Approve Reservation
                     </h3>
                     <button onclick="closeApproveModal()" class="text-gray-400 hover:text-gray-600 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
                         <i class="fas fa-times"></i>
@@ -576,27 +540,26 @@ use Illuminate\Support\Facades\Storage;
                 </div>
             </div>
             
-            <div class="p-4">
-                <p class="text-gray-700 mb-3 text-sm">Are you sure you want to approve this reservation?</p>
-                <div class="bg-green-50 p-3 rounded border border-green-200 mb-3">
-                    <h4 class="font-semibold text-green-800 text-sm" id="approveEventTitle"></h4>
-                    <p class="text-xs text-green-600 mt-1">This is the final approval. The reservation will be confirmed.</p>
+            <div class="p-6">
+                <p class="text-gray-700 mb-4">Are you sure you want to approve this reservation?</p>
+                <div class="bg-green-50 p-4 rounded-lg mb-4 border border-green-200">
+                    <h4 class="font-semibold text-gray-800" id="approveEventTitle"></h4>
+                    <p class="text-sm text-green-600 mt-1">This is the final approval. The reservation will be confirmed.</p>
                 </div>
-                
-                <div class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Additional Notes (Optional)</label>
-                    <textarea id="approveNotes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm" placeholder="Add any additional notes for this approval..."></textarea>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Additional Notes (Optional)</label>
+                    <textarea id="approveNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Add any additional notes for this approval..."></textarea>
                 </div>
             </div>
             
-            <div class="p-4 border-t border-gray-200 flex justify-end space-x-2">
-                <button onclick="closeApproveModal()" class="px-3 py-2 text-gray-700 bg-gray-100 rounded hover:bg-gray-200 transition-colors text-sm">
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+                <button onclick="closeApproveModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
                     Cancel
                 </button>
                 <form id="approveForm" method="POST" class="inline">
                     @csrf
                     <input type="hidden" id="approveNotesInput" name="notes">
-                    <button type="submit" class="btn-dark-green text-sm px-3 py-2 rounded">
+                    <button type="submit" class="px-4 py-2 btn-dark-green rounded-lg transition-colors">
                         <i class="fas fa-check mr-2"></i>Approve Reservation
                     </button>
                 </form>
@@ -608,11 +571,12 @@ use Illuminate\Support\Facades\Storage;
 <!-- Reject Modal -->
 <div id="rejectModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full font-poppins animate-fadeIn">
-            <div class="p-4 border-b border-gray-200 bg-red-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full font-poppins animate-fadeIn">
+            <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-red-50 to-white">
                 <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-bold text-gray-800 flex items-center font-poppins">
-                        <i class="fas fa-times-circle text-red-500 mr-2"></i>Reject Reservation
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
+                        <i class="fas fa-times-circle text-red-500 mr-2"></i>
+                        Reject Reservation
                     </h3>
                     <button onclick="closeRejectModal()" class="text-gray-400 hover:text-gray-600 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
                         <i class="fas fa-times"></i>
@@ -620,30 +584,61 @@ use Illuminate\Support\Facades\Storage;
                 </div>
             </div>
             
-            <div class="p-4">
-                <p class="text-gray-700 mb-3 text-sm">Are you sure you want to reject this reservation?</p>
-                <div class="bg-red-50 p-3 rounded border border-red-200 mb-3">
-                    <h4 class="font-semibold text-red-800 text-sm" id="rejectEventTitle"></h4>
-                    <p class="text-xs text-red-600 mt-1">This action cannot be undone.</p>
+            <div class="p-6">
+                <p class="text-gray-700 mb-4">Are you sure you want to reject this reservation?</p>
+                <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                    <h4 class="font-semibold text-gray-800" id="rejectEventTitle"></h4>
+                    <p class="text-sm text-gray-600 mt-1">This action cannot be undone.</p>
                 </div>
                 
-                <div class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Reason for Rejection (Required)</label>
-                    <textarea id="rejectNotes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm" placeholder="Please provide a reason for rejecting this reservation..." required></textarea>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Reason for Rejection (Required)</label>
+                    <textarea id="rejectNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="Please provide a reason for rejecting this reservation..." required></textarea>
                 </div>
             </div>
             
-            <div class="p-4 border-t border-gray-200 flex justify-end space-x-2">
-                <button onclick="closeRejectModal()" class="px-3 py-2 text-gray-700 bg-gray-100 rounded hover:bg-gray-200 transition-colors text-sm">
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+                <button onclick="closeRejectModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
                     Cancel
                 </button>
                 <form id="rejectForm" method="POST" class="inline">
                     @csrf
                     <input type="hidden" id="rejectNotesInput" name="notes">
-                    <button type="submit" class="btn-dark-red text-sm px-3 py-2 rounded">
+                    <button type="submit" class="px-4 py-2 btn-dark-red rounded-lg transition-colors">
                         <i class="fas fa-times mr-2"></i>Reject Reservation
                     </button>
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Grid Modal -->
+<div id="activityGridModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full font-poppins animate-fadeIn">
+            <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
+                        <i class="fas fa-table text-blue-500 mr-2"></i>
+                        Activity Grid Preview
+                    </h3>
+                    <button onclick="closeActivityGridModal()" class="text-gray-400 hover:text-gray-600 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <pre id="activityGridContent" class="text-sm text-gray-800 whitespace-pre-wrap font-mono"></pre>
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+                <button onclick="closeActivityGridModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    Close
+                </button>
             </div>
         </div>
     </div>
@@ -678,6 +673,20 @@ use Illuminate\Support\Facades\Storage;
         document.body.style.overflow = 'auto';
     }
     
+    // Activity Grid Modal Functions
+    function openActivityGridModal() {
+        const activityGridContent = `{{ $reservation->activity_grid }}`;
+        const el = document.getElementById('activityGridContent');
+        if (el) el.textContent = activityGridContent;
+        document.getElementById('activityGridModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeActivityGridModal() {
+        document.getElementById('activityGridModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+    
     // Form submission handlers
     document.addEventListener('DOMContentLoaded', function() {
         // Handle approve form submission
@@ -688,7 +697,7 @@ use Illuminate\Support\Facades\Storage;
         
         // Handle reject form submission
         document.getElementById('rejectForm').addEventListener('submit', function(e) {
-            const notes = document.getElementById('rejectNotes').value;
+            const notes = document.getElementById('rejectNotes').value; 
             if (!notes.trim()) {
                 e.preventDefault();
                 alert('Please provide a reason for rejection.');
@@ -709,6 +718,15 @@ use Illuminate\Support\Facades\Storage;
                 closeRejectModal();
             }
         });
+
+        const activityGridModal = document.getElementById('activityGridModal');
+        if (activityGridModal) {
+            activityGridModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeActivityGridModal();
+                }
+            });
+        }
     });
 </script>
 @endsection

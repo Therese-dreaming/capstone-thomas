@@ -69,6 +69,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('reservations/{id}', [UserController::class, 'cancel'])->name('reservations.cancel');
     });
     Route::get('/profile', [UserController::class, 'profile'])->name('user.profile');
+    Route::put('/profile', [UserController::class, 'updateProfile'])->name('user.profile.update');
+    Route::put('/password', [UserController::class, 'updatePassword'])->name('user.password.update');
 
     // Notifications
     Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
@@ -92,6 +94,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/reports', [IOSAController::class, 'reports'])->name('reports');
         Route::get('/reports/{report}', [IOSAController::class, 'showReport'])->name('reports.show');
         Route::post('/reports/{report}/status', [IOSAController::class, 'updateReportStatus'])->name('reports.update-status');
+        Route::get('/reservation-reports', [IOSAController::class, 'reservationReports'])->name('reservation-reports');
+        Route::get('/reservation-reports-export', [IOSAController::class, 'exportReservationReports'])->name('reservation-reports.export');
         
         // Reservations Routes
         Route::resource('reservations', IOSAReservationController::class);
@@ -103,6 +107,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Mhadel Routes
     Route::group(['prefix' => 'mhadel', 'as' => 'mhadel.', 'middleware' => ['auth', 'mhadel.role']], function () {
         Route::get('/', [MhadelController::class, 'dashboard'])->name('dashboard');
+        // Profile
+        Route::get('/profile', [MhadelController::class, 'profile'])->name('profile');
+        Route::put('/profile', [MhadelController::class, 'updateProfile'])->name('profile.update');
         Route::get('/reports', [MhadelController::class, 'reports'])->name('reports');
         Route::get('/reports/{report}', [MhadelController::class, 'showReport'])->name('reports.show');
         Route::get('/reports-export', [MhadelController::class, 'exportReports'])->name('reports.export');
@@ -136,7 +143,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // OTP Routes
     Route::group(['prefix' => 'drjavier', 'as' => 'drjavier.', 'middleware' => ['auth', 'otp.role']], function () {
-        Route::get('/', [OTPReservationController::class, 'index'])->name('dashboard');
+        Route::get('/', [DrJavierController::class, 'dashboard'])->name('dashboard');
         Route::get('/gsu-reports', [OTPReservationController::class, 'gsuReports'])->name('gsu-reports');
         Route::get('/gsu-reports/{report}', [OTPReservationController::class, 'showGsuReport'])->name('gsu-reports.show');
         Route::post('/gsu-reports/{report}/status', [OTPReservationController::class, 'updateGsuReportStatus'])->name('gsu-reports.update-status');

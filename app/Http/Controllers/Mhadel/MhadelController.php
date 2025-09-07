@@ -7,6 +7,8 @@ use App\Models\Reservation;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\Report;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class MhadelController extends Controller
 {
@@ -37,7 +39,8 @@ class MhadelController extends Controller
 			->get();
 		
 		// Finance datasets
-		$monthlyRaw = Reservation::where('status', 'approved_OTP')
+		// Actual revenue: COMPLETED only
+		$monthlyRaw = Reservation::where('status', 'completed')
 			->where('updated_at', '>=', $startOfYear)
 			->selectRaw('MONTH(updated_at) as m, SUM(final_price) as revenue')
 			->groupBy('m')
@@ -48,7 +51,7 @@ class MhadelController extends Controller
 		}
 		
 		// Quarterly revenue data
-		$quarterlyRaw = Reservation::where('status', 'approved_OTP')
+		$quarterlyRaw = Reservation::where('status', 'completed')
 			->where('updated_at', '>=', $startOfYear)
 			->selectRaw('QUARTER(updated_at) as q, SUM(final_price) as revenue')
 			->groupBy('q')
@@ -58,8 +61,8 @@ class MhadelController extends Controller
 			$revenueQuarterly[] = (float) ($quarterlyRaw[$i] ?? 0);
 		}
 		
-		// Expected revenue datasets (IOSA approved and Mhadel approved - waiting for final OTP approval)
-		$monthlyExpectedRaw = Reservation::whereIn('status', ['approved_IOSA', 'approved_mhadel'])
+		// Expected revenue datasets: use final_price from approved_mhadel and approved_OTP
+		$monthlyExpectedRaw = Reservation::whereIn('status', ['approved_mhadel', 'approved_OTP'])
 			->where('start_date', '>=', $startOfYear)
 			->whereNotNull('final_price')
 			->selectRaw('MONTH(start_date) as m, SUM(final_price) as expected_revenue')
@@ -71,7 +74,7 @@ class MhadelController extends Controller
 		}
 		
 		// Quarterly expected revenue data
-		$quarterlyExpectedRaw = Reservation::whereIn('status', ['approved_IOSA', 'approved_mhadel'])
+		$quarterlyExpectedRaw = Reservation::whereIn('status', ['approved_mhadel', 'approved_OTP'])
 			->where('start_date', '>=', $startOfYear)
 			->whereNotNull('final_price')
 			->selectRaw('QUARTER(start_date) as q, SUM(final_price) as expected_revenue')
@@ -94,13 +97,11 @@ class MhadelController extends Controller
 		]);
 		
 		$approvalsVsRejections = [
-			'approved' => Reservation::where('status', 'approved_mhadel')
-				->where('updated_at', '>=', $startOfMonth)->count(),
-			'rejected' => Reservation::where('status', 'rejected_mhadel')
-				->where('updated_at', '>=', $startOfMonth)->count(),
+			'approved' => Reservation::where('status', 'approved_mhadel')->count(),
+			'rejected' => Reservation::where('status', 'rejected_mhadel')->count(),
 		];
 		
-		$topVenues = Reservation::where('status', 'approved_OTP')
+		$topVenues = Reservation::where('status', 'completed')
 			->where('updated_at', '>=', $startOfYear)
 			->selectRaw('venue_id, SUM(final_price) as total')
 			->groupBy('venue_id')
@@ -120,7 +121,7 @@ class MhadelController extends Controller
 			->values();
 		
 		// Top venues by bookings count
-		$topVenuesByBookings = Reservation::where('status', 'approved_OTP')
+		$topVenuesByBookings = Reservation::where('status', 'completed')
 			->where('updated_at', '>=', $startOfYear)
 			->selectRaw('venue_id, COUNT(*) as total_bookings')
 			->groupBy('venue_id')
@@ -140,6 +141,7 @@ class MhadelController extends Controller
 			->values();
 		
 		// Trends datasets
+		// Department distribution by count: regardless of status
 		$byDepartment = Reservation::whereNotNull('department')
 			->selectRaw('department, COUNT(*) as c')
 			->groupBy('department')
@@ -151,8 +153,9 @@ class MhadelController extends Controller
 			});
 		
 		// Department data by revenue
+		// Department distribution by revenue: completed only
 		$byDepartmentRevenue = Reservation::whereNotNull('department')
-			->where('status', 'approved_OTP')
+			->where('status', 'completed')
 			->whereNotNull('final_price')
 			->selectRaw('department, SUM(final_price) as total_revenue')
 			->groupBy('department')
@@ -163,7 +166,8 @@ class MhadelController extends Controller
 				return [ 'department' => $r->department, 'revenue' => (float) $r->total_revenue ];
 			});
 		
-		$utilizationWeeks = Reservation::whereNotNull('start_date')
+		$utilizationWeeks = Reservation::where('status', 'completed')
+			->whereNotNull('start_date')
 			->whereNotNull('end_date')
 			->where('start_date', '>=', $startOfMonth)
 			->selectRaw('WEEK(start_date, 1) as wk, SUM(TIMESTAMPDIFF(HOUR, start_date, end_date)) as hrs')
@@ -173,23 +177,41 @@ class MhadelController extends Controller
 			->map(function ($r) {
 				return [ 'week' => (int) $r->wk, 'hours' => (int) $r->hrs ];
 			})
-			->filter(function ($item) {
-				return $item['hours'] > 0; // Only show weeks with actual usage
-			})
 			->values();
+
+		// Fill up venue utilization to include all weeks of the current month
+		$utilMap = collect($utilizationWeeks)->keyBy('week');
+		$filledUtil = [];
+		$cursor = (clone $startOfMonth)->startOfWeek(Carbon::MONDAY);
+		$endOfMonth = Carbon::now()->endOfMonth();
+		while ($cursor <= $endOfMonth) {
+			$wk = (int) $cursor->format('W');
+			$rangeStart = $cursor->copy();
+			$rangeEnd = $cursor->copy()->endOfWeek(Carbon::SUNDAY);
+			if ($rangeStart < $startOfMonth) { $rangeStart = $startOfMonth->copy(); }
+			if ($rangeEnd > $endOfMonth) { $rangeEnd = $endOfMonth->copy(); }
+			$label = $rangeStart->format('M d') . '–' . $rangeEnd->format('d');
+			$filledUtil[] = [
+				'week' => $wk,
+				'label' => $label,
+				'hours' => (int) (optional($utilMap->get($wk))['hours'] ?? 0),
+			];
+			$cursor->addWeek();
+		}
+		$utilizationWeeks = collect($filledUtil)->unique('week')->values();
 		
-		// Additional data for enhanced charts
-		$totalRevenue = Reservation::where('status', 'approved_OTP')
+		// Additional data for enhanced charts (completed only)
+		$totalRevenue = Reservation::where('status', 'completed')
 			->where('updated_at', '>=', $startOfMonth)
 			->sum('final_price');
 		
-		$averageRevenue = Reservation::where('status', 'approved_OTP')
+		$averageRevenue = Reservation::where('status', 'completed')
 			->where('updated_at', '>=', $startOfMonth)
 			->whereNotNull('final_price')
 			->avg('final_price');
 		
 		// Calculate expected revenue from pending reservations
-		$expectedRevenue = Reservation::whereIn('status', ['approved_IOSA', 'approved_mhadel'])
+		$expectedRevenue = Reservation::whereIn('status', ['approved_mhadel', 'approved_OTP'])
 			->where('start_date', '>=', $startOfMonth)
 			->whereNotNull('final_price')
 			->sum('final_price');
@@ -228,7 +250,7 @@ class MhadelController extends Controller
 		
 		// Calculate revenue growth (compare with previous month)
 		$previousMonth = Carbon::now()->subMonth()->startOfMonth();
-		$previousMonthRevenue = Reservation::where('status', 'approved_OTP')
+		$previousMonthRevenue = Reservation::where('status', 'completed')
 			->where('updated_at', '>=', $previousMonth)
 			->where('updated_at', '<', $startOfMonth)
 			->sum('final_price');
@@ -241,15 +263,6 @@ class MhadelController extends Controller
 		$totalUsers = \App\Models\User::count();
 		$totalVenues = \App\Models\Venue::where('is_available', true)->count();
 		$totalReservations = Reservation::count();
-		
-		// Calculate average processing time (in hours)
-		$avgProcessingTime = Reservation::whereIn('status', ['approved_mhadel', 'rejected_mhadel'])
-			->whereNotNull('created_at')
-			->whereNotNull('updated_at')
-			->get()
-			->avg(function ($r) {
-				return $r->created_at->diffInHours($r->updated_at);
-			});
 		
 		// Status flow data
 		$statusFlow = [
@@ -281,7 +294,7 @@ class MhadelController extends Controller
 			$monthlyComparison[] = [
 				'month' => $monthStart->format('M'),
 				'reservations' => Reservation::whereBetween('start_date', [$monthStart, $monthEnd])->count(),
-				'revenue' => (float) Reservation::where('status', 'approved_OTP')
+				'revenue' => (float) Reservation::where('status', 'completed')
 					->whereBetween('updated_at', [$monthStart, $monthEnd])
 					->sum('final_price')
 			];
@@ -308,11 +321,47 @@ class MhadelController extends Controller
 			'totalUsers' => $totalUsers,
 			'totalVenues' => $totalVenues,
 			'totalReservations' => $totalReservations,
-			'avgProcessingTime' => round($avgProcessingTime ?? 0, 1),
 			'statusFlow' => $statusFlow,
 			'peakHours' => $peakHours,
 			'monthlyComparison' => $monthlyComparison,
 		]);
+	}
+
+	/**
+	 * Show profile edit page for the authenticated Mhadel user.
+	 */
+	public function profile()
+	{
+		$user = \Illuminate\Support\Facades\Auth::user();
+		return view('mhadel.profile', compact('user'));
+	}
+
+	/**
+	 * Update profile information for the authenticated Mhadel user.
+	 */
+	public function updateProfile(Request $request)
+	{
+		$user = \Illuminate\Support\Facades\Auth::user();
+		$request->validate([
+			'first_name' => 'nullable|string|max:255',
+			'last_name' => 'nullable|string|max:255',
+			'name' => 'nullable|string|max:255',
+			'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+			'department' => 'nullable|string|max:255',
+			'password' => 'nullable|string|min:8|confirmed',
+		]);
+
+		$user->first_name = $request->first_name ?? $user->first_name;
+		$user->last_name = $request->last_name ?? $user->last_name;
+		$user->name = $request->name ?? trim(($request->first_name ?? $user->first_name).' '.($request->last_name ?? $user->last_name)) ?: $user->name;
+		$user->email = $request->email;
+		$user->department = $request->department ?? $user->department;
+		if ($request->filled('password')) {
+			$user->password = \Illuminate\Support\Facades\Hash::make($request->password);
+		}
+		$user->save();
+
+		return redirect()->route('mhadel.profile')->with('success', 'Profile updated successfully.');
 	}
 
 	/**
@@ -398,9 +447,8 @@ class MhadelController extends Controller
 	 */
 	public function showReport(Reservation $report)
 	{
-		$report->load(['user', 'venue']);
-		
-		return view('mhadel.reports.show', compact('report'));
+		// Redirect to the reservations show page since we removed the reports show view
+		return redirect()->route('mhadel.reservations.show', $report);
 	}
 
 	/**
