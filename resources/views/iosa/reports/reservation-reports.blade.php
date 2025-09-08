@@ -176,29 +176,27 @@
             </div>
         </div>
         
-        <!-- Tabs -->
+        <!-- Main Tabs -->
         <div class="flex border-b border-gray-200">
-            <button onclick="filterByStatus('all')" class="px-6 py-3 text-gray-700 hover:text-maroon transition-colors {{ request('status') == null ? 'tab-active' : '' }}">
-                All Reports
+            <button onclick="showReservationsTab()" id="reservationsTab" class="px-6 py-3 text-gray-700 hover:text-maroon transition-colors tab-active flex items-center">
+                <i class="fas fa-clipboard-list text-blue-500 mr-2"></i>
+                Reservations ({{ $results->total() }})
             </button>
-            <button onclick="filterByStatus('pending')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'pending' ? 'tab-active' : '' }}">
-                Pending Review
+            <button onclick="showEventsTab()" id="eventsTab" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors flex items-center">
+                <i class="fas fa-calendar-alt text-green-500 mr-2"></i>
+                Events ({{ $events->total() ?? 0 }})
             </button>
-            <button onclick="filterByStatus('approved_IOSA')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'approved_IOSA' ? 'tab-active' : '' }}">
-                IOSA Approved
-            </button>
-            <button onclick="filterByStatus('approved_OTP')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'approved_OTP' ? 'tab-active' : '' }}">
-                OTP Approved
-            </button>
-            <button onclick="filterByStatus('rejected_IOSA')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'rejected_IOSA' ? 'tab-active' : '' }}">
-                IOSA Rejected
-            </button>
-            <button onclick="filterByStatus('rejected_OTP')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'rejected_OTP' ? 'tab-active' : '' }}">
-                OTP Rejected
-            </button>
-            <button onclick="filterByStatus('completed')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'completed' ? 'tab-active' : '' }}">
-                Completed
-            </button>
+        </div>
+
+        <!-- Reservations Sub Tabs -->
+        <div id="reservationsSubTabs" class="flex border-b border-gray-200">
+            <button onclick="filterByStatus('all')" class="px-6 py-3 text-gray-700 hover:text-maroon transition-colors {{ request('status') == null ? 'tab-active' : '' }}">All Reservations</button>
+            <button onclick="filterByStatus('pending')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'pending' ? 'tab-active' : '' }}">Pending Review</button>
+            <button onclick="filterByStatus('approved_IOSA')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'approved_IOSA' ? 'tab-active' : '' }}">IOSA Approved</button>
+            <button onclick="filterByStatus('approved_OTP')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'approved_OTP' ? 'tab-active' : '' }}">OTP Approved</button>
+            <button onclick="filterByStatus('rejected_IOSA')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'rejected_IOSA' ? 'tab-active' : '' }}">IOSA Rejected</button>
+            <button onclick="filterByStatus('rejected_OTP')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'rejected_OTP' ? 'tab-active' : '' }}">OTP Rejected</button>
+            <button onclick="filterByStatus('completed')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'completed' ? 'tab-active' : '' }}">Completed</button>
         </div>
         
         <!-- View Toggle -->
@@ -343,6 +341,77 @@
             @endif
         </div>
         
+        <!-- Events View -->
+        <div id="eventsView" class="p-0 hidden">
+            @if(($events->count() ?? 0) > 0)
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><i class="fas fa-calendar-alt text-green-500 mr-1"></i>Event Details</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Venue</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Capacity</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach($events as $event)
+                                <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                    <td class="px-6 py-4">
+                                        <div>
+                                            <div class="text-sm font-semibold text-gray-900">{{ $event->title ?? 'N/A' }}</div>
+                                            <div class="text-sm text-gray-600">{{ $event->description ?? 'No description provided' }}</div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-medium text-gray-900">{{ optional($event->venue)->name ?? 'N/A' }}</div>
+                                        <div class="text-xs text-gray-500"><i class="fas fa-map-marker-alt mr-1"></i>{{ optional($event->venue)->capacity ?? 'N/A' }} capacity</div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm text-gray-900">{{ optional($event->start_date)->format('M d, Y') ?? 'N/A' }}</div>
+                                        <div class="text-xs text-gray-500">
+                                            @if($event->start_date && $event->end_date)
+                                                {{ \Carbon\Carbon::parse($event->start_date)->format('g:i A') }} - {{ \Carbon\Carbon::parse($event->end_date)->format('g:i A') }}
+                                            @else
+                                                N/A
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">{{ $event->capacity ?? 'N/A' }}</td>
+                                    <td class="px-6 py-4">
+                                        @php
+                                            $now = now();
+                                            $status = 'Unknown';
+                                            if ($event->start_date && $event->end_date) {
+                                                if ($now->isBefore($event->start_date)) $status = 'Upcoming';
+                                                elseif ($now->isBetween($event->start_date, $event->end_date)) $status = 'Ongoing';
+                                                else $status = 'Completed';
+                                            }
+                                        @endphp
+                                        <span class="status-badge {{ strtolower($status) === 'completed' ? 'status-completed' : (strtolower($status) === 'ongoing' ? 'status-approved' : 'status-pending') }}">{{ $status }}</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <a href="{{ route('iosa.events.show', $event->id) }}" class="btn-dark-blue px-3 py-2 rounded-lg text-xs font-medium transition-colors">
+                                            <i class="fas fa-eye mr-1"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <div class="px-6 py-4 border-t border-gray-200">{{ $events->links() }}</div>
+            @else
+                <div class="text-center py-12">
+                    <i class="fas fa-calendar-alt text-6xl text-gray-300 mb-6"></i>
+                    <h3 class="text-2xl font-bold text-gray-700 mb-4">No Events Found</h3>
+                    <p class="text-gray-500 mb-6">There are no events matching your current filters.</p>
+                </div>
+            @endif
+        </div>
+
         <!-- Chart View -->
         <div id="chartView" class="p-6 hidden">
             <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
@@ -364,42 +433,59 @@
                 </div>
                 
                 <div class="p-6">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 gap-6">
+                        <div id="reservationsCharts" class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
                         <!-- Revenue Chart -->
                         <div class="bg-gray-50 rounded-lg p-4">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-semibold text-gray-800">Revenue Trend (Completed Reservations Only)</h3>
-                                <div class="flex space-x-2">
-                                    <button onclick="updateRevenueChart('monthly')" id="monthlyBtn" class="px-3 py-1 text-xs font-medium bg-maroon text-white rounded-lg">Monthly</button>
-                                    <button onclick="updateRevenueChart('quarterly')" id="quarterlyBtn" class="px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Quarterly</button>
-                                </div>
+                          <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800">Revenue Trend (Completed Reservations Only)</h3>
+                            <div class="flex space-x-2">
+                              <button onclick="updateRevenueChart('monthly')" id="monthlyBtn" class="px-3 py-1 text-xs font-medium bg-maroon text-white rounded-lg">Monthly</button>
+                              <button onclick="updateRevenueChart('quarterly')" id="quarterlyBtn" class="px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Quarterly</button>
                             </div>
-                            <div class="h-64 bg-white rounded-lg border border-gray-200 p-4">
-                                <canvas id="revenueChart" width="400" height="200"></canvas>
+                          </div>
+                          <div class="h-64 bg-white rounded-lg border border-gray-200 p-4">
+                            <canvas id="revenueChart" width="400" height="200"></canvas>
+                          </div>
+                          <div class="mt-4 grid grid-cols-2 gap-4">
+                            <div class="bg-white rounded-lg p-3 text-center">
+                              <div class="text-lg font-bold text-gray-800">₱{{ number_format($totalRevenue ?? 0, 2) }}</div>
+                              <div class="text-xs text-gray-600">Total Revenue</div>
                             </div>
-                            <div class="mt-4 grid grid-cols-2 gap-4">
-                                <div class="bg-white rounded-lg p-3 text-center">
-                                    <div class="text-lg font-bold text-gray-800">₱{{ number_format($totalRevenue ?? 0, 2) }}</div>
-                                    <div class="text-xs text-gray-600">Total Revenue</div>
-                                </div>
-                                <div class="bg-white rounded-lg p-3 text-center">
-                                    <div class="text-lg font-bold text-gray-800">₱{{ number_format($averageRevenue ?? 0, 2) }}</div>
-                                    <div class="text-xs text-gray-600">Average per Reservation</div>
-                                </div>
+                            <div class="bg-white rounded-lg p-3 text-center">
+                              <div class="text-lg font-bold text-gray-800">₱{{ number_format($averageRevenue ?? 0, 2) }}</div>
+                              <div class="text-xs text-gray-600">Average per Reservation</div>
                             </div>
+                          </div>
                         </div>
                         
                         <!-- Status Distribution -->
                         <div class="bg-gray-50 rounded-lg p-4">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Reservation Status Distribution</h3>
+                          <h3 class="text-lg font-semibold text-gray-800 mb-4">Reservation Status Distribution</h3>
+                          <div class="h-64 bg-white rounded-lg border border-gray-200 p-4">
+                            <canvas id="statusChart" width="400" height="200"></canvas>
+                          </div>
+                        </div>
+                        </div>
+
+                        <div id="eventsCharts" class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full hidden">
+                          <div class="bg-gray-50 rounded-lg p-4">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Events Timeline</h3>
                             <div class="h-64 bg-white rounded-lg border border-gray-200 p-4">
-                                <canvas id="statusChart" width="400" height="200"></canvas>
+                              <canvas id="eventsTimelineChart" width="400" height="200"></canvas>
                             </div>
+                          </div>
+                          <div class="bg-gray-50 rounded-lg p-4">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Events Status Distribution</h3>
+                            <div class="h-64 bg-white rounded-lg border border-gray-200 p-4">
+                              <canvas id="eventsStatusChart" width="400" height="200"></canvas>
+                            </div>
+                          </div>
                         </div>
                     </div>
                     
-                    <!-- Additional Analytics -->
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                    <!-- Additional Analytics (Reservations only) -->
+                    <div id="reservationsAnalytics" class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
                         <!-- Venue Usage -->
                         <div class="bg-gray-50 rounded-lg p-4">
                             <h3 class="text-lg font-semibold text-gray-800 mb-4">Top Venues</h3>
@@ -488,7 +574,7 @@
 <!-- Filter Modal -->
 <div id="filterModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-screen overflow-y-auto font-poppins animate-fadeIn">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-screen overflow-y-auto font-poppins animate-fadeIn">
             <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white sticky top-0 z-10">
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
@@ -601,10 +687,10 @@
             </div>
             
             <div class="p-6 space-y-6">
-                <!-- Date Range Filter for Export -->
+                <!-- Date Range + Quick Ranges -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Export Date Range</label>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs text-gray-500 mb-1">From</label>
                             <input type="date" id="exportDateFrom" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon">
@@ -614,88 +700,110 @@
                             <input type="date" id="exportDateTo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon">
                         </div>
                     </div>
-                </div>
-                
-                <!-- Quick Date Ranges for Export -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Quick Ranges</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button type="button" onclick="setExportQuickRange('this_week')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                            This Week
-                        </button>
-                        <button type="button" onclick="setExportQuickRange('this_month')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                            This Month
-                        </button>
-                        <button type="button" onclick="setExportQuickRange('ytd')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                            YTD
-                        </button>
-                        <button type="button" onclick="setExportQuickRange('clear')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                            Clear
-                        </button>
+                    <div class="mt-3 grid grid-cols-2 gap-2">
+                        <button type="button" onclick="setExportQuickRange('this_week')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">This Week</button>
+                        <button type="button" onclick="setExportQuickRange('this_month')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">This Month</button>
+                        <button type="button" onclick="setExportQuickRange('ytd')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">YTD</button>
+                        <button type="button" onclick="setExportQuickRange('clear')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Clear</button>
                     </div>
                 </div>
-                
-                <!-- Status Filter for Export -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Include Statuses</label>
-                    
-                    <!-- Quick Status Presets -->
-                    <div class="mb-3">
-                        <button type="button" onclick="setStatusPreset('active')" class="px-3 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors mr-2" title="Pending + Mhadel Approved + OTP Approved + Completed">
-                            Active Only
-                        </button>
-                        <button type="button" onclick="setStatusPreset('all')" class="px-3 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors mr-2">
-                            All Statuses
-                        </button>
-                        <button type="button" onclick="setStatusPreset('clear')" class="px-3 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                            Clear All
-                        </button>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Left Column: Export Type + Options -->
+                    <div class="space-y-6">
+                        <!-- Export Type Selection -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-3">Export Data Type</label>
+                            <div class="space-y-3">
+                                <div class="bg-gray-50 rounded-lg p-3">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="exportType" value="both" class="mr-3 text-maroon focus:ring-maroon" checked>
+                                        <div class="flex items-center space-x-2">
+                                            <i class="fas fa-clipboard-list text-blue-500"></i>
+                                            <i class="fas fa-plus text-gray-400"></i>
+                                            <i class="fas fa-calendar-alt text-green-500"></i>
+                                            <span class="text-sm text-gray-700 font-medium">Both Reservations & Events</span>
+                                        </div>
+                                    </label>
+                                    <p class="text-xs text-gray-500 ml-6 mt-1">Export all reservations and events data</p>
+                                </div>
+                                <div class="bg-blue-50 rounded-lg p-3">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="exportType" value="reservations" class="mr-3 text-maroon focus:ring-maroon">
+                                        <div class="flex items-center space-x-2">
+                                            <i class="fas fa-clipboard-list text-blue-500"></i>
+                                            <span class="text-sm text-gray-700 font-medium">Reservations Only</span>
+                                        </div>
+                                    </label>
+                                    <p class="text-xs text-gray-500 ml-6 mt-1">Includes status filtering and financial details</p>
+                                </div>
+                                <div class="bg-green-50 rounded-lg p-3">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="exportType" value="events" class="mr-3 text-maroon focus:ring-maroon">
+                                        <div class="flex items-center space-x-2">
+                                            <i class="fas fa-calendar-alt text-green-500"></i>
+                                            <span class="text-sm text-gray-700 font-medium">Events Only</span>
+                                        </div>
+                                    </label>
+                                    <p class="text-xs text-gray-500 ml-6 mt-1">Standalone events with scheduling details</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Export Options -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Export Options</label>
+                            <div class="space-y-3">
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="includeFilters" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                    <span class="text-sm text-gray-700">Include current page filters</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="includeSummary" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                    <span class="text-sm text-gray-700">Include summary sheet</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div class="grid grid-cols-2 gap-2">
-                        <label class="flex items-center">
-                            <input type="checkbox" id="exportStatusPending" class="mr-2 text-maroon focus:ring-maroon" checked>
-                            <span class="text-sm text-gray-700">Pending</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="exportStatusApprovedIOSA" class="mr-2 text-maroon focus:ring-maroon" checked>
-                            <span class="text-sm text-gray-700">IOSA Approved</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="exportStatusApprovedMhadel" class="mr-2 text-maroon focus:ring-maroon" checked>
-                            <span class="text-sm text-gray-700">Mhadel Approved</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="exportStatusApprovedOTP" class="mr-2 text-maroon focus:ring-maroon" checked>
-                            <span class="text-sm text-gray-700">OTP Approved</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="exportStatusRejectedMhadel" class="mr-2 text-maroon focus:ring-maroon" checked>
-                            <span class="text-sm text-gray-700">Mhadel Rejected</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="exportStatusRejectedOTP" class="mr-2 text-maroon focus:ring-maroon" checked>
-                            <span class="text-sm text-gray-700">OTP Rejected</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="exportStatusCompleted" class="mr-2 text-maroon focus:ring-maroon" checked>
-                            <span class="text-sm text-gray-700">Completed</span>
-                        </label>
-                    </div>
-                </div>
-                
-                <!-- Export Options -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Export Options</label>
-                    <div class="space-y-2">
-                        <label class="flex items-center">
-                            <input type="checkbox" id="includeFilters" class="mr-2 text-maroon focus:ring-maroon" checked>
-                            <span class="text-sm text-gray-700">Include current page filters</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="includeSummary" class="mr-2 text-maroon focus:ring-maroon" checked>
-                            <span class="text-sm text-gray-700">Include summary sheet</span>
-                        </label>
+
+                    <!-- Right Column: Statuses -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Include Statuses</label>
+                        <div class="mb-3">
+                            <button type="button" onclick="setStatusPreset('active')" class="px-3 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors mr-2" title="Pending + Mhadel Approved + OTP Approved + Completed">Active Only</button>
+                            <button type="button" onclick="setStatusPreset('all')" class="px-3 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors mr-2">All Statuses</button>
+                            <button type="button" onclick="setStatusPreset('clear')" class="px-3 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Clear All</button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="exportStatusPending" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                <span class="text-sm text-gray-700">Pending</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="exportStatusApprovedIOSA" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                <span class="text-sm text-gray-700">IOSA Approved</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="exportStatusApprovedMhadel" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                <span class="text-sm text-gray-700">Mhadel Approved</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="exportStatusApprovedOTP" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                <span class="text-sm text-gray-700">OTP Approved</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="exportStatusRejectedMhadel" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                <span class="text-sm text-gray-700">Mhadel Rejected</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="exportStatusRejectedOTP" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                <span class="text-sm text-gray-700">OTP Rejected</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="exportStatusCompleted" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                <span class="text-sm text-gray-700">Completed</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -716,6 +824,7 @@
     // View toggle functions
     function showListView() {
         document.getElementById('listView').classList.remove('hidden');
+        document.getElementById('eventsView').classList.add('hidden');
         document.getElementById('chartView').classList.add('hidden');
         document.getElementById('listViewBtn').classList.add('active');
         document.getElementById('chartViewBtn').classList.remove('active');
@@ -723,6 +832,7 @@
     
     function showChartView() {
         document.getElementById('listView').classList.add('hidden');
+        document.getElementById('eventsView').classList.add('hidden');
         document.getElementById('chartView').classList.remove('hidden');
         document.getElementById('chartViewBtn').classList.add('active');
         document.getElementById('listViewBtn').classList.remove('active');
@@ -816,6 +926,42 @@
         window.location.href = `${window.location.pathname}?${params.toString()}`;
     }
     
+    function showReservationsTab() {
+        document.getElementById('reservationsTab').classList.add('tab-active');
+        document.getElementById('eventsTab').classList.remove('tab-active');
+        document.getElementById('reservationsSubTabs').classList.remove('hidden');
+        document.getElementById('listView').classList.remove('hidden');
+        document.getElementById('eventsView').classList.add('hidden');
+        document.getElementById('chartView').classList.add('hidden');
+        if (document.getElementById('reservationsCharts')) {
+            document.getElementById('reservationsCharts').classList.remove('hidden');
+        }
+        if (document.getElementById('eventsCharts')) {
+            document.getElementById('eventsCharts').classList.add('hidden');
+        }
+        if (document.getElementById('reservationsAnalytics')) {
+            document.getElementById('reservationsAnalytics').classList.remove('hidden');
+        }
+    }
+    
+    function showEventsTab() {
+        document.getElementById('eventsTab').classList.add('tab-active');
+        document.getElementById('reservationsTab').classList.remove('tab-active');
+        document.getElementById('reservationsSubTabs').classList.add('hidden');
+        document.getElementById('listView').classList.add('hidden');
+        document.getElementById('eventsView').classList.remove('hidden');
+        document.getElementById('chartView').classList.add('hidden');
+        if (document.getElementById('reservationsCharts')) {
+            document.getElementById('reservationsCharts').classList.add('hidden');
+        }
+        if (document.getElementById('eventsCharts')) {
+            document.getElementById('eventsCharts').classList.remove('hidden');
+        }
+        if (document.getElementById('reservationsAnalytics')) {
+            document.getElementById('reservationsAnalytics').classList.add('hidden');
+        }
+    }
+
     // Export Modal Functions
     function openExportModal() {
         document.getElementById('exportModal').classList.remove('hidden');
@@ -877,20 +1023,26 @@
         const dateTo = document.getElementById('exportDateTo').value;
         const includeFilters = document.getElementById('includeFilters').checked;
         const includeSummary = document.getElementById('includeSummary').checked;
+        const exportType = document.querySelector('input[name="exportType"]:checked').value;
         
-        // Collect selected statuses
+        // Collect selected statuses (only relevant for reservations or both)
         const selectedStatuses = [];
-        if (document.getElementById('exportStatusPending').checked) selectedStatuses.push('pending');
-        if (document.getElementById('exportStatusApprovedIOSA').checked) selectedStatuses.push('approved_IOSA');
-        if (document.getElementById('exportStatusApprovedMhadel').checked) selectedStatuses.push('approved_mhadel');
-        if (document.getElementById('exportStatusApprovedOTP').checked) selectedStatuses.push('approved_OTP');
-        if (document.getElementById('exportStatusRejectedMhadel').checked) selectedStatuses.push('rejected_mhadel');
-        if (document.getElementById('exportStatusRejectedOTP').checked) selectedStatuses.push('rejected_OTP');
-        if (document.getElementById('exportStatusCompleted').checked) selectedStatuses.push('completed');
+        if (exportType === 'reservations' || exportType === 'both') {
+            if (document.getElementById('exportStatusPending').checked) selectedStatuses.push('pending');
+            if (document.getElementById('exportStatusApprovedIOSA').checked) selectedStatuses.push('approved_IOSA');
+            if (document.getElementById('exportStatusApprovedMhadel').checked) selectedStatuses.push('approved_mhadel');
+            if (document.getElementById('exportStatusApprovedOTP').checked) selectedStatuses.push('approved_OTP');
+            if (document.getElementById('exportStatusRejectedMhadel').checked) selectedStatuses.push('rejected_mhadel');
+            if (document.getElementById('exportStatusRejectedOTP').checked) selectedStatuses.push('rejected_OTP');
+            if (document.getElementById('exportStatusCompleted').checked) selectedStatuses.push('completed');
+        }
         
         // Build export URL
         let exportUrl = '{{ route("iosa.reservation-reports.export") }}?';
         const params = new URLSearchParams();
+        
+        // Add export type
+        params.append('export_type', exportType);
         
         // Add export date range
         if (dateFrom) params.append('export_start_date', dateFrom);
@@ -957,6 +1109,8 @@
     // Chart variables
     let revenueChart = null;
     let statusChart = null;
+    let eventsTimelineChart = null;
+    let eventsStatusChart = null;
     
     // Chart data from backend
     const revenueTrendData = @json($revenueTrendData ?? []);
@@ -964,6 +1118,10 @@
     const quarterlyRevenueData = @json($quarterlyRevenueData ?? []);
     const quarterLabels = @json($quarterLabels ?? []);
     const statusDistribution = @json($statusDistribution ?? []);
+    const eventsTimelineData = @json($eventsTimelineData ?? []);
+    const eventsTimelineLabels = @json($eventsTimelineLabels ?? []);
+    @php $eventsStatusDefault = $eventsStatusData ?? ['upcoming' => 0, 'ongoing' => 0, 'completed' => 0, 'unknown' => 0]; @endphp
+    const eventsStatusData = @json($eventsStatusDefault);
     
     // Initialize charts
     function initializeCharts() {
@@ -1160,6 +1318,40 @@
                         mode: 'index'
                     }
                 }
+            });
+        }
+        // Events: Timeline
+        const eventsTimelineCtx = document.getElementById('eventsTimelineChart');
+        if (eventsTimelineCtx) {
+            eventsTimelineChart = new Chart(eventsTimelineCtx, {
+                type: 'line',
+                data: {
+                    labels: eventsTimelineLabels,
+                    datasets: [{
+                        label: 'Events',
+                        data: eventsTimelineData,
+                        borderColor: '#10B981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+        // Events: Status
+        const eventsStatusCtx = document.getElementById('eventsStatusChart');
+        if (eventsStatusCtx) {
+            eventsStatusChart = new Chart(eventsStatusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Upcoming', 'Ongoing', 'Completed', 'Unknown'],
+                    datasets: [{
+                        data: [eventsStatusData.upcoming || 0, eventsStatusData.ongoing || 0, eventsStatusData.completed || 0, eventsStatusData.unknown || 0],
+                        backgroundColor: ['#34D399', '#3B82F6', '#9CA3AF', '#F59E0B']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
             });
         }
     }

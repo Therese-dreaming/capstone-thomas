@@ -1,7 +1,7 @@
 @extends('layouts.drjavier')
 
-@section('title', 'Reservation Reports & Analytics - OTP')
-@section('page-title', 'Reservation Reports & Analytics')
+@section('title', 'Reservations & Events Reports - OTP')
+@section('page-title', 'Reservations & Events Reports')
 
 @section('header-actions')
     <button id="openFilterBtn" class="bg-white text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 transition shadow-sm mr-2 flex items-center">
@@ -10,6 +10,34 @@
 @endsection
 
 @section('content')
+@php
+    // Process events data for charts
+    $eventsTimelineData = $events->groupBy(function($event) {
+        return $event->start_date ? \Carbon\Carbon::parse($event->start_date)->format('M Y') : 'Unknown';
+    })->map(function($group) {
+        return $group->count();
+    })->sortKeys()->values()->toArray();
+    
+    $eventsTimelineLabels = $events->groupBy(function($event) {
+        return $event->start_date ? \Carbon\Carbon::parse($event->start_date)->format('M Y') : 'Unknown';
+    })->keys()->sort()->values()->toArray();
+    
+    $eventsStatusData = [
+        'upcoming' => $events->filter(function($event) {
+            return $event->start_date && now()->isBefore($event->start_date);
+        })->count(),
+        'ongoing' => $events->filter(function($event) {
+            return $event->start_date && $event->end_date && now()->isBetween($event->start_date, $event->end_date);
+        })->count(),
+        'completed' => $events->filter(function($event) {
+            return $event->end_date && now()->isAfter($event->end_date);
+        })->count(),
+        'unknown' => $events->filter(function($event) {
+            return !$event->start_date || !$event->end_date;
+        })->count()
+    ];
+@endphp
+
 <!-- Google Fonts Import -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -114,45 +142,100 @@
 </style>
 
 <div class="space-y-6 font-inter">
-    <!-- Stats Overview -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
-            <div class="rounded-full bg-blue-50 p-3 mr-4">
-                <i class="fas fa-chart-line text-blue-500 text-xl"></i>
+    <!-- Reservations Statistics -->
+    <div class="mb-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+            <i class="fas fa-clipboard-list text-blue-500 mr-2"></i>
+            Reservations Statistics
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
+                <div class="rounded-full bg-blue-50 p-3 mr-4">
+                    <i class="fas fa-chart-line text-blue-500 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Total Reservations</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ number_format($kpis['total'] ?? 0) }}</h3>
+                </div>
             </div>
-            <div>
-                <p class="text-sm text-gray-500 font-medium">Total Reservations</p>
-                <h3 class="text-2xl font-bold text-gray-800">{{ number_format($kpis['total'] ?? 0) }}</h3>
+            
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
+                <div class="rounded-full bg-green-50 p-3 mr-4">
+                    <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Approved</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ number_format($kpis['approved'] ?? 0) }}</h3>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
+                <div class="rounded-full bg-red-50 p-3 mr-4">
+                    <i class="fas fa-times-circle text-red-500 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Rejected</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ number_format($kpis['rejected'] ?? 0) }}</h3>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
+                <div class="rounded-full bg-purple-50 p-3 mr-4">
+                    <i class="fas fa-peso-sign text-purple-500 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Total Revenue</p>
+                    <h3 class="text-2xl font-bold text-gray-800">₱{{ number_format($kpis['revenue'] ?? 0, 2) }}</h3>
+                </div>
             </div>
         </div>
-        
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
-            <div class="rounded-full bg-green-50 p-3 mr-4">
-                <i class="fas fa-check-circle text-green-500 text-xl"></i>
+    </div>
+
+    <!-- Events Statistics -->
+    <div class="mb-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+            <i class="fas fa-calendar-alt text-green-500 mr-2"></i>
+            Events Statistics
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
+                <div class="rounded-full bg-green-50 p-3 mr-4">
+                    <i class="fas fa-calendar-alt text-green-500 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Total Events</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ number_format($eventsKpis['total'] ?? 0) }}</h3>
+                </div>
             </div>
-            <div>
-                <p class="text-sm text-gray-500 font-medium">Approved</p>
-                <h3 class="text-2xl font-bold text-gray-800">{{ number_format($kpis['approved'] ?? 0) }}</h3>
+            
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
+                <div class="rounded-full bg-blue-50 p-3 mr-4">
+                    <i class="fas fa-clock text-blue-500 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Upcoming</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ number_format($eventsKpis['upcoming'] ?? 0) }}</h3>
+                </div>
             </div>
-        </div>
-        
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
-            <div class="rounded-full bg-red-50 p-3 mr-4">
-                <i class="fas fa-times-circle text-red-500 text-xl"></i>
+            
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
+                <div class="rounded-full bg-purple-50 p-3 mr-4">
+                    <i class="fas fa-check-circle text-purple-500 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Completed</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ number_format($eventsKpis['completed'] ?? 0) }}</h3>
+                </div>
             </div>
-            <div>
-                <p class="text-sm text-gray-500 font-medium">Rejected</p>
-                <h3 class="text-2xl font-bold text-gray-800">{{ number_format($kpis['rejected'] ?? 0) }}</h3>
-            </div>
-        </div>
-        
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
-            <div class="rounded-full bg-purple-50 p-3 mr-4">
-                <i class="fas fa-peso-sign text-purple-500 text-xl"></i>
-            </div>
-            <div>
-                <p class="text-sm text-gray-500 font-medium">Total Revenue</p>
-                <h3 class="text-2xl font-bold text-gray-800">₱{{ number_format($kpis['revenue'] ?? 0, 2) }}</h3>
+            
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
+                <div class="rounded-full bg-orange-50 p-3 mr-4">
+                    <i class="fas fa-calendar-day text-orange-500 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">This Month</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ number_format($eventsKpis['this_month'] ?? 0) }}</h3>
+                </div>
             </div>
         </div>
     </div>
@@ -163,7 +246,7 @@
             <div class="flex items-center justify-between">
                 <h2 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
                     <i class="fas fa-chart-bar text-maroon mr-3"></i>
-                    Reservation Reports & Analytics - OTP
+                    Reservations & Events Reports - OTP
                 </h2>
                 <div class="flex items-center space-x-2">
                     <div class="relative">
@@ -176,10 +259,22 @@
             </div>
         </div>
         
-        <!-- Tabs -->
+        <!-- Main Tabs -->
         <div class="flex border-b border-gray-200">
+            <button onclick="showReservationsTab()" id="reservationsTab" class="px-6 py-3 text-gray-700 hover:text-maroon transition-colors tab-active flex items-center">
+                <i class="fas fa-clipboard-list text-blue-500 mr-2"></i>
+                Reservations ({{ $results->total() }})
+            </button>
+            <button onclick="showEventsTab()" id="eventsTab" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors flex items-center">
+                <i class="fas fa-calendar-alt text-green-500 mr-2"></i>
+                Events ({{ $events->total() }})
+            </button>
+        </div>
+        
+        <!-- Reservations Status Filter Tabs -->
+        <div id="reservationsSubTabs" class="flex border-b border-gray-200">
             <button onclick="filterByStatus('all')" class="px-6 py-3 text-gray-700 hover:text-maroon transition-colors {{ request('status') == null ? 'tab-active' : '' }}">
-                All Reports
+                All Reservations
             </button>
             <button onclick="filterByStatus('pending')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'pending' ? 'tab-active' : '' }}">
                 Pending Review
@@ -194,7 +289,7 @@
                 Completed
             </button>
         </div>
-        
+
         <!-- View Toggle -->
         <div class="p-4 border-b border-gray-200 bg-gray-50">
             <div class="flex items-center justify-between">
@@ -208,7 +303,7 @@
                 </div>
                 <div class="flex items-center space-x-2">
                     <span class="text-sm text-gray-500">
-                        Showing {{ $results->count() }} of {{ $stats['total'] ?? $kpis['total'] ?? 0 }} results
+                        Showing <span id="currentCount">{{ $results->count() }}</span> of <span id="totalCount">{{ $stats['total'] ?? $kpis['total'] ?? 0 }}</span> results
                     </span>
                     <button onclick="openExportModal()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
                         <i class="fas fa-file-excel mr-2"></i>Export to Excel
@@ -224,7 +319,9 @@
                     <table class="w-full">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event Details</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <i class="fas fa-clipboard-list text-blue-500 mr-1"></i>Reservation Details
+                                </th>
                                 <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requester</th>
                                 <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Venue</th>
                                 <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
@@ -237,11 +334,16 @@
                             @foreach($results as $r)
                                 <tr class="hover:bg-gray-50 transition-colors duration-200">
                                     <td class="px-6 py-4">
-                                        <div>
-                                            <div class="text-sm font-semibold text-gray-900">{{ $r->event_title ?? 'N/A' }}</div>
-                                            <div class="text-sm text-gray-600">{{ $r->purpose ?? 'No purpose specified' }}</div>
-                                            <div class="text-xs text-gray-500 mt-1">
-                                                <i class="fas fa-users mr-1"></i>{{ $r->capacity ?? 'N/A' }} participants
+                                        <div class="flex items-start">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                                                <i class="fas fa-clipboard-list mr-1"></i>Reservation
+                                            </span>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900">{{ $r->event_title ?? 'N/A' }}</div>
+                                                <div class="text-sm text-gray-600">{{ $r->purpose ?? 'No purpose specified' }}</div>
+                                                <div class="text-xs text-gray-500 mt-1">
+                                                    <i class="fas fa-users mr-1"></i>{{ $r->capacity ?? 'N/A' }} participants
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -336,58 +438,174 @@
                 </div>
             @endif
         </div>
-        
-        <!-- Chart View -->
-        <div id="chartView" class="p-6 hidden">
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-                <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-2xl font-bold text-gray-800 flex items-center font-poppins">
-                            <i class="fas fa-chart-pie text-maroon mr-3"></i>
-                            Analytics Dashboard
-                        </h2>
-                        <div class="flex items-center space-x-2">
-                            <select id="chartPeriod" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon">
-                                <option value="7">Last 7 Days</option>
-                                <option value="30">Last 30 Days</option>
-                                <option value="90">Last 90 Days</option>
-                                <option value="365">Last Year</option>
-                            </select>
+
+        <!-- Events View -->
+        <div id="eventsView" class="p-0 hidden">
+            @if($events->count() > 0)
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <i class="fas fa-calendar-alt text-green-500 mr-1"></i>Event Details
+                                </th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Venue</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Capacity</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach($events as $event)
+                                <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-start">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-2">
+                                                <i class="fas fa-calendar-alt mr-1"></i>Event
+                                            </span>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900">{{ $event->title ?? 'N/A' }}</div>
+                                                <div class="text-sm text-gray-600">{{ $event->description ?? 'No description provided' }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">{{ optional($event->venue)->name ?? 'N/A' }}</div>
+                                            <div class="text-xs text-gray-500">
+                                                <i class="fas fa-map-marker-alt mr-1"></i>{{ optional($event->venue)->location ?? 'N/A' }}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div>
+                                            <div class="text-sm text-gray-900">{{ optional($event->start_date)->format('M d, Y') ?? 'N/A' }}</div>
+                                            <div class="text-xs text-gray-500">
+                                                @if($event->start_date && $event->end_date)
+                                                    {{ \Carbon\Carbon::parse($event->start_date)->format('g:i A') }} - {{ \Carbon\Carbon::parse($event->end_date)->format('g:i A') }}
+                                                @else
+                                                    N/A
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm text-gray-900">{{ $event->capacity ?? 'N/A' }} participants</div>
+                                        <div class="text-xs text-gray-500">
+                                            <i class="fas fa-building mr-1"></i>{{ optional($event->venue)->capacity ?? 'N/A' }} venue capacity
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        @php
+                                            $now = now();
+                                            $status = 'Unknown';
+                                            if ($event->start_date && $event->end_date) {
+                                                if ($now->isBefore($event->start_date)) {
+                                                    $status = 'Upcoming';
+                                                } elseif ($now->isBetween($event->start_date, $event->end_date)) {
+                                                    $status = 'Ongoing';
+                                                } else {
+                                                    $status = 'Completed';
+                                                }
+                                            }
+                                            
+                                            $badge = 'status-pending';
+                                            if ($status === 'Upcoming') $badge = 'status-pending';
+                                            if ($status === 'Ongoing') $badge = 'status-approved';
+                                            if ($status === 'Completed') $badge = 'status-completed';
+                                        @endphp
+                                        <span class="status-badge {{ $badge }}">
+                                            {{ $status }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <a href="{{ route('drjavier.events.show', $event->id) }}" class="btn-dark-blue px-3 py-2 rounded-lg text-xs font-medium transition-colors">
+                                            <i class="fas fa-eye mr-1"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="px-6 py-4 border-t border-gray-200">
+                    {{ $events->links() }}
+                </div>
+            @else
+                <div class="text-center py-12">
+                    <i class="fas fa-calendar-alt text-6xl text-gray-300 mb-6"></i>
+                    <h3 class="text-2xl font-bold text-gray-700 mb-4">No Events Found</h3>
+                    <p class="text-gray-500 mb-6">There are no events matching your current filters.</p>
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 max-w-md mx-auto">
+                        <div class="flex items-center">
+                            <i class="fas fa-info-circle text-green-500 mr-3"></i>
+                            <div>
+                                <h4 class="font-medium text-green-800">Events Information</h4>
+                                <p class="text-green-700 text-sm mt-1">Events are managed separately from reservations and show venue bookings.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="p-6">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- Revenue Chart -->
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-semibold text-gray-800">Revenue Trend (Completed Reservations Only)</h3>
-                                <div class="flex space-x-2">
-                                    <button onclick="updateRevenueChart('monthly')" id="monthlyBtn" class="px-3 py-1 text-xs font-medium bg-maroon text-white rounded-lg">Monthly</button>
-                                    <button onclick="updateRevenueChart('quarterly')" id="quarterlyBtn" class="px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Quarterly</button>
-                                </div>
-                            </div>
-                            <div class="h-64 bg-white rounded-lg border border-gray-200 p-4">
-                                <canvas id="revenueChart" width="400" height="200"></canvas>
-                            </div>
-                            <div class="mt-4 grid grid-cols-2 gap-4">
-                                <div class="bg-white rounded-lg p-3 text-center">
-                                    <div class="text-lg font-bold text-gray-800">₱{{ number_format($totalRevenue ?? 0, 2) }}</div>
-                                    <div class="text-xs text-gray-600">Total Revenue</div>
-                                </div>
-                                <div class="bg-white rounded-lg p-3 text-center">
-                                    <div class="text-lg font-bold text-gray-800">₱{{ number_format($averageRevenue ?? 0, 2) }}</div>
-                                    <div class="text-xs text-gray-600">Average per Reservation</div>
-                                </div>
+            @endif
+        </div>
+        
+        <!-- Chart View -->
+        <div id="chartView" class="p-6 hidden">
+            <!-- Reservations Charts -->
+            <div id="reservationsCharts" class="space-y-6">
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+                    <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-2xl font-bold text-gray-800 flex items-center font-poppins">
+                                <i class="fas fa-chart-pie text-maroon mr-3"></i>
+                                Reservations Analytics
+                            </h2>
+                            <div class="flex items-center space-x-2">
+                                <select id="chartPeriod" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon">
+                                    <option value="7">Last 7 Days</option>
+                                    <option value="30">Last 30 Days</option>
+                                    <option value="90">Last 90 Days</option>
+                                    <option value="365">Last Year</option>
+                                </select>
                             </div>
                         </div>
-                        
-                        <!-- Status Distribution -->
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Reservation Status Distribution</h3>
-                            <div class="h-64 bg-white rounded-lg border border-gray-200 p-4">
-                                <canvas id="statusChart" width="400" height="200"></canvas>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Revenue Chart -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-800">Revenue Trend (Completed Reservations Only)</h3>
+                                    <div class="flex space-x-2">
+                                        <button onclick="updateRevenueChart('monthly')" id="monthlyBtn" class="px-3 py-1 text-xs font-medium bg-maroon text-white rounded-lg">Monthly</button>
+                                        <button onclick="updateRevenueChart('quarterly')" id="quarterlyBtn" class="px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Quarterly</button>
+                                    </div>
+                                </div>
+                                <div class="h-64 bg-white rounded-lg border border-gray-200 p-4">
+                                    <canvas id="revenueChart" width="400" height="200"></canvas>
+                                </div>
+                                <div class="mt-4 grid grid-cols-2 gap-4">
+                                    <div class="bg-white rounded-lg p-3 text-center">
+                                        <div class="text-lg font-bold text-gray-800">₱{{ number_format($totalRevenue ?? 0, 2) }}</div>
+                                        <div class="text-xs text-gray-600">Total Revenue</div>
+                                    </div>
+                                    <div class="bg-white rounded-lg p-3 text-center">
+                                        <div class="text-lg font-bold text-gray-800">₱{{ number_format($averageRevenue ?? 0, 2) }}</div>
+                                        <div class="text-xs text-gray-600">Average per Reservation</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Status Distribution -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">Reservation Status Distribution</h3>
+                                <div class="h-64 bg-white rounded-lg border border-gray-200 p-4">
+                                    <canvas id="statusChart" width="400" height="200"></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -470,6 +688,121 @@
                                         </div>
                                     </div>
                                 @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Events Charts -->
+            <div id="eventsCharts" class="space-y-6 hidden">
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+                    <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-2xl font-bold text-gray-800 flex items-center font-poppins">
+                                <i class="fas fa-calendar-alt text-green-500 mr-3"></i>
+                                Events Analytics
+                            </h2>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Events Timeline Chart -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">Events Timeline</h3>
+                                <div class="h-64 bg-white rounded-lg border border-gray-200 p-4">
+                                    <canvas id="eventsTimelineChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                            
+                            <!-- Events Status Distribution -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">Events Status Distribution</h3>
+                                <div class="h-64 bg-white rounded-lg border border-gray-200 p-4">
+                                    <canvas id="eventsStatusChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Events Analytics -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                            <!-- Top Event Venues -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">Top Event Venues</h3>
+                                <div class="space-y-3">
+                                    @php
+                                        $eventVenueStats = $events->groupBy('venue_id')->map(function($group) {
+                                            return $group->count();
+                                        })->sortDesc()->take(5);
+                                    @endphp
+                                    @foreach($eventVenueStats as $venueId => $count)
+                                        @php
+                                            $venue = $venues->firstWhere('id', $venueId);
+                                            $venueName = $venue ? $venue->name : 'Unknown Venue';
+                                            $percentage = $events->count() > 0 ? round(($count / $events->count()) * 100, 1) : 0;
+                                        @endphp
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm text-gray-700 truncate">{{ $venueName }}</span>
+                                            <div class="flex items-center space-x-2">
+                                                <div class="w-20 bg-gray-200 rounded-full h-2">
+                                                    <div class="bg-green-500 h-2 rounded-full" style="width: {{ $percentage }}%"></div>
+                                                </div>
+                                                <span class="text-xs text-gray-500">{{ $count }}</span>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            
+                            <!-- Monthly Events Trend -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">Monthly Events Trend</h3>
+                                <div class="space-y-3">
+                                    @php
+                                        $monthlyEventStats = $events->groupBy(function($item) {
+                                            return $item->start_date ? \Carbon\Carbon::parse($item->start_date)->format('M Y') : 'Unknown';
+                                        })->map(function($group) {
+                                            return $group->count();
+                                        })->sortKeys()->take(6);
+                                    @endphp
+                                    @foreach($monthlyEventStats as $month => $count)
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm text-gray-700">{{ $month }}</span>
+                                            <div class="flex items-center space-x-2">
+                                                <div class="w-20 bg-gray-200 rounded-full h-2">
+                                                    <div class="bg-green-500 h-2 rounded-full" style="width: {{ $count > 0 ? min(100, ($count / max($monthlyEventStats->max(), 1)) * 100) : 0 }}%"></div>
+                                                </div>
+                                                <span class="text-xs text-gray-500">{{ $count }}</span>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            
+                            <!-- Events Capacity Analysis -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">Events Capacity Analysis</h3>
+                                <div class="space-y-3">
+                                    @php
+                                        $totalEventCapacity = $events->sum('capacity');
+                                        $averageEventCapacity = $events->count() > 0 ? round($totalEventCapacity / $events->count(), 1) : 0;
+                                        $maxEventCapacity = $events->max('capacity') ?? 0;
+                                        $minEventCapacity = $events->min('capacity') ?? 0;
+                                    @endphp
+                                    <div class="bg-white rounded-lg p-3 text-center">
+                                        <div class="text-lg font-bold text-gray-800">{{ $totalEventCapacity }}</div>
+                                        <div class="text-xs text-gray-600">Total Capacity</div>
+                                    </div>
+                                    <div class="bg-white rounded-lg p-3 text-center">
+                                        <div class="text-lg font-bold text-gray-800">{{ $averageEventCapacity }}</div>
+                                        <div class="text-xs text-gray-600">Average per Event</div>
+                                    </div>
+                                    <div class="bg-white rounded-lg p-3 text-center">
+                                        <div class="text-lg font-bold text-gray-800">{{ $maxEventCapacity }}</div>
+                                        <div class="text-xs text-gray-600">Largest Event</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -581,7 +914,7 @@
 <!-- Export Modal -->
 <div id="exportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-screen overflow-y-auto font-poppins animate-fadeIn">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-screen overflow-y-auto font-poppins animate-fadeIn">
             <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white sticky top-0 z-10">
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
@@ -594,102 +927,151 @@
                 </div>
             </div>
             
-            <div class="p-6 space-y-6">
-                <!-- Date Range Filter for Export -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Export Date Range</label>
-                    <div class="grid grid-cols-2 gap-4">
+            <div class="p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Left Column -->
+                    <div class="space-y-6">
+                        <!-- Export Type Selection -->
                         <div>
-                            <label class="block text-xs text-gray-500 mb-1">From</label>
-                            <input type="date" id="exportDateFrom" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon">
+                            <label class="block text-sm font-medium text-gray-700 mb-3">Export Data Type</label>
+                            <div class="space-y-3">
+                                <div class="bg-gray-50 rounded-lg p-3">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="exportType" value="both" class="mr-3 text-maroon focus:ring-maroon" checked>
+                                        <div class="flex items-center space-x-2">
+                                            <i class="fas fa-clipboard-list text-blue-500"></i>
+                                            <i class="fas fa-plus text-gray-400"></i>
+                                            <i class="fas fa-calendar-alt text-green-500"></i>
+                                            <span class="text-sm text-gray-700 font-medium">Both Reservations & Events</span>
+                                        </div>
+                                    </label>
+                                    <p class="text-xs text-gray-500 ml-6 mt-1">Export all reservations and events data</p>
+                                </div>
+
+                                <div class="bg-blue-50 rounded-lg p-3">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="exportType" value="reservations" class="mr-3 text-maroon focus:ring-maroon">
+                                        <div class="flex items-center space-x-2">
+                                            <i class="fas fa-clipboard-list text-blue-500"></i>
+                                            <span class="text-sm text-gray-700 font-medium">Reservations Only</span>
+                                        </div>
+                                    </label>
+                                    <p class="text-xs text-gray-500 ml-6 mt-1">Export only reservation data with financial information</p>
+                                </div>
+
+                                <div class="bg-green-50 rounded-lg p-3">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="exportType" value="events" class="mr-3 text-maroon focus:ring-maroon">
+                                        <div class="flex items-center space-x-2">
+                                            <i class="fas fa-calendar-alt text-green-500"></i>
+                                            <span class="text-sm text-gray-700 font-medium">Events Only</span>
+                                        </div>
+                                    </label>
+                                    <p class="text-xs text-gray-500 ml-6 mt-1">Export only events data with venue and timeline information</p>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- Date Range Filter for Export -->
                         <div>
-                            <label class="block text-xs text-gray-500 mb-1">To</label>
-                            <input type="date" id="exportDateTo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Export Date Range</label>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">From</label>
+                                    <input type="date" id="exportDateFrom" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">To</label>
+                                    <input type="date" id="exportDateTo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Date Ranges for Export -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Quick Ranges</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" onclick="setExportQuickRange('this_week')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    This Week
+                                </button>
+                                <button type="button" onclick="setExportQuickRange('this_month')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    This Month
+                                </button>
+                                <button type="button" onclick="setExportQuickRange('ytd')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    YTD
+                                </button>
+                                <button type="button" onclick="setExportQuickRange('clear')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    Clear
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Quick Date Ranges for Export -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Quick Ranges</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button type="button" onclick="setExportQuickRange('this_week')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                            This Week
-                        </button>
-                        <button type="button" onclick="setExportQuickRange('this_month')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                            This Month
-                        </button>
-                        <button type="button" onclick="setExportQuickRange('ytd')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                            YTD
-                        </button>
-                        <button type="button" onclick="setExportQuickRange('clear')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                            Clear
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Status Filter for Export -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Include Statuses</label>
-                    
-                    <!-- Quick Status Presets -->
-                    <div class="mb-3">
-                        <button type="button" onclick="setStatusPreset('active')" class="px-3 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors mr-2" title="Pending + Mhadel Approved + OTP Approved + Completed">
-                            Active Only
-                        </button>
-                        <button type="button" onclick="setStatusPreset('all')" class="px-3 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors mr-2">
-                            All Statuses
-                        </button>
-                        <button type="button" onclick="setStatusPreset('clear')" class="px-3 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                            Clear All
-                        </button>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-2">
-                        <label class="flex items-center">
-                            <input type="checkbox" id="exportStatusPending" class="mr-2 text-maroon focus:ring-maroon" checked>
-                            <span class="text-sm text-gray-700">Pending</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="exportStatusApprovedIOSA" class="mr-2 text-maroon focus:ring-maroon" checked>
-                            <span class="text-sm text-gray-700">IOSA Approved</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="exportStatusApprovedMhadel" class="mr-2 text-maroon focus:ring-maroon" checked>
-                            <span class="text-sm text-gray-700">Mhadel Approved</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="exportStatusApprovedOTP" class="mr-2 text-maroon focus:ring-maroon" checked>
-                            <span class="text-sm text-gray-700">OTP Approved</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="exportStatusRejectedMhadel" class="mr-2 text-maroon focus:ring-maroon" checked>
-                            <span class="text-sm text-gray-700">Mhadel Rejected</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="exportStatusRejectedOTP" class="mr-2 text-maroon focus:ring-maroon" checked>
-                            <span class="text-sm text-gray-700">OTP Rejected</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="exportStatusCompleted" class="mr-2 text-maroon focus:ring-maroon" checked>
-                            <span class="text-sm text-gray-700">Completed</span>
-                        </label>
-                    </div>
-                </div>
-                
-                <!-- Export Options -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Export Options</label>
-                    <div class="space-y-2">
-                        <label class="flex items-center">
-                            <input type="checkbox" id="includeFilters" class="mr-2 text-maroon focus:ring-maroon" checked>
-                            <span class="text-sm text-gray-700">Include current page filters</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="includeSummary" class="mr-2 text-maroon focus:ring-maroon" checked>
-                            <span class="text-sm text-gray-700">Include summary sheet</span>
-                        </label>
+
+                    <!-- Right Column -->
+                    <div class="space-y-6">
+                        <!-- Status Filter for Export -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Include Statuses</label>
+                            
+                            <!-- Quick Status Presets -->
+                            <div class="mb-3">
+                                <button type="button" onclick="setStatusPreset('active')" class="px-3 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors mr-2" title="Pending + Mhadel Approved + OTP Approved + Completed">
+                                    Active Only
+                                </button>
+                                <button type="button" onclick="setStatusPreset('all')" class="px-3 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors mr-2">
+                                    All Statuses
+                                </button>
+                                <button type="button" onclick="setStatusPreset('clear')" class="px-3 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    Clear All
+                                </button>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 gap-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="exportStatusPending" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                    <span class="text-sm text-gray-700">Pending</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="exportStatusApprovedIOSA" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                    <span class="text-sm text-gray-700">IOSA Approved</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="exportStatusApprovedMhadel" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                    <span class="text-sm text-gray-700">Mhadel Approved</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="exportStatusApprovedOTP" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                    <span class="text-sm text-gray-700">OTP Approved</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="exportStatusRejectedMhadel" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                    <span class="text-sm text-gray-700">Mhadel Rejected</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="exportStatusRejectedOTP" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                    <span class="text-sm text-gray-700">OTP Rejected</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="exportStatusCompleted" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                    <span class="text-sm text-gray-700">Completed</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Export Options -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Export Options</label>
+                            <div class="space-y-3">
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="includeFilters" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                    <span class="text-sm text-gray-700">Include current page filters</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="includeSummary" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                    <span class="text-sm text-gray-700">Include summary sheet</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -711,15 +1093,72 @@
     function showListView() {
         document.getElementById('listView').classList.remove('hidden');
         document.getElementById('chartView').classList.add('hidden');
+        document.getElementById('eventsView').classList.add('hidden');
         document.getElementById('listViewBtn').classList.add('active');
         document.getElementById('chartViewBtn').classList.remove('active');
+        
+        // Show appropriate list view based on active tab
+        if (document.getElementById('reservationsTab').classList.contains('tab-active')) {
+            document.getElementById('listView').classList.remove('hidden');
+            document.getElementById('eventsView').classList.add('hidden');
+        } else {
+            document.getElementById('listView').classList.add('hidden');
+            document.getElementById('eventsView').classList.remove('hidden');
+        }
     }
     
     function showChartView() {
         document.getElementById('listView').classList.add('hidden');
+        document.getElementById('eventsView').classList.add('hidden');
         document.getElementById('chartView').classList.remove('hidden');
         document.getElementById('chartViewBtn').classList.add('active');
         document.getElementById('listViewBtn').classList.remove('active');
+        
+        // Show appropriate chart view based on active tab
+        if (document.getElementById('reservationsTab').classList.contains('tab-active')) {
+            document.getElementById('reservationsCharts').classList.remove('hidden');
+            document.getElementById('eventsCharts').classList.add('hidden');
+        } else {
+            document.getElementById('reservationsCharts').classList.add('hidden');
+            document.getElementById('eventsCharts').classList.remove('hidden');
+        }
+    }
+    
+    // Tab switching functions
+    function showReservationsTab() {
+        // Update tab styles
+        document.getElementById('reservationsTab').classList.add('tab-active');
+        document.getElementById('eventsTab').classList.remove('tab-active');
+        
+        // Show/hide appropriate content
+        document.getElementById('listView').classList.remove('hidden');
+        document.getElementById('eventsView').classList.add('hidden');
+        document.getElementById('chartView').classList.add('hidden');
+        document.getElementById('reservationsCharts').classList.add('hidden');
+        document.getElementById('eventsCharts').classList.add('hidden');
+        document.getElementById('reservationsSubTabs').classList.remove('hidden');
+        
+        // Update count display
+        document.getElementById('currentCount').textContent = '{{ $results->count() }}';
+        document.getElementById('totalCount').textContent = '{{ $stats["total"] ?? $kpis["total"] ?? 0 }}';
+    }
+    
+    function showEventsTab() {
+        // Update tab styles
+        document.getElementById('eventsTab').classList.add('tab-active');
+        document.getElementById('reservationsTab').classList.remove('tab-active');
+        
+        // Show/hide appropriate content
+        document.getElementById('listView').classList.add('hidden');
+        document.getElementById('eventsView').classList.remove('hidden');
+        document.getElementById('chartView').classList.add('hidden');
+        document.getElementById('reservationsCharts').classList.add('hidden');
+        document.getElementById('eventsCharts').classList.add('hidden');
+        document.getElementById('reservationsSubTabs').classList.add('hidden');
+        
+        // Update count display
+        document.getElementById('currentCount').textContent = '{{ $events->count() }}';
+        document.getElementById('totalCount').textContent = '{{ $events->total() }}';
     }
     
     // Filter Modal Functions
@@ -871,30 +1310,38 @@
         const dateTo = document.getElementById('exportDateTo').value;
         const includeFilters = document.getElementById('includeFilters').checked;
         const includeSummary = document.getElementById('includeSummary').checked;
-        
-        // Collect selected statuses
+
+        // Get selected export type
+        const exportType = document.querySelector('input[name="exportType"]:checked').value;
+
+        // Collect selected statuses (only for reservations)
         const selectedStatuses = [];
-        if (document.getElementById('exportStatusPending').checked) selectedStatuses.push('pending');
-        if (document.getElementById('exportStatusApprovedIOSA').checked) selectedStatuses.push('approved_IOSA');
-        if (document.getElementById('exportStatusApprovedMhadel').checked) selectedStatuses.push('approved_mhadel');
-        if (document.getElementById('exportStatusApprovedOTP').checked) selectedStatuses.push('approved_OTP');
-        if (document.getElementById('exportStatusRejectedMhadel').checked) selectedStatuses.push('rejected_mhadel');
-        if (document.getElementById('exportStatusRejectedOTP').checked) selectedStatuses.push('rejected_OTP');
-        if (document.getElementById('exportStatusCompleted').checked) selectedStatuses.push('completed');
-        
-        // Build export URL
-        let exportUrl = '{{ route("iosa.reservation-reports.export") }}?';
+        if (exportType === 'reservations' || exportType === 'both') {
+            if (document.getElementById('exportStatusPending').checked) selectedStatuses.push('pending');
+            if (document.getElementById('exportStatusApprovedIOSA').checked) selectedStatuses.push('approved_IOSA');
+            if (document.getElementById('exportStatusApprovedMhadel').checked) selectedStatuses.push('approved_mhadel');
+            if (document.getElementById('exportStatusApprovedOTP').checked) selectedStatuses.push('approved_OTP');
+            if (document.getElementById('exportStatusRejectedMhadel').checked) selectedStatuses.push('rejected_mhadel');
+            if (document.getElementById('exportStatusRejectedOTP').checked) selectedStatuses.push('rejected_OTP');
+            if (document.getElementById('exportStatusCompleted').checked) selectedStatuses.push('completed');
+        }
+
+        // Build export URL - use Dr. Javier route
+        let exportUrl = '{{ route("drjavier.reports.reservation-reports.export") }}?';
         const params = new URLSearchParams();
-        
+
+        // Add export type
+        params.append('export_type', exportType);
+
         // Add export date range
         if (dateFrom) params.append('export_start_date', dateFrom);
         if (dateTo) params.append('export_end_date', dateTo);
-        
-        // Add selected statuses
+
+        // Add selected statuses (only for reservations)
         if (selectedStatuses.length > 0) {
             params.append('export_statuses', selectedStatuses.join(','));
         }
-        
+
         // Add current page filters if requested
         if (includeFilters) {
             const currentParams = new URLSearchParams(window.location.search);
@@ -906,10 +1353,10 @@
                 }
             });
         }
-        
+
         // Add export options
         params.append('include_summary', includeSummary ? '1' : '0');
-        
+
         // Execute export
         window.location.href = exportUrl + params.toString();
         closeExportModal();
@@ -951,6 +1398,8 @@
     // Chart variables
     let revenueChart = null;
     let statusChart = null;
+    let eventsTimelineChart = null;
+    let eventsStatusChart = null;
     
     // Chart data from backend
     const revenueTrendData = @json($revenueTrendData ?? []);
@@ -958,6 +1407,11 @@
     const quarterlyRevenueData = @json($quarterlyRevenueData ?? []);
     const quarterLabels = @json($quarterLabels ?? []);
     const statusDistribution = @json($statusDistribution ?? []);
+    
+    // Events chart data
+    const eventsTimelineData = @json($eventsTimelineData ?? []);
+    const eventsTimelineLabels = @json($eventsTimelineLabels ?? []);
+    const eventsStatusData = @json($eventsStatusData ?? []);
     
     // Initialize charts
     function initializeCharts() {
@@ -1115,6 +1569,181 @@
                             callbacks: {
                                 label: function(context) {
                                     return context.parsed.y + ' reservations';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#6B7280',
+                                font: {
+                                    size: 10,
+                                    family: 'Inter'
+                                },
+                                maxRotation: 45,
+                                minRotation: 0
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#F3F4F6'
+                            },
+                            ticks: {
+                                color: '#6B7280',
+                                font: {
+                                    size: 11,
+                                    family: 'Inter'
+                                },
+                                precision: 0
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+        
+        // Events Timeline Chart
+        const eventsTimelineCtx = document.getElementById('eventsTimelineChart');
+        if (eventsTimelineCtx) {
+            eventsTimelineChart = new Chart(eventsTimelineCtx, {
+                type: 'line',
+                data: {
+                    labels: eventsTimelineLabels,
+                    datasets: [{
+                        label: 'Events Count',
+                        data: eventsTimelineData,
+                        borderColor: '#10B981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#10B981',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                font: {
+                                    size: 12,
+                                    family: 'Inter'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                            titleColor: '#E5E7EB',
+                            bodyColor: '#E5E7EB',
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Events: ' + context.parsed.y;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#6B7280',
+                                font: {
+                                    size: 11,
+                                    family: 'Inter'
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#F3F4F6'
+                            },
+                            ticks: {
+                                color: '#6B7280',
+                                font: {
+                                    size: 11,
+                                    family: 'Inter'
+                                },
+                                precision: 0
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+        
+        // Events Status Chart
+        const eventsStatusCtx = document.getElementById('eventsStatusChart');
+        if (eventsStatusCtx) {
+            const eventsStatusLabels = ['Upcoming', 'Ongoing', 'Completed', 'Unknown'];
+            const eventsStatusValues = [
+                eventsStatusData.upcoming || 0,
+                eventsStatusData.ongoing || 0,
+                eventsStatusData.completed || 0,
+                eventsStatusData.unknown || 0
+            ];
+            
+            const eventsStatusColors = [
+                '#F59E0B', // Upcoming - Yellow
+                '#3B82F6', // Ongoing - Blue
+                '#10B981', // Completed - Green
+                '#6B7280'  // Unknown - Gray
+            ];
+            
+            eventsStatusChart = new Chart(eventsStatusCtx, {
+                type: 'bar',
+                data: {
+                    labels: eventsStatusLabels,
+                    datasets: [{
+                        label: 'Number of Events',
+                        data: eventsStatusValues,
+                        backgroundColor: eventsStatusColors,
+                        borderColor: eventsStatusColors,
+                        borderWidth: 2,
+                        borderRadius: 4,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                            titleColor: '#E5E7EB',
+                            bodyColor: '#E5E7EB',
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y + ' events';
                                 }
                             }
                         }

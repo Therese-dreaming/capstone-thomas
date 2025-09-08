@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Mhadel;
 
 use App\Http\Controllers\Controller;
 use App\Models\Reservation;
+use App\Models\Event;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\Report;
@@ -436,6 +437,31 @@ class MhadelController extends Controller
 
 		$results = $query->orderByDesc('start_date')->paginate(10)->withQueryString();
 
+		// Events list (for Events tab)
+		$eventsQuery = Event::with(['venue']);
+		if ($start) { $eventsQuery->whereDate('start_date', '>=', $start); }
+		if ($end) { $eventsQuery->whereDate('end_date', '<=', $end); }
+		if ($venueId) { $eventsQuery->where('venue_id', $venueId); }
+		if ($department) { $eventsQuery->where('department', $department); }
+		$events = $eventsQuery->orderByDesc('start_date')->paginate(10)->withQueryString();
+
+		// Events charts data
+		$eventsTimelineData = $events->getCollection()->groupBy(function($event) {
+			return $event->start_date ? \Carbon\Carbon::parse($event->start_date)->format('M Y') : 'Unknown';
+		})->map(function($group) {
+			return $group->count();
+		})->sortKeys()->values()->toArray();
+		$eventsTimelineLabels = $events->getCollection()->groupBy(function($event) {
+			return $event->start_date ? \Carbon\Carbon::parse($event->start_date)->format('M Y') : 'Unknown';
+		})->keys()->sort()->values()->toArray();
+
+		$eventsStatusData = [
+			'upcoming' => $events->getCollection()->filter(function($event) { return $event->start_date && now()->isBefore($event->start_date); })->count(),
+			'ongoing' => $events->getCollection()->filter(function($event) { return $event->start_date && $event->end_date && now()->isBetween($event->start_date, $event->end_date); })->count(),
+			'completed' => $events->getCollection()->filter(function($event) { return $event->end_date && now()->isAfter($event->end_date); })->count(),
+			'unknown' => $events->getCollection()->filter(function($event) { return !$event->start_date || !$event->end_date; })->count(),
+		];
+
 		// Revenue trend data for completed reservations only
 		$startOfYear = Carbon::now()->startOfYear();
 		
@@ -501,6 +527,7 @@ class MhadelController extends Controller
 		return view('mhadel.reports.index', [
 			'kpis' => $kpis,
 			'results' => $results,
+			'events' => $events,
 			'filters' => [
 				'start_date' => $start,
 				'end_date' => $end,
@@ -517,6 +544,9 @@ class MhadelController extends Controller
 			'totalRevenue' => $totalRevenue,
 			'averageRevenue' => $averageRevenue,
 			'statusDistribution' => $statusDistribution,
+			'eventsTimelineData' => $eventsTimelineData,
+			'eventsTimelineLabels' => $eventsTimelineLabels,
+			'eventsStatusData' => $eventsStatusData,
 		]);
 	}
 
@@ -534,41 +564,58 @@ class MhadelController extends Controller
 	 */
 	public function exportReports(Request $request)
 	{
-		$filters = [];
-		
-		// Check if we should include current page filters
-		if ($request->query('include_filters') == '1') {
-			$filters = [
-				'start_date' => $request->query('start_date'),
-				'end_date' => $request->query('end_date'),
-				'status' => $request->query('status'),
-				'venue_id' => $request->query('venue_id'),
-				'department' => $request->query('department'),
-			];
-		}
-		
-		// Add export-specific date range (overrides page filters if provided)
-		if ($request->query('export_start_date')) {
-			$filters['start_date'] = $request->query('export_start_date');
-		}
-		if ($request->query('export_end_date')) {
-			$filters['end_date'] = $request->query('export_end_date');
-		}
-		
-		// Add export-specific statuses (overrides page filters if provided)
-		if ($request->query('export_statuses')) {
-			$filters['export_statuses'] = explode(',', $request->query('export_statuses'));
-		}
-		
-		// Clean up empty filters
-		$filters = array_filter($filters, function($value) {
-			return $value !== null && $value !== '';
-		});
+		$exportType = $request->query('export_type', 'both');
+		$startDate = $request->query('export_start_date');
+		$endDate = $request->query('export_end_date');
+		$includeFilters = $request->query('include_filters', false);
+		$includeSummary = $request->query('include_summary', true);
+		$exportStatuses = $request->query('export_statuses');
 
-		return \Maatwebsite\Excel\Facades\Excel::download(
-			new \App\Exports\MhadelReportsExport($filters),
-			'mhadel_reports_' . now()->format('Y-m-d_H-i-s') . '.xlsx'
-		);
+		if ($includeFilters) {
+			$startDate = $startDate ?: $request->query('start_date');
+			$endDate = $endDate ?: $request->query('end_date');
+		}
+
+		$fileName = 'mhadel_reports_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+		if ($exportType === 'events') {
+			$query = Event::with(['venue']);
+			if ($startDate) { $query->whereDate('start_date', '>=', $startDate); }
+			if ($endDate) { $query->whereDate('end_date', '<=', $endDate); }
+			$events = $query->orderBy('start_date')->get();
+
+			return \Maatwebsite\Excel\Facades\Excel::download(
+				new \App\Exports\MhadelEventsExport($events),
+				$fileName
+			);
+		} elseif ($exportType === 'reservations') {
+			$query = Reservation::with(['user', 'venue']);
+			if ($startDate) { $query->whereDate('start_date', '>=', $startDate); }
+			if ($endDate) { $query->whereDate('end_date', '<=', $endDate); }
+			if ($exportStatuses) { $query->whereIn('status', explode(',', $exportStatuses)); }
+			$reservations = $query->orderBy('start_date')->get();
+
+			return \Maatwebsite\Excel\Facades\Excel::download(
+				new \App\Exports\MhadelReservationsExport($reservations),
+				$fileName
+			);
+		} else {
+			$eventsQuery = Event::with(['venue']);
+			if ($startDate) { $eventsQuery->whereDate('start_date', '>=', $startDate); }
+			if ($endDate) { $eventsQuery->whereDate('end_date', '<=', $endDate); }
+			$events = $eventsQuery->orderBy('start_date')->get();
+
+			$reservationsQuery = Reservation::with(['user', 'venue']);
+			if ($startDate) { $reservationsQuery->whereDate('start_date', '>=', $startDate); }
+			if ($endDate) { $reservationsQuery->whereDate('end_date', '<=', $endDate); }
+			if ($exportStatuses) { $reservationsQuery->whereIn('status', explode(',', $exportStatuses)); }
+			$reservations = $reservationsQuery->orderBy('start_date')->get();
+
+			return \Maatwebsite\Excel\Facades\Excel::download(
+				new \App\Exports\MhadelCombinedExport($reservations, $events, (bool) $includeSummary),
+				$fileName
+			);
+		}
 	}
 
 	/**
@@ -647,6 +694,55 @@ class MhadelController extends Controller
 		$report->load(['reporter', 'reportedUser', 'reservation', 'event']);
 		
 		return view('mhadel.gsu-reports.show', compact('report'));
+	}
+
+	/**
+	 * Export GSU reports to Excel.
+	 */
+	public function exportGsuReports(Request $request)
+	{
+		$query = Report::with(['reporter', 'reportedUser', 'reservation', 'event'])
+			->orderBy('created_at', 'desc');
+
+		// Apply filters
+		if ($request->filled('type')) {
+			$query->where('type', $request->type);
+		}
+		
+		if ($request->filled('severity')) {
+			$query->where('severity', $request->severity);
+		}
+		
+		if ($request->filled('status')) {
+			$query->where('status', $request->status);
+		}
+		
+		if ($request->filled('start_date')) {
+			$query->whereDate('created_at', '>=', $request->start_date);
+		}
+		
+		if ($request->filled('end_date')) {
+			$query->whereDate('created_at', '<=', $request->end_date);
+		}
+
+		// Get all filtered reports (no pagination for export)
+		$reports = $query->get();
+
+		// Generate filename with date range if applicable
+		$filename = 'GSU_Reports';
+		if ($request->filled('start_date') && $request->filled('end_date')) {
+			$filename .= '_' . $request->start_date . '_to_' . $request->end_date;
+		} elseif ($request->filled('start_date')) {
+			$filename .= '_from_' . $request->start_date;
+		} elseif ($request->filled('end_date')) {
+			$filename .= '_until_' . $request->end_date;
+		}
+		$filename .= '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+		return \Maatwebsite\Excel\Facades\Excel::download(
+			new \App\Exports\GSUReportsExport($reports),
+			$filename
+		);
 	}
 
 	/**

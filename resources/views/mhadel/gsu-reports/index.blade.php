@@ -121,6 +121,10 @@
                 </div>
                 
                 <div class="flex items-center space-x-3">
+                    <button onclick="openExportModal()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg flex items-center space-x-2 text-sm">
+                        <i class="fas fa-file-excel mr-1.5"></i>
+                        <span>Export to Excel</span>
+                    </button>
                     <a href="{{ route('mhadel.dashboard') }}" 
                        class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg flex items-center space-x-2 text-sm">
                         <i class="fas fa-arrow-left mr-1.5"></i>
@@ -421,4 +425,151 @@
         </div>
     </div>
 </div>
+
+<!-- Export Modal -->
+<div id="exportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-screen overflow-y-auto font-poppins animate-fadeIn">
+            <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white sticky top-0 z-10">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
+                        <i class="fas fa-file-excel text-green-600 mr-2"></i>
+                        Export GSU Reports to Excel
+                    </h3>
+                    <button onclick="closeExportModal()" class="text-gray-400 hover:text-gray-600 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <form id="exportForm" method="GET" action="{{ route('mhadel.gsu-reports.export') }}" class="space-y-6">
+                    <!-- Export Options -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Left Column -->
+                        <div class="space-y-6">
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                    <i class="fas fa-cog text-maroon mr-2"></i>
+                                    Export Options
+                                </h4>
+                                
+                                <div class="space-y-4">
+                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                        <label class="block text-sm font-medium text-gray-700 mb-3">Export Type</label>
+                                        <div class="space-y-2">
+                                            <label class="flex items-center">
+                                                <input type="radio" name="export_type" value="all" checked class="mr-3 text-green-600 focus:ring-green-500">
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-list text-green-600 mr-2"></i>
+                                                    <span class="text-sm font-medium">All Reports</span>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column -->
+                        <div class="space-y-6">
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                    <i class="fas fa-filter text-maroon mr-2"></i>
+                                    Apply Current Filters
+                                </h4>
+                                
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <div class="flex items-start">
+                                        <i class="fas fa-info-circle text-blue-500 mr-3 mt-0.5"></i>
+                                        <div>
+                                            <h5 class="font-medium text-blue-800 text-sm">Filter Information</h5>
+                                            <p class="text-blue-700 text-xs mt-1">The export will include all reports matching your current filter criteria. Use the filters above to refine your selection before exporting.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Pass current filter values -->
+                                @if(request('type'))
+                                    <input type="hidden" name="type" value="{{ request('type') }}">
+                                @endif
+                                @if(request('severity'))
+                                    <input type="hidden" name="severity" value="{{ request('severity') }}">
+                                @endif
+                                @if(request('status'))
+                                    <input type="hidden" name="status" value="{{ request('status') }}">
+                                @endif
+                                @if(request('start_date'))
+                                    <input type="hidden" name="start_date" value="{{ request('start_date') }}">
+                                @endif
+                                @if(request('end_date'))
+                                    <input type="hidden" name="end_date" value="{{ request('end_date') }}">
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Export Summary -->
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <h5 class="font-medium text-gray-800 mb-2 flex items-center">
+                            <i class="fas fa-chart-bar text-maroon mr-2"></i>
+                            Export Summary
+                        </h5>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-gray-800">{{ $stats['total'] }}</div>
+                                <div class="text-gray-600">Total Reports</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-yellow-600">{{ $stats['pending'] }}</div>
+                                <div class="text-gray-600">Pending</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-blue-600">{{ $stats['investigating'] }}</div>
+                                <div class="text-gray-600">Investigating</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-green-600">{{ $stats['resolved'] }}</div>
+                                <div class="text-gray-600">Resolved</div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+                <button onclick="closeExportModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    Cancel
+                </button>
+                <button onclick="submitExport()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2">
+                    <i class="fas fa-download mr-1"></i>
+                    <span>Export to Excel</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openExportModal() {
+        document.getElementById('exportModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeExportModal() {
+        document.getElementById('exportModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+    
+    function submitExport() {
+        document.getElementById('exportForm').submit();
+    }
+    
+    // Close modal when clicking outside
+    document.getElementById('exportModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeExportModal();
+        }
+    });
+</script>
 @endsection 

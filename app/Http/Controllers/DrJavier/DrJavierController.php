@@ -4,8 +4,11 @@ namespace App\Http\Controllers\DrJavier;
 
 use App\Http\Controllers\Controller;
 use App\Models\Reservation;
+use App\Models\Event;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class DrJavierController extends Controller
 {
@@ -361,6 +364,25 @@ class DrJavierController extends Controller
         // Get venues for filter dropdown
         $venues = \App\Models\Venue::orderBy('name')->get();
 
+        // Events data
+        $eventsQuery = Event::query()->with(['venue']);
+        
+        // Apply same filters to events if they exist
+        if ($start) { $eventsQuery->whereDate('start_date', '>=', $start); }
+        if ($end) { $eventsQuery->whereDate('end_date', '<=', $end); }
+        if ($venueId) { $eventsQuery->where('venue_id', $venueId); }
+        
+        $events = $eventsQuery->orderByDesc('start_date')->paginate(10)->withQueryString();
+        
+        // Events KPIs
+        $eventsKpis = [
+            'total' => Event::count(),
+            'upcoming' => Event::where('start_date', '>', now())->count(),
+            'completed' => Event::where('end_date', '<', now())->count(),
+            'this_month' => Event::whereMonth('start_date', now()->month)
+                ->whereYear('start_date', now()->year)->count(),
+        ];
+
         // Add stats for view compatibility
         $stats = [
             'total' => $kpis['total']
@@ -369,6 +391,8 @@ class DrJavierController extends Controller
         return view('drjavier.reports.reservation-reports', [
             'kpis' => $kpis,
             'results' => $results,
+            'events' => $events,
+            'eventsKpis' => $eventsKpis,
             'filters' => [
                 'start_date' => $start,
                 'end_date' => $end,
@@ -386,5 +410,216 @@ class DrJavierController extends Controller
             'averageRevenue' => $averageRevenue,
             'statusDistribution' => $statusDistribution,
         ]);
+    }
+
+    /**
+     * Export reports to Excel
+     */
+    public function exportReports(Request $request)
+    {
+        $exportType = $request->query('export_type', 'both');
+        $startDate = $request->query('export_start_date');
+        $endDate = $request->query('export_end_date');
+        $includeFilters = $request->query('include_filters', false);
+        $includeSummary = $request->query('include_summary', true);
+        $exportStatuses = $request->query('export_statuses');
+
+        // Apply filters from current page if requested
+        if ($includeFilters) {
+            $startDate = $startDate ?: $request->query('start_date');
+            $endDate = $endDate ?: $request->query('end_date');
+        }
+
+        $fileName = 'drjavier_reports_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        if ($exportType === 'events') {
+            return $this->exportEventsOnly($startDate, $endDate, $includeSummary, $fileName);
+        } elseif ($exportType === 'reservations') {
+            return $this->exportReservationsOnly($startDate, $endDate, $exportStatuses, $includeSummary, $fileName);
+        } else {
+            return $this->exportBoth($startDate, $endDate, $exportStatuses, $includeSummary, $fileName);
+        }
+    }
+
+    /**
+     * Export events only
+     */
+    private function exportEventsOnly($startDate, $endDate, $includeSummary, $fileName)
+    {
+        $query = Event::with(['venue']);
+
+        if ($startDate) {
+            $query->whereDate('start_date', '>=', $startDate);
+        }
+        if ($endDate) {
+            $query->whereDate('end_date', '<=', $endDate);
+        }
+
+        $events = $query->orderBy('start_date')->get();
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\DrJavierEventsExport($events, $includeSummary),
+            $fileName
+        );
+    }
+
+    /**
+     * Export reservations only
+     */
+    private function exportReservationsOnly($startDate, $endDate, $exportStatuses, $includeSummary, $fileName)
+    {
+        $query = Reservation::with(['user', 'venue']);
+
+        if ($startDate) {
+            $query->whereDate('start_date', '>=', $startDate);
+        }
+        if ($endDate) {
+            $query->whereDate('end_date', '<=', $endDate);
+        }
+        if ($exportStatuses) {
+            $statuses = explode(',', $exportStatuses);
+            $query->whereIn('status', $statuses);
+        }
+
+        $reservations = $query->orderBy('start_date')->get();
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\DrJavierReservationsExport($reservations, $includeSummary),
+            $fileName
+        );
+    }
+
+    /**
+     * Export both reservations and events
+     */
+    private function exportBoth($startDate, $endDate, $exportStatuses, $includeSummary, $fileName)
+    {
+        // Get events
+        $eventsQuery = Event::with(['venue']);
+        if ($startDate) {
+            $eventsQuery->whereDate('start_date', '>=', $startDate);
+        }
+        if ($endDate) {
+            $eventsQuery->whereDate('end_date', '<=', $endDate);
+        }
+        $events = $eventsQuery->orderBy('start_date')->get();
+
+        // Get reservations
+        $reservationsQuery = Reservation::with(['user', 'venue']);
+        if ($startDate) {
+            $reservationsQuery->whereDate('start_date', '>=', $startDate);
+        }
+        if ($endDate) {
+            $reservationsQuery->whereDate('end_date', '<=', $endDate);
+        }
+        if ($exportStatuses) {
+            $statuses = explode(',', $exportStatuses);
+            $reservationsQuery->whereIn('status', $statuses);
+        }
+        $reservations = $reservationsQuery->orderBy('start_date')->get();
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\DrJavierCombinedExport($reservations, $events, $includeSummary),
+            $fileName
+        );
+    }
+
+    /**
+     * Export GSU reports to Excel.
+     */
+    public function exportGsuReports(Request $request)
+    {
+        $query = \App\Models\Report::with(['reporter', 'reportedUser', 'reservation', 'event'])
+            ->orderBy('created_at', 'desc');
+
+        // Apply filters
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+        if ($request->filled('severity')) {
+            $query->where('severity', $request->severity);
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        // Get all filtered reports (no pagination for export)
+        $reports = $query->get();
+
+        // Generate filename with date range if applicable
+        $filename = 'GSU_Reports';
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $filename .= '_' . $request->start_date . '_to_' . $request->end_date;
+        } elseif ($request->filled('start_date')) {
+            $filename .= '_from_' . $request->start_date;
+        } elseif ($request->filled('end_date')) {
+            $filename .= '_until_' . $request->end_date;
+        }
+        $filename .= '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\GSUReportsExport($reports),
+            $filename
+        );
+    }
+
+    /**
+     * Display the profile page.
+     */
+    public function profile()
+    {
+        $user = Auth::user();
+        return view('drjavier.profile', compact('user'));
+    }
+
+    /**
+     * Update the user's profile information.
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = Auth::user();
+        
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:20',
+        ]);
+
+        $user->name = $request->name;
+        $user->email = $request->email;
+        if ($request->filled('phone')) {
+            $user->phone = $request->phone;
+        }
+        $user->save();
+
+        return redirect()->route('drjavier.profile')->with('success', 'Profile updated successfully.');
+    }
+
+    /**
+     * Update the user's password.
+     */
+    public function updatePassword(Request $request)
+    {
+        $user = Auth::user();
+        
+        $request->validate([
+            'current_password' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return back()->with('error', 'Current password is incorrect.');
+        }
+
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        return redirect()->route('drjavier.profile')->with('success', 'Password updated successfully.');
     }
 } 

@@ -20,17 +20,20 @@ class ReservationController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Reservation::with(['user', 'venue'])
-            ->where('status', 'approved_IOSA'); // Only show IOSA approved reservations for list view
+        $query = Reservation::with(['user', 'venue']);
         
-        if ($request->filled('status')) {
-            if ($request->status === 'pending') {
-                $query->where('status', 'approved_IOSA'); // Map 'pending' to 'approved_IOSA' for Mhadel's context
-            } elseif ($request->status === 'approved') {
-                $query->where('status', 'approved_mhadel');
-            } elseif ($request->status === 'rejected') {
-                $query->where('status', 'rejected_mhadel');
-            }
+        // Set default status to 'pending' if no status is specified
+        $status = $request->query('status', 'pending');
+        
+        if ($status === 'all') {
+            // Show all reservations regardless of status
+            // No additional filtering needed
+        } elseif ($status === 'pending') {
+            $query->where('status', 'approved_IOSA'); // Map 'pending' to 'approved_IOSA' for Mhadel's context
+        } elseif ($status === 'approved') {
+            $query->where('status', 'approved_mhadel');
+        } elseif ($status === 'rejected') {
+            $query->where('status', 'rejected_mhadel');
         }
         
         if ($request->filled('date_from')) {
@@ -72,7 +75,7 @@ class ReservationController extends Controller
         ])->with(['user', 'venue'])->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
         
         $stats = [
-            'total' => Reservation::where('status', 'approved_IOSA')->count(),
+            'total' => Reservation::count(), // All reservations regardless of status
             'pending' => Reservation::where('status', 'approved_IOSA')->count(),
             'approved' => Reservation::where('status', 'approved_mhadel')->count(),
             'rejected' => Reservation::where('status', 'rejected_mhadel')->count(),

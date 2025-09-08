@@ -90,8 +90,8 @@
 
 					<!-- Settings -->
 					<li>
-						<a href="#" 
-							class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon text-gray-700">
+						<a href="{{ route('drjavier.profile') }}" 
+							class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('drjavier.profile*') ? 'active-maroon' : 'text-gray-700' }}">
 							<i class="fas fa-cog w-5 h-5"></i>
 							<span class="font-medium">Settings</span>
 						</a>

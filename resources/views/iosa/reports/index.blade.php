@@ -121,6 +121,11 @@
                 </div>
                 
                 <div class="flex items-center space-x-3">
+                    <button onclick="openExportModal()" 
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg flex items-center space-x-2 text-sm">
+                        <i class="fas fa-file-excel mr-1.5"></i>
+                        <span>Export to Excel</span>
+                    </button>
                     <a href="{{ route('iosa.dashboard') }}" 
                        class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg flex items-center space-x-2 text-sm">
                         <i class="fas fa-arrow-left mr-1.5"></i>
@@ -420,5 +425,167 @@
             @endif
         </div>
     </div>
+
+    <!-- Export Modal -->
+    <div id="exportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center">
+                        <i class="fas fa-file-excel text-green-600 mr-3"></i>
+                        Export GSU Reports to Excel
+                    </h3>
+                    <button onclick="closeExportModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <form id="exportForm" method="GET" action="{{ route('iosa.reports.export') }}" class="p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Export Options -->
+                    <div class="space-y-6">
+                        <div>
+                            <h4 class="text-lg font-semibold text-gray-800 mb-4">Export Options</h4>
+                            
+                            <div class="space-y-4">
+                                <div class="flex items-center">
+                                    <input type="radio" id="exportAll" name="export_type" value="all" checked 
+                                           class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300">
+                                    <label for="exportAll" class="ml-3 text-sm font-medium text-gray-700">
+                                        Export All Reports
+                                    </label>
+                                </div>
+                                
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="includeSummary" name="include_summary" value="1" checked 
+                                           class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300">
+                                    <label for="includeSummary" class="ml-3 text-sm font-medium text-gray-700">
+                                        Include Summary Sheet
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="text-lg font-semibold text-gray-800 mb-4">Current Filters</h4>
+                            <div class="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="font-medium text-gray-600">Issue Type:</span>
+                                    <span class="text-gray-800">{{ request('type') ? ucfirst(request('type')) : 'All' }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="font-medium text-gray-600">Severity:</span>
+                                    <span class="text-gray-800">{{ request('severity') ? ucfirst(request('severity')) : 'All' }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="font-medium text-gray-600">Status:</span>
+                                    <span class="text-gray-800">{{ request('status') ? ucfirst(request('status')) : 'All' }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="font-medium text-gray-600">Date Range:</span>
+                                    <span class="text-gray-800">
+                                        @if(request('start_date') && request('end_date'))
+                                            {{ request('start_date') }} to {{ request('end_date') }}
+                                        @elseif(request('start_date'))
+                                            From {{ request('start_date') }}
+                                        @elseif(request('end_date'))
+                                            Until {{ request('end_date') }}
+                                        @else
+                                            All dates
+                                        @endif
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Export Summary -->
+                    <div class="space-y-6">
+                        <div>
+                            <h4 class="text-lg font-semibold text-gray-800 mb-4">Export Summary</h4>
+                            <div class="bg-green-50 rounded-lg p-4 space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium text-gray-700">Total Reports:</span>
+                                    <span class="text-2xl font-bold text-green-600">{{ $stats['total'] }}</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Pending:</span>
+                                        <span class="font-medium text-yellow-600">{{ $stats['pending'] }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Investigating:</span>
+                                        <span class="font-medium text-blue-600">{{ $stats['investigating'] }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Resolved:</span>
+                                        <span class="font-medium text-green-600">{{ $stats['resolved'] }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Critical:</span>
+                                        <span class="font-medium text-red-600">{{ $stats['critical'] }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-blue-50 rounded-lg p-4">
+                            <div class="flex items-start space-x-3">
+                                <i class="fas fa-info-circle text-blue-500 mt-1"></i>
+                                <div class="text-sm text-blue-700">
+                                    <p class="font-medium mb-1">Export Information:</p>
+                                    <ul class="space-y-1 text-xs">
+                                        <li>• Excel file will include all filtered reports</li>
+                                        <li>• Summary sheet provides overview statistics</li>
+                                        <li>• File will be downloaded automatically</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Hidden inputs to preserve current filters -->
+                <input type="hidden" name="type" value="{{ request('type') }}">
+                <input type="hidden" name="severity" value="{{ request('severity') }}">
+                <input type="hidden" name="status" value="{{ request('status') }}">
+                <input type="hidden" name="start_date" value="{{ request('start_date') }}">
+                <input type="hidden" name="end_date" value="{{ request('end_date') }}">
+                
+                <!-- Action Buttons -->
+                <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200 mt-6">
+                    <button type="button" onclick="closeExportModal()" 
+                            class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-all duration-200 font-medium">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg flex items-center space-x-2">
+                        <i class="fas fa-download mr-2"></i>
+                        <span>Export to Excel</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
+
+<script>
+function openExportModal() {
+    document.getElementById('exportModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeExportModal() {
+    document.getElementById('exportModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal when clicking outside
+document.getElementById('exportModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeExportModal();
+    }
+});
+</script>
 @endsection 

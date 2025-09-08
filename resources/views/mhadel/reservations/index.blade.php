@@ -211,10 +211,10 @@
         
         <!-- Tabs -->
         <div class="flex border-b border-gray-200">
-            <button onclick="filterByStatus('all')" class="px-6 py-3 text-gray-700 hover:text-maroon transition-colors {{ request('status') == null ? 'tab-active' : '' }}">
+            <button onclick="filterByStatus('all')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'all' ? 'tab-active' : '' }}">
                 All Reservations
             </button>
-            <button onclick="filterByStatus('pending')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'pending' ? 'tab-active' : '' }}">
+            <button onclick="filterByStatus('pending')" class="px-6 py-3 text-gray-700 hover:text-maroon transition-colors {{ (request('status') == 'pending' || request('status') == null) ? 'tab-active' : '' }}">
                 Pending Review
             </button>
             <button onclick="filterByStatus('approved')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'approved' ? 'tab-active' : '' }}">
@@ -250,21 +250,52 @@
                         <div class="reservation-card bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-all duration-300">
                             <div class="flex items-center justify-between mb-4">
                                 <div class="flex items-center space-x-3">
-                                    <span class="status-badge status-pending">
-                                        Pending Review
-                                    </span>
+                                    @if($reservation->status == 'approved_IOSA')
+                                        <span class="status-badge status-pending">
+                                            Pending Review
+                                        </span>
+                                    @elseif($reservation->status == 'approved_mhadel')
+                                        <span class="status-badge status-approved">
+                                            Approved by Mhadel
+                                        </span>
+                                    @elseif($reservation->status == 'rejected_mhadel')
+                                        <span class="status-badge status-rejected">
+                                            Rejected by Mhadel
+                                        </span>
+                                    @elseif($reservation->status == 'approved_OTP')
+                                        <span class="status-badge status-completed">
+                                            Final Approval
+                                        </span>
+                                    @elseif($reservation->status == 'rejected_OTP')
+                                        <span class="status-badge status-rejected">
+                                            Rejected by OTP
+                                        </span>
+                                    @elseif($reservation->status == 'rejected_IOSA')
+                                        <span class="status-badge status-rejected">
+                                            Rejected by IOSA
+                                        </span>
+                                    @else
+                                        <span class="status-badge status-pending">
+                                            {{ ucfirst(str_replace('_', ' ', $reservation->status)) }}
+                                        </span>
+                                    @endif
                                     <span class="text-sm text-gray-500">{{ $reservation->created_at->format('M d, Y H:i') }}</span>
                                 </div>
                                 <div class="flex items-center space-x-2">
                                     <a href="{{ route('mhadel.reservations.show', $reservation->id) }}" class="btn-dark-blue px-3 py-2 rounded-lg text-sm font-medium transition-colors">
                                         <i class="fas fa-eye mr-1"></i>View Details
                                     </a>
-                                    <button onclick="openApproveModal({{ $reservation->id }}, '{{ $reservation->event_title }}')" class="btn-dark-green px-3 py-2 rounded-lg text-sm font-medium transition-colors">
-                                        <i class="fas fa-check mr-1"></i>Approve
-                                    </button>
-                                    <button onclick="openRejectModal({{ $reservation->id }}, '{{ $reservation->event_title }}')" class="btn-dark-red px-3 py-2 rounded-lg text-sm font-medium transition-colors">
-                                        <i class="fas fa-times mr-1"></i>Reject
-                                    </button>
+                                    <a href="{{ route('mhadel.reservations.edit', $reservation->id) }}" class="px-3 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium">
+                                        <i class="fas fa-edit mr-1"></i>Edit
+                                    </a>
+                                    @if($reservation->status == 'approved_IOSA')
+                                        <button onclick="openApproveModal({{ $reservation->id }}, '{{ $reservation->event_title }}')" class="btn-dark-green px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+                                            <i class="fas fa-check mr-1"></i>Approve
+                                        </button>
+                                        <button onclick="openRejectModal({{ $reservation->id }}, '{{ $reservation->event_title }}')" class="btn-dark-red px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+                                            <i class="fas fa-times mr-1"></i>Reject
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                             
@@ -343,14 +374,35 @@
             @else
                 <div class="text-center py-12">
                     <i class="fas fa-calendar-check text-6xl text-gray-300 mb-6"></i>
-                    <h3 class="text-2xl font-bold text-gray-700 mb-4">No Pending Reservations</h3>
-                    <p class="text-gray-500 mb-6">All IOSA approved reservations have been reviewed.</p>
+                    @if(request('status') == 'all' || request('status') == null)
+                        <h3 class="text-2xl font-bold text-gray-700 mb-4">No Reservations Found</h3>
+                        <p class="text-gray-500 mb-6">No reservations match the current filters.</p>
+                    @elseif(request('status') == 'pending')
+                        <h3 class="text-2xl font-bold text-gray-700 mb-4">No Pending Reservations</h3>
+                        <p class="text-gray-500 mb-6">All IOSA approved reservations have been reviewed.</p>
+                    @elseif(request('status') == 'approved')
+                        <h3 class="text-2xl font-bold text-gray-700 mb-4">No Approved Reservations</h3>
+                        <p class="text-gray-500 mb-6">No reservations have been approved by Ms. Mhadel yet.</p>
+                    @elseif(request('status') == 'rejected')
+                        <h3 class="text-2xl font-bold text-gray-700 mb-4">No Rejected Reservations</h3>
+                        <p class="text-gray-500 mb-6">No reservations have been rejected by Ms. Mhadel yet.</p>
+                    @endif
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
                         <div class="flex items-center">
                             <i class="fas fa-info-circle text-blue-500 mr-3"></i>
                             <div>
                                 <h4 class="font-medium text-blue-800">Workflow Information</h4>
-                                <p class="text-blue-700 text-sm mt-1">Reservations approved by IOSA will appear here for your review.</p>
+                                <p class="text-blue-700 text-sm mt-1">
+                                    @if(request('status') == 'all' || request('status') == null)
+                                        All reservations will appear here regardless of status.
+                                    @elseif(request('status') == 'pending')
+                                        Reservations approved by IOSA will appear here for your review.
+                                    @elseif(request('status') == 'approved')
+                                        Reservations approved by Ms. Mhadel will appear here.
+                                    @elseif(request('status') == 'rejected')
+                                        Reservations rejected by Ms. Mhadel will appear here.
+                                    @endif
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -1248,7 +1300,7 @@
     function filterByStatus(status) {
         const params = new URLSearchParams(window.location.search);
         if (status === 'all') {
-            params.delete('status');
+            params.set('status', 'all');
         } else {
             params.set('status', status);
         }

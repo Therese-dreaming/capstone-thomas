@@ -95,6 +95,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/reports', [IOSAController::class, 'reports'])->name('reports');
         Route::get('/reports/{report}', [IOSAController::class, 'showReport'])->name('reports.show');
         Route::post('/reports/{report}/status', [IOSAController::class, 'updateReportStatus'])->name('reports.update-status');
+        Route::get('/reports/export/excel', [IOSAController::class, 'exportGsuReports'])->name('reports.export');
         Route::get('/reservation-reports', [IOSAController::class, 'reservationReports'])->name('reservation-reports');
         Route::get('/reservation-reports-export', [IOSAController::class, 'exportReservationReports'])->name('reservation-reports.export');
         
@@ -128,6 +129,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/gsu-reports', [MhadelController::class, 'gsuReports'])->name('gsu-reports');
         Route::get('/gsu-reports/{report}', [MhadelController::class, 'showGsuReport'])->name('gsu-reports.show');
         Route::post('/gsu-reports/{report}/status', [MhadelController::class, 'updateGsuReportStatus'])->name('gsu-reports.update-status');
+        Route::get('/gsu-reports/export/excel', [MhadelController::class, 'exportGsuReports'])->name('gsu-reports.export');
         
         // Venues Routes
         Route::resource('venues', MhadelVenueController::class);
@@ -159,12 +161,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/gsu-reports', [OTPReservationController::class, 'gsuReports'])->name('gsu-reports');
         Route::get('/gsu-reports/{report}', [OTPReservationController::class, 'showGsuReport'])->name('gsu-reports.show');
         Route::post('/gsu-reports/{report}/status', [OTPReservationController::class, 'updateGsuReportStatus'])->name('gsu-reports.update-status');
+        Route::get('/gsu-reports/export/excel', [DrJavierController::class, 'exportGsuReports'])->name('gsu-reports.export');
         Route::get('/reports/reservation-reports', [DrJavierController::class, 'reservationReports'])->name('reports.reservation-reports');
+        Route::get('/reports/reservation-reports/export', [DrJavierController::class, 'exportReports'])->name('reports.reservation-reports.export');
+        Route::get('/profile', [DrJavierController::class, 'profile'])->name('profile');
+        Route::post('/profile', [DrJavierController::class, 'updateProfile'])->name('profile.update');
+        Route::post('/profile/password', [DrJavierController::class, 'updatePassword'])->name('profile.password');
         Route::resource('reservations', OTPReservationController::class);
         Route::post('reservations/{id}/approve', [OTPReservationController::class, 'approve'])->name('reservations.approve');
         Route::post('reservations/{id}/reject', [OTPReservationController::class, 'reject'])->name('reservations.reject');
         Route::get('reservations/{id}/download-activity-grid', [OTPReservationController::class, 'downloadActivityGrid'])->name('reservations.download-activity-grid');
-        Route::get('reservations-export', [OTPReservationController::class, 'export'])->name('reservations.export');
+        // Removed export route for Dr. Javier reservations
+        
+        // Dr. Javier Events Routes
+        Route::get('events', [\App\Http\Controllers\DrJavier\EventController::class, 'index'])->name('events.index');
+        Route::get('events/{event}', [\App\Http\Controllers\DrJavier\EventController::class, 'show'])->name('events.show');
+        Route::get('events-calendar', [\App\Http\Controllers\DrJavier\EventController::class, 'calendar'])->name('events.calendar');
     });
 
     // GSU Routes

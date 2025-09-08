@@ -5,9 +5,6 @@
 @section('page-subtitle', 'Final approval authority for reservations')
 
 @section('header-actions')
-    <a href="{{ route('drjavier.reservations.export', request()->query()) }}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition shadow-sm mr-2 flex items-center">
-        <i class="fas fa-file-excel mr-2"></i>Export to Excel
-    </a>
     <button id="openFilterBtn" class="bg-white text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 transition shadow-sm mr-2 flex items-center">
         <i class="fas fa-filter mr-2 text-maroon"></i>Filter
     </button>

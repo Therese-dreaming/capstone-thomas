@@ -415,6 +415,32 @@ class IOSAController extends Controller
             'completed' => Reservation::where('status', 'completed')->count(),
         ];
 
+        // Build events list (for Events tab)
+        $eventsQuery = \App\Models\Event::with(['venue']);
+        if ($request->filled('start_date')) { $eventsQuery->whereDate('start_date', '>=', $request->start_date); }
+        if ($request->filled('end_date')) { $eventsQuery->whereDate('end_date', '<=', $request->end_date); }
+        if ($request->filled('venue_id')) { $eventsQuery->where('venue_id', $request->venue_id); }
+        if ($request->filled('department')) { $eventsQuery->where('department', $request->department); }
+        $events = $eventsQuery->orderByDesc('start_date')->paginate(10)->withQueryString();
+
+        // Events charts data (timeline and status)
+        $eventsTimelineData = $events->getCollection()->groupBy(function($event) {
+            return $event->start_date ? \Carbon\Carbon::parse($event->start_date)->format('M Y') : 'Unknown';
+        })->map(function($group) {
+            return $group->count();
+        })->sortKeys()->values()->toArray();
+
+        $eventsTimelineLabels = $events->getCollection()->groupBy(function($event) {
+            return $event->start_date ? \Carbon\Carbon::parse($event->start_date)->format('M Y') : 'Unknown';
+        })->keys()->sort()->values()->toArray();
+
+        $eventsStatusData = [
+            'upcoming' => $events->getCollection()->filter(function($event) { return $event->start_date && now()->isBefore($event->start_date); })->count(),
+            'ongoing' => $events->getCollection()->filter(function($event) { return $event->start_date && $event->end_date && now()->isBetween($event->start_date, $event->end_date); })->count(),
+            'completed' => $events->getCollection()->filter(function($event) { return $event->end_date && now()->isAfter($event->end_date); })->count(),
+            'unknown' => $events->getCollection()->filter(function($event) { return !$event->start_date || !$event->end_date; })->count(),
+        ];
+
         // Get venues for filter
         $venues = \App\Models\Venue::where('is_available', true)->get();
 
@@ -428,54 +454,70 @@ class IOSAController extends Controller
             'quarterLabels',
             'totalRevenue',
             'averageRevenue',
-            'statusDistribution'
+            'statusDistribution',
+            'events',
+            'eventsTimelineData',
+            'eventsTimelineLabels',
+            'eventsStatusData'
         ));
     }
 
     /**
-     * Export reservation reports to Excel.
+     * Export reservation and event reports to Excel.
      */
     public function exportReservationReports(Request $request)
     {
-        // Prepare filters for the export class
-        $filters = [];
+        $exportType = $request->query('export_type', 'both');
+        $startDate = $request->query('export_start_date');
+        $endDate = $request->query('export_end_date');
+        $includeFilters = $request->query('include_filters', false);
+        $includeSummary = $request->query('include_summary', true);
+        $exportStatuses = $request->query('export_statuses');
 
-        // Map export filters to the format expected by the export class
-        if ($request->filled('export_start_date')) {
-            $filters['start_date'] = $request->export_start_date;
-        }
-        if ($request->filled('export_end_date')) {
-            $filters['end_date'] = $request->export_end_date;
-        }
-        if ($request->filled('export_statuses')) {
-            $statuses = explode(',', $request->export_statuses);
-            $filters['export_statuses'] = $statuses;
+        if ($includeFilters) {
+            $startDate = $startDate ?: $request->query('start_date');
+            $endDate = $endDate ?: $request->query('end_date');
         }
 
-        // Apply current page filters if requested
-        if ($request->filled('include_filters')) {
-            if ($request->filled('start_date')) {
-                $filters['start_date'] = $request->start_date;
-            }
-            if ($request->filled('end_date')) {
-                $filters['end_date'] = $request->end_date;
-            }
-            if ($request->filled('status')) {
-                $filters['status'] = $request->status;
-            }
-            if ($request->filled('venue_id')) {
-                $filters['venue_id'] = $request->venue_id;
-            }
-            if ($request->filled('department')) {
-                $filters['department'] = $request->department;
-            }
-        }
+        $fileName = 'iosa-reports-' . now()->format('Y-m-d-H-i-s') . '.xlsx';
 
-        // Create export with properly formatted filters
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\IOSAReservationsExport($filters),
-            'iosa-reservation-reports-' . now()->format('Y-m-d-H-i-s') . '.xlsx'
-        );
+        if ($exportType === 'events') {
+            $query = \App\Models\Event::with(['venue']);
+            if ($startDate) { $query->whereDate('start_date', '>=', $startDate); }
+            if ($endDate) { $query->whereDate('end_date', '<=', $endDate); }
+            $events = $query->orderBy('start_date')->get();
+
+            return \Maatwebsite\Excel\Facades\Excel::download(
+                new \App\Exports\IOSAEventsExport($events),
+                $fileName
+            );
+        } elseif ($exportType === 'reservations') {
+            $filters = [];
+            if ($startDate) { $filters['start_date'] = $startDate; }
+            if ($endDate) { $filters['end_date'] = $endDate; }
+            if ($exportStatuses) { $filters['export_statuses'] = explode(',', $exportStatuses); }
+
+            return \Maatwebsite\Excel\Facades\Excel::download(
+                new \App\Exports\IOSAReservationsExport($filters),
+                $fileName
+            );
+        } else {
+            $eventsQuery = \App\Models\Event::with(['venue']);
+            if ($startDate) { $eventsQuery->whereDate('start_date', '>=', $startDate); }
+            if ($endDate) { $eventsQuery->whereDate('end_date', '<=', $endDate); }
+            $events = $eventsQuery->orderBy('start_date')->get();
+
+            $reservationsQuery = \App\Models\Reservation::with(['user', 'venue']);
+            if ($startDate) { $reservationsQuery->whereDate('start_date', '>=', $startDate); }
+            if ($endDate) { $reservationsQuery->whereDate('end_date', '<=', $endDate); }
+            if ($exportStatuses) { $reservationsQuery->whereIn('status', explode(',', $exportStatuses)); }
+            $reservations = $reservationsQuery->orderBy('start_date')->get();
+
+            return \Maatwebsite\Excel\Facades\Excel::download(
+                new \App\Exports\IOSACombinedExport($reservations, $events, (bool) $includeSummary),
+                $fileName
+            );
+        }
     }
 
     /**
@@ -632,5 +674,50 @@ class IOSAController extends Controller
         $user->save();
 
         return redirect()->route('iosa.profile')->with('success', 'Password updated successfully.');
+    }
+
+    /**
+     * Export GSU reports to Excel.
+     */
+    public function exportGsuReports(Request $request)
+    {
+        $query = Report::with(['reporter', 'reportedUser', 'reservation', 'event'])
+            ->orderBy('created_at', 'desc');
+
+        // Apply filters
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+        if ($request->filled('severity')) {
+            $query->where('severity', $request->severity);
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        // Get all filtered reports (no pagination for export)
+        $reports = $query->get();
+
+        // Generate filename with date range if applicable
+        $filename = 'GSU_Reports';
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $filename .= '_' . $request->start_date . '_to_' . $request->end_date;
+        } elseif ($request->filled('start_date')) {
+            $filename .= '_from_' . $request->start_date;
+        } elseif ($request->filled('end_date')) {
+            $filename .= '_until_' . $request->end_date;
+        }
+        $filename .= '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\GSUReportsExport($reports),
+            $filename
+        );
     }
 } 

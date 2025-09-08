@@ -5,8 +5,7 @@ namespace App\Http\Controllers\DrJavier;
 use App\Http\Controllers\Controller;
 use App\Models\Reservation;
 use Illuminate\Http\Request;
-use App\Exports\OTPReservationsExport;
-use Maatwebsite\Excel\Facades\Excel;
+// Export removed
 use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -88,45 +87,7 @@ class ReservationController extends Controller
 		return view('drjavier.reservations.index', compact('reservations', 'stats', 'venues'));
 	}
 
-	/**
-	 * Export reservations to CSV (Excel-compatible).
-	 */
-	public function export(Request $request)
-	{
-		$query = Reservation::with(['user', 'venue']);
-		
-		// Apply same filters as index
-		if ($request->filled('status')) {
-			if ($request->status === 'pending') {
-				$query->where('status', 'approved_mhadel');
-			} elseif ($request->status === 'approved') {
-				$query->where('status', 'approved_OTP');
-			} elseif ($request->status === 'rejected') {
-				$query->where('status', 'rejected_OTP');
-			}
-		} else {
-			$query->whereIn('status', ['approved_mhadel', 'approved_OTP', 'rejected_OTP']);
-		}
-		
-		if ($request->filled('date_from')) {
-			$query->where('start_date', '>=', $request->date_from);
-		}
-		if ($request->filled('date_to')) {
-			$query->where('start_date', '<=', $request->date_to);
-		}
-		if ($request->filled('venue')) {
-			$query->where('venue_id', $request->venue);
-		}
-		if ($request->filled('department')) {
-			$query->whereHas('user', function($q) use ($request) {
-				$q->where('department', $request->department);
-			});
-		}
-		
-		$rows = $query->orderBy('created_at', 'desc')->get();
-		$filename = 'otp_reservations_' . now()->format('Ymd_His') . '.xlsx';
-		return Excel::download(new OTPReservationsExport($rows), $filename);
-	}
+	// Export method removed for Dr. Javier reservations
 
 	/**
 	 * Display the specified reservation.
