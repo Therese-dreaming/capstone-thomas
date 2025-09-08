@@ -10,9 +10,11 @@ use Carbon\Carbon;
 use App\Models\Event;
 use App\Models\User;
 use App\Models\Notification;
+use App\Models\ReservationRating;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ReservationSubmitted;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
@@ -72,7 +74,7 @@ class UserController extends Controller
 		$searchQuery = request()->query('q');
 		
 		$query = Reservation::where('user_id', Auth::id())
-			->with(['venue'])
+			->with(['venue', 'ratings'])
 			->latest();
 
 		// Add search functionality
@@ -534,5 +536,186 @@ class UserController extends Controller
 			'success' => true,
 			'message' => 'Reservation cancelled successfully!'
 		]);
+	}
+
+	/**
+	 * Rate a reservation (1-5 stars)
+	 */
+	public function rateReservation(Reservation $reservation, Request $request)
+	{
+		// Only allow rating completed reservations
+		if ($reservation->status !== 'completed') {
+			if ($request->expectsJson()) {
+				return response()->json(['success' => false, 'message' => 'Only completed reservations can be rated.']);
+			}
+			return back()->with('error', 'Only completed reservations can be rated.');
+		}
+
+		// Ensure user can only rate their own reservations
+		if ($reservation->user_id !== auth()->id()) {
+			if ($request->expectsJson()) {
+				return response()->json(['success' => false, 'message' => 'You can only rate your own reservations.']);
+			}
+			return back()->with('error', 'You can only rate your own reservations.');
+		}
+
+		$request->validate([
+			'rating' => 'required|integer|min:1|max:5',
+			'comment' => 'nullable|string|max:1000'
+		]);
+
+		$userId = auth()->id();
+
+		// Check if user has already rated this reservation
+		$existingRating = ReservationRating::where('reservation_id', $reservation->id)
+			->where('user_id', $userId)
+			->first();
+
+		if ($existingRating) {
+			// Update existing rating
+			$existingRating->update([
+				'rating' => $request->rating,
+				'comment' => $request->comment
+			]);
+			$message = 'Your rating has been updated successfully!';
+			$isNewRating = false;
+		} else {
+			// Create new rating
+			ReservationRating::create([
+				'reservation_id' => $reservation->id,
+				'user_id' => $userId,
+				'rating' => $request->rating,
+				'comment' => $request->comment
+			]);
+			$message = 'Thank you for rating your reservation!';
+			$isNewRating = true;
+		}
+
+		// Create notifications for all relevant roles
+		$this->createRatingNotifications($reservation, $request->rating, $request->comment, $isNewRating);
+
+		if ($request->expectsJson()) {
+			return response()->json([
+				'success' => true,
+				'message' => $message,
+				'average_rating' => $reservation->fresh()->average_rating,
+				'total_ratings' => $reservation->fresh()->total_ratings
+			]);
+		}
+
+		return back()->with('success', $message);
+	}
+
+	/**
+	 * Get reservation rating details
+	 */
+	public function getReservationRating(Reservation $reservation)
+	{
+		$userId = auth()->id();
+		$userRating = $reservation->getUserRating($userId);
+		
+		return response()->json([
+			'average_rating' => $reservation->average_rating,
+			'total_ratings' => $reservation->total_ratings,
+			'user_rating' => $userRating ? $userRating->rating : null,
+			'user_comment' => $userRating ? $userRating->comment : null,
+			'can_rate' => $reservation->status === 'completed' && $reservation->user_id === $userId
+		]);
+	}
+
+	/**
+	 * Create notifications for reservation ratings
+	 */
+	private function createRatingNotifications($reservation, $rating, $comment, $isNewRating)
+	{
+		$userName = auth()->user()->name;
+		$reservationTitle = $reservation->event_title;
+		$ratingText = $this->getRatingText($rating);
+		
+		$action = $isNewRating ? 'rated' : 'updated their rating for';
+		$notificationTitle = $isNewRating ? 'New Reservation Rating' : 'Reservation Rating Updated';
+		
+		$ratingMessage = "User {$userName} has {$action} reservation '{$reservationTitle}' with {$ratingText} ({$rating}/5 stars)";
+		
+		if ($comment) {
+			$ratingMessage .= ". Comment: " . Str::limit($comment, 100);
+		}
+
+		// Notify IOSA users
+		$iosaUsers = \App\Models\User::where('role', 'IOSA')->get();
+		foreach ($iosaUsers as $user) {
+			\App\Models\Notification::create([
+				'user_id' => $user->id,
+				'title' => $notificationTitle,
+				'body' => $ratingMessage,
+				'type' => 'rating',
+				'related_id' => $reservation->id,
+				'related_type' => 'App\\Models\\Reservation',
+				'read_at' => null
+			]);
+		}
+
+		// Notify GSU users
+		$gsuUsers = \App\Models\User::where('role', 'GSU')->get();
+		foreach ($gsuUsers as $user) {
+			\App\Models\Notification::create([
+				'user_id' => $user->id,
+				'title' => $notificationTitle,
+				'body' => $ratingMessage,
+				'type' => 'rating',
+				'related_id' => $reservation->id,
+				'related_type' => 'App\\Models\\Reservation',
+				'read_at' => null
+			]);
+		}
+
+		// Notify Ms. Mhadel users
+		$mhadelUsers = \App\Models\User::where('role', 'Mhadel')->get();
+		foreach ($mhadelUsers as $user) {
+			\App\Models\Notification::create([
+				'user_id' => $user->id,
+				'title' => $notificationTitle,
+				'body' => $ratingMessage,
+				'type' => 'rating',
+				'related_id' => $reservation->id,
+				'related_type' => 'App\\Models\\Reservation',
+				'read_at' => null
+			]);
+		}
+
+		// Notify OTP users
+		$otpUsers = \App\Models\User::where('role', 'OTP')->get();
+		foreach ($otpUsers as $user) {
+			\App\Models\Notification::create([
+				'user_id' => $user->id,
+				'title' => $notificationTitle,
+				'body' => $ratingMessage,
+				'type' => 'rating',
+				'related_id' => $reservation->id,
+				'related_type' => 'App\\Models\\Reservation',
+				'read_at' => null
+			]);
+		}
+	}
+
+	/**
+	 * Get rating text based on numeric rating
+	 */
+	private function getRatingText($rating)
+	{
+		switch ($rating) {
+			case 1:
+				return 'Poor';
+			case 2:
+				return 'Fair';
+			case 3:
+				return 'Good';
+			case 4:
+				return 'Very Good';
+			case 5:
+				return 'Excellent';
+			default:
+				return 'Unknown';
+		}
 	}
 }

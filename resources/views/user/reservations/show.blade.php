@@ -82,16 +82,6 @@
         <i class="fas fa-calendar-alt"></i>
         <span>Calendar</span>
     </a>
-    @if(!empty($reservation->activity_grid))
-        <a href="{{ asset('storage/' . $reservation->activity_grid) }}" target="_blank" class="action-btn px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center space-x-2 shadow-sm">
-            <i class="fas fa-file-download"></i>
-            <span>Download Grid</span>
-        </a>
-    @endif
-    <button id="printButton" class="action-btn px-4 py-2 bg-maroon-600 text-white rounded-lg hover:bg-maroon-700 flex items-center space-x-2 shadow-sm">
-        <i class="fas fa-print"></i>
-        <span>Print</span>
-    </button>
 </div>
 @endsection
 
@@ -186,6 +176,11 @@
             @if(!empty($reservation->activity_grid))
             <button class="tab-button flex-1 py-3 px-4 text-center font-medium text-gray-500 hover:text-gray-700 focus:outline-none" data-tab="attachments">
                 <i class="fas fa-paperclip mr-2"></i>Attachments
+            </button>
+            @endif
+            @if($reservation->status === 'completed')
+            <button class="tab-button flex-1 py-3 px-4 text-center font-medium text-gray-500 hover:text-gray-700 focus:outline-none" data-tab="rating">
+                <i class="fas fa-star mr-2"></i>Rating
             </button>
             @endif
         </div>
@@ -536,34 +531,78 @@
         </div>
     </div>
     @endif
-</div>
 
-<!-- Floating Action Button for Mobile -->
-<div class="fixed bottom-6 right-6 md:hidden">
-    <div class="relative group">
-        <button id="mobileActionBtn" class="w-12 h-12 rounded-full bg-maroon-600 text-white flex items-center justify-center shadow-lg focus:outline-none">
-            <i class="fas fa-ellipsis-h"></i>
-        </button>
-        <div id="mobileActionMenu" class="absolute bottom-16 right-0 bg-white rounded-lg shadow-xl border border-gray-200 w-48 hidden">
-            <div class="py-2">
-                <a href="{{ route('user.reservations.index') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-arrow-left mr-2"></i> Back to List
-                </a>
-                <a href="{{ route('user.reservations.calendar') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-calendar-alt mr-2"></i> Calendar
-                </a>
-                @if(!empty($reservation->activity_grid))
-                <a href="{{ asset('storage/' . $reservation->activity_grid) }}" target="_blank" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-file-download mr-2"></i> Download Grid
-                </a>
-                @endif
-                <button id="mobilePrintBtn" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-print mr-2"></i> Print
-                </button>
+    <!-- Rating Tab -->
+    @if($reservation->status === 'completed')
+    <div class="tab-content" id="rating-content">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 detail-card">
+            <div class="flex items-center mb-4">
+                <div class="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center mr-3">
+                    <i class="fas fa-star text-yellow-600"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800">Reservation Rating</h3>
             </div>
+            
+            @if($reservation->hasUserRated(auth()->id()))
+                <!-- Show existing rating -->
+                @php $userRating = $reservation->getUserRating(auth()->id()); @endphp
+                <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-semibold text-yellow-800">Your Rating</h4>
+                        <div class="flex items-center">
+                            @for($i = 1; $i <= 5; $i++)
+                                <i class="fas fa-star {{ $i <= $userRating->rating ? 'text-yellow-400' : 'text-gray-300' }}"></i>
+                            @endfor
+                            <span class="ml-2 text-sm font-medium text-yellow-700">{{ $userRating->rating }}/5</span>
+                        </div>
+                    </div>
+                    @if($userRating->comment)
+                        <div class="mt-3">
+                            <p class="text-sm text-yellow-700 bg-white p-3 rounded border border-yellow-200">
+                                <i class="fas fa-quote-left text-yellow-500 mr-2"></i>
+                                {{ $userRating->comment }}
+                            </p>
+                        </div>
+                    @endif
+                    <p class="text-xs text-yellow-600 mt-2">
+                        <i class="fas fa-clock mr-1"></i>
+                        Rated on {{ $userRating->created_at->format('M d, Y g:i A') }}
+                    </p>
+                </div>
+            @else
+                <!-- Show rating form -->
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <p class="text-gray-700 mb-4">How was your experience with this reservation?</p>
+                    <button onclick="openRatingModal({{ $reservation->id }}, '{{ $reservation->event_title }}')" 
+                            class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors flex items-center">
+                        <i class="fas fa-star mr-2"></i>
+                        Rate This Reservation
+                    </button>
+                </div>
+            @endif
+            
+            <!-- Show average rating if there are ratings -->
+            @if($reservation->total_ratings > 0)
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">Overall Rating</h4>
+                            <p class="text-sm text-gray-600">{{ $reservation->total_ratings }} rating{{ $reservation->total_ratings > 1 ? 's' : '' }}</p>
+                        </div>
+                        <div class="flex items-center">
+                            @for($i = 1; $i <= 5; $i++)
+                                <i class="fas fa-star {{ $i <= round($reservation->average_rating) ? 'text-yellow-400' : 'text-gray-300' }}"></i>
+                            @endfor
+                            <span class="ml-2 text-sm font-medium text-gray-700">{{ number_format($reservation->average_rating, 1) }}/5</span>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
+    @endif
 </div>
+
 @endsection
 
 @section('scripts')
@@ -591,33 +630,6 @@
             });
         });
         
-        // Print functionality
-        document.getElementById('printButton').addEventListener('click', function() {
-            window.print();
-        });
-        
-        if (document.getElementById('mobilePrintBtn')) {
-            document.getElementById('mobilePrintBtn').addEventListener('click', function() {
-                window.print();
-            });
-        }
-        
-        // Mobile action menu toggle
-        const mobileActionBtn = document.getElementById('mobileActionBtn');
-        const mobileActionMenu = document.getElementById('mobileActionMenu');
-        
-        if (mobileActionBtn && mobileActionMenu) {
-            mobileActionBtn.addEventListener('click', function() {
-                mobileActionMenu.classList.toggle('hidden');
-            });
-            
-            // Close menu when clicking outside
-            document.addEventListener('click', function(event) {
-                if (!mobileActionBtn.contains(event.target) && !mobileActionMenu.contains(event.target)) {
-                    mobileActionMenu.classList.add('hidden');
-                }
-            });
-        }
         
         // Simple progress bar animation
         setTimeout(() => {
@@ -626,6 +638,175 @@
                 progressBar.style.transition = 'height 0.5s ease';
             }
         }, 100);
+    });
+</script>
+
+<!-- Rating Modal -->
+<div id="ratingModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full font-poppins animate-fadeIn">
+            <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-yellow-50 to-white">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
+                        <i class="fas fa-star text-yellow-500 mr-2"></i>
+                        Rate Reservation
+                    </h3>
+                    <button onclick="closeRatingModal()" class="text-gray-400 hover:text-gray-600 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <div class="mb-4">
+                    <h4 class="font-semibold text-gray-800 mb-2" id="ratingEventTitle"></h4>
+                    <p class="text-sm text-gray-600">How was your experience with this reservation?</p>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Your Rating</label>
+                    <div class="flex items-center space-x-2" id="starRating">
+                        @for($i = 1; $i <= 5; $i++)
+                            <button type="button" onclick="setRating({{ $i }})" class="star-btn text-3xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="{{ $i }}">
+                                <i class="fas fa-star"></i>
+                            </button>
+                        @endfor
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2" id="ratingText">Click a star to rate</p>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Comment (Optional)</label>
+                    <textarea id="ratingComment" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" placeholder="Share your experience..."></textarea>
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+                <button onclick="closeRatingModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    Cancel
+                </button>
+                <button onclick="submitRating()" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors">
+                    <i class="fas fa-star mr-2"></i>Submit Rating
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentRating = 0;
+    let currentReservationId = null;
+
+    function openRatingModal(reservationId, eventTitle) {
+        currentReservationId = reservationId;
+        document.getElementById('ratingEventTitle').textContent = eventTitle;
+        document.getElementById('ratingModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        // Reset form
+        currentRating = 0;
+        document.getElementById('ratingComment').value = '';
+        updateStarDisplay();
+    }
+
+    function closeRatingModal() {
+        document.getElementById('ratingModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        currentReservationId = null;
+    }
+
+    function setRating(rating) {
+        currentRating = rating;
+        updateStarDisplay();
+    }
+
+    function updateStarDisplay() {
+        const stars = document.querySelectorAll('.star-btn');
+        const ratingText = document.getElementById('ratingText');
+        
+        stars.forEach((star, index) => {
+            if (index < currentRating) {
+                star.classList.remove('text-gray-300');
+                star.classList.add('text-yellow-400');
+            } else {
+                star.classList.remove('text-yellow-400');
+                star.classList.add('text-gray-300');
+            }
+        });
+        
+        const ratingTexts = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+        ratingText.textContent = currentRating > 0 ? ratingTexts[currentRating] : 'Click a star to rate';
+    }
+
+    function submitRating() {
+        if (currentRating === 0) {
+            alert('Please select a rating before submitting.');
+            return;
+        }
+
+        const comment = document.getElementById('ratingComment').value;
+        
+        fetch(`/user/reservations/${currentReservationId}/rate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                rating: currentRating,
+                comment: comment
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Rating submitted successfully!', 'success');
+                closeRatingModal();
+                // Reload the page to show the new rating
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showNotification(data.message || 'Error submitting rating', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error submitting rating. Please try again.', 'error');
+        });
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full ${
+            type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        }`;
+        notification.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+        }, 100);
+        
+        setTimeout(() => {
+            notification.classList.add('translate-x-full');
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 5000);
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('ratingModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeRatingModal();
+        }
     });
 </script>
 @endsection

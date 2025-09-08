@@ -339,7 +339,7 @@
 			@if($events->count())
 				<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
 					@foreach($events as $event)
-						<div class="event-card group">
+						<div class="event-card group flex flex-col">
 							<!-- Status Badge -->
 							<div class="absolute top-4 right-4 z-20">
 								@switch($event->status)
@@ -411,11 +411,18 @@
 											<span>Max: {{ $event->max_participants }} participants</span>
 										</div>
 									@endif
+									@if($event->equipment_details && count($event->equipment_details) > 0)
+										<div class="flex items-center text-sm text-gray-700">
+											<i class="fas fa-tools mr-3 text-maroon w-4"></i>
+											<span>{{ count($event->equipment_details) }} equipment item{{ count($event->equipment_details) > 1 ? 's' : '' }}</span>
+										</div>
+									@endif
 								</div>
 							</div>
 
+
 							<!-- Event Footer -->
-							<div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
+							<div class="px-6 py-4 border-t border-gray-100 bg-gray-50 mt-auto">
 								<div class="flex items-center justify-between">
 									<div class="text-xs text-gray-500">
 										<i class="far fa-clock mr-1"></i>
@@ -426,10 +433,12 @@
 										   class="action-button bg-blue-50 text-blue-600 hover:bg-blue-100" title="View Details">
 											<i class="fas fa-eye"></i>
 										</a>
+										@if($event->status !== 'completed' && $event->status !== 'cancelled')
 										<a href="{{ route('mhadel.events.edit', $event) }}" 
 										   class="action-button bg-green-50 text-green-600 hover:bg-green-100" title="Edit Event">
 											<i class="fas fa-edit"></i>
 										</a>
+										@endif
 										@if($event->status !== 'cancelled' && $event->status !== 'completed')
 										<button type="button" 
 												onclick="openCancelModal({{ $event->id }}, '{{ $event->title }}')"
@@ -439,21 +448,19 @@
 										@endif
 										
 										@if($event->status !== 'cancelled' && $event->status !== 'completed')
-										<form action="{{ route('mhadel.events.complete', $event) }}" method="POST" class="inline">
-											@csrf
-											<button type="submit" 
-													class="action-button bg-green-50 text-green-600 hover:bg-green-100" 
-													title="Mark as Complete"
-													onclick="return confirm('Are you sure you want to mark \"{{ $event->title }}\" as completed?')">
-												<i class="fas fa-check-circle"></i>
-											</button>
-										</form>
+										<button type="button" 
+												onclick="openCompleteModal({{ $event->id }}, '{{ $event->title }}')"
+												class="action-button bg-green-50 text-green-600 hover:bg-green-100" title="Mark as Complete">
+											<i class="fas fa-check-circle"></i>
+										</button>
 										@endif
+										@if($event->status !== 'completed')
 										<button type="button" 
 												onclick="openDeleteModal({{ $event->id }}, '{{ $event->title }}')"
 												class="action-button bg-red-50 text-red-600 hover:bg-red-100" title="Delete Event">
 											<i class="fas fa-trash"></i>
 										</button>
+										@endif
 									</div>
 								</div>
 							</div>
@@ -551,6 +558,67 @@
 	</div>
 </div>
 
+<!-- Complete Event Modal -->
+<div id="completeModal" class="modal">
+	<div class="modal-content">
+		<div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+			<i class="fas fa-check-circle text-green-600 text-2xl"></i>
+		</div>
+		<h3 class="text-xl font-bold text-gray-800 mb-2">Complete Event</h3>
+		<p class="text-gray-600 mb-4">Are you sure you want to mark "<span id="completeEventTitle" class="font-semibold"></span>" as completed?</p>
+		
+		<form id="completeForm" method="POST" class="space-y-4">
+			@csrf
+			<div>
+				<label for="completion_notes" class="block text-sm font-medium text-gray-700 mb-2">Completion Notes (Optional)</label>
+				<textarea id="completion_notes" name="completion_notes" rows="3" 
+						  placeholder="Add any notes about the event completion..."
+						  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"></textarea>
+			</div>
+			
+			<div class="flex justify-center space-x-3">
+				<button type="button" onclick="closeCompleteModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+					Cancel
+				</button>
+				<button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+					Mark as Complete
+				</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+<!-- Complete Event Modal -->
+<div id="completeModal" class="modal">
+	<div class="modal-content">
+		<div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+			<i class="fas fa-check-circle text-green-600 text-2xl"></i>
+		</div>
+		<h3 class="text-xl font-bold text-gray-800 mb-2">Complete Event</h3>
+		<p class="text-gray-600 mb-4">Are you sure you want to mark "<span id="completeEventTitle" class="font-semibold"></span>" as completed?</p>
+		
+		<div class="mb-4">
+			<label for="completionNotes" class="block text-sm font-medium text-gray-700 mb-2">Completion Notes (Optional)</label>
+			<textarea id="completionNotes" name="completion_notes" rows="3" 
+					  placeholder="Add any notes about the event completion..."
+					  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"></textarea>
+		</div>
+		
+		<div class="flex justify-center space-x-3">
+			<button onclick="closeCompleteModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+				Keep Ongoing
+			</button>
+			<form id="completeForm" method="POST" class="inline">
+				@csrf
+				<input type="hidden" id="completionNotesInput" name="completion_notes" value="">
+				<button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+					Mark as Complete
+				</button>
+			</form>
+		</div>
+	</div>
+</div>
+
 <script>
 function openDeleteModal(eventId, eventTitle) {
 	document.getElementById('eventTitle').textContent = eventTitle;
@@ -576,6 +644,20 @@ function closeCancelModal() {
 	document.body.style.overflow = 'auto';
 }
 
+function openCompleteModal(eventId, eventTitle) {
+	document.getElementById('completeEventTitle').textContent = eventTitle;
+	document.getElementById('completeForm').action = `/mhadel/events/${eventId}/complete`;
+	document.getElementById('completeModal').classList.add('show');
+	document.body.style.overflow = 'hidden';
+}
+
+function closeCompleteModal() {
+	document.getElementById('completeModal').classList.remove('show');
+	document.body.style.overflow = 'auto';
+	// Clear the completion notes when closing
+	document.getElementById('completion_notes').value = '';
+}
+
 // Close modal when clicking outside
 document.getElementById('deleteModal').addEventListener('click', function(e) {
 	if (e.target === this) {
@@ -589,11 +671,18 @@ document.getElementById('cancelModal').addEventListener('click', function(e) {
 	}
 });
 
+document.getElementById('completeModal').addEventListener('click', function(e) {
+	if (e.target === this) {
+		closeCompleteModal();
+	}
+});
+
 // Close modal with Escape key
 document.addEventListener('keydown', function(e) {
 	if (e.key === 'Escape') {
 		closeDeleteModal();
 		closeCancelModal();
+		closeCompleteModal();
 	}
 });
 </script>

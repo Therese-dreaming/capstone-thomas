@@ -601,6 +601,53 @@ use Illuminate\Support\Facades\Storage;
                     </div>
                 </div>
             @endif
+
+            <!-- Rating Information -->
+            @if($reservation->status === 'completed' && $reservation->total_ratings > 0)
+                <div class="info-card">
+                    <div class="p-4 border-b border-gray-200">
+                        <h2 class="text-base font-semibold text-gray-800 font-poppins flex items-center">
+                            <i class="fas fa-star text-maroon mr-2"></i>
+                            User Rating
+                        </h2>
+                    </div>
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <div class="text-center">
+                                <div class="flex items-center justify-center mb-2">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        <i class="fas fa-star {{ $i <= round($reservation->average_rating) ? 'text-yellow-400' : 'text-gray-300' }}"></i>
+                                    @endfor
+                                </div>
+                                <p class="text-lg font-bold text-gray-800">{{ number_format($reservation->average_rating, 1) }}/5</p>
+                                <p class="text-xs text-gray-600">{{ $reservation->total_ratings }} rating{{ $reservation->total_ratings > 1 ? 's' : '' }}</p>
+                            </div>
+                            
+                            @if($reservation->ratings->count() > 0)
+                                <div class="space-y-2">
+                                    <h4 class="font-medium text-gray-800 text-sm">Recent Reviews</h4>
+                                    @foreach($reservation->ratings->take(1) as $rating)
+                                        <div class="bg-gray-50 p-3 rounded border border-gray-200">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <div class="flex items-center">
+                                                    @for($i = 1; $i <= 5; $i++)
+                                                        <i class="fas fa-star {{ $i <= $rating->rating ? 'text-yellow-400' : 'text-gray-300' }} text-xs"></i>
+                                                    @endfor
+                                                </div>
+                                                <span class="text-xs text-gray-500">{{ $rating->created_at->format('M d') }}</span>
+                                            </div>
+                                            @if($rating->comment)
+                                                <p class="text-xs text-gray-700 italic">"{{ Str::limit($rating->comment, 80) }}"</p>
+                                            @endif
+                                            <p class="text-xs text-gray-500 mt-1">by {{ $rating->user->name }}</p>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 </div>

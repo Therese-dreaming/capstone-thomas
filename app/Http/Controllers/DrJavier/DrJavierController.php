@@ -7,6 +7,7 @@ use App\Models\Reservation;
 use App\Models\Event;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Models\ReservationRating;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
@@ -236,6 +237,9 @@ class DrJavierController extends Controller
             ];
         }
 
+        // Ratings Analytics Data
+        $ratingsData = $this->getRatingsAnalytics();
+
         return view('drjavier.dashboard', [
             'stats' => $stats,
             'recent_reservations' => $recent_reservations,
@@ -259,6 +263,7 @@ class DrJavierController extends Controller
             'statusFlow' => $statusFlow,
             'peakHours' => $peakHours,
             'monthlyComparison' => $monthlyComparison,
+            'ratingsData' => $ratingsData,
         ]);
     }
 
@@ -621,5 +626,114 @@ class DrJavierController extends Controller
         $user->save();
 
         return redirect()->route('drjavier.profile')->with('success', 'Password updated successfully.');
+    }
+
+    /**
+     * Get comprehensive ratings analytics data
+     */
+    private function getRatingsAnalytics()
+    {
+        $startOfYear = Carbon::now()->startOfYear();
+        $startOfMonth = Carbon::now()->startOfMonth();
+        
+        // Overall ratings statistics
+        $totalRatings = ReservationRating::count();
+        $averageRating = ReservationRating::avg('rating') ?? 0;
+        $ratingsThisMonth = ReservationRating::where('created_at', '>=', $startOfMonth)->count();
+        $averageRatingThisMonth = ReservationRating::where('created_at', '>=', $startOfMonth)->avg('rating') ?? 0;
+        
+        // Rating distribution (1-5 stars)
+        $ratingDistribution = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $ratingDistribution[$i] = ReservationRating::where('rating', $i)->count();
+        }
+        
+        // Monthly ratings trend (last 12 months)
+        $monthlyRatingsRaw = ReservationRating::where('created_at', '>=', $startOfYear)
+            ->selectRaw('MONTH(created_at) as month, COUNT(*) as count, AVG(rating) as avg_rating')
+            ->groupBy('month')
+            ->get();
+        
+        $monthlyRatingsData = [];
+        $monthlyAverageRatings = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $monthData = $monthlyRatingsRaw->where('month', $i)->first();
+            $monthlyRatingsData[] = $monthData ? $monthData->count : 0;
+            $monthlyAverageRatings[] = $monthData ? round($monthData->avg_rating, 1) : 0;
+        }
+        
+        // Ratings by venue
+        $ratingsByVenue = ReservationRating::join('reservations', 'reservation_ratings.reservation_id', '=', 'reservations.id')
+            ->join('venues', 'reservations.venue_id', '=', 'venues.id')
+            ->selectRaw('venues.name as venue_name, COUNT(*) as total_ratings, AVG(reservation_ratings.rating) as avg_rating')
+            ->groupBy('venues.id', 'venues.name')
+            ->having('total_ratings', '>', 0)
+            ->orderBy('total_ratings', 'desc')
+            ->limit(10)
+            ->get()
+            ->map(function($item) {
+                return [
+                    'venue' => $item->venue_name,
+                    'total_ratings' => $item->total_ratings,
+                    'avg_rating' => round($item->avg_rating, 1)
+                ];
+            });
+        
+        // Ratings by department
+        $ratingsByDepartment = ReservationRating::join('reservations', 'reservation_ratings.reservation_id', '=', 'reservations.id')
+            ->selectRaw('reservations.department, COUNT(*) as total_ratings, AVG(reservation_ratings.rating) as avg_rating')
+            ->whereNotNull('reservations.department')
+            ->groupBy('reservations.department')
+            ->having('total_ratings', '>', 0)
+            ->orderBy('total_ratings', 'desc')
+            ->limit(8)
+            ->get()
+            ->map(function($item) {
+                return [
+                    'department' => $item->department,
+                    'total_ratings' => $item->total_ratings,
+                    'avg_rating' => round($item->avg_rating, 1)
+                ];
+            });
+        
+        // Recent ratings with comments
+        $recentRatings = ReservationRating::with(['reservation.venue', 'user'])
+            ->whereNotNull('comment')
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function($rating) {
+                return [
+                    'id' => $rating->id,
+                    'rating' => $rating->rating,
+                    'comment' => $rating->comment,
+                    'user_name' => $rating->user->name,
+                    'venue_name' => $rating->reservation->venue->name ?? 'N/A',
+                    'event_title' => $rating->reservation->event_title,
+                    'created_at' => $rating->created_at->format('M d, Y g:i A')
+                ];
+            });
+        
+        // Rating growth (comparing this month vs last month)
+        $lastMonthStart = Carbon::now()->subMonth()->startOfMonth();
+        $lastMonthEnd = Carbon::now()->subMonth()->endOfMonth();
+        $ratingsLastMonth = ReservationRating::whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])->count();
+        $ratingGrowth = $ratingsLastMonth > 0 
+            ? round((($ratingsThisMonth - $ratingsLastMonth) / $ratingsLastMonth) * 100, 1)
+            : 0;
+        
+        return [
+            'total_ratings' => $totalRatings,
+            'average_rating' => round($averageRating, 1),
+            'ratings_this_month' => $ratingsThisMonth,
+            'average_rating_this_month' => round($averageRatingThisMonth, 1),
+            'rating_distribution' => $ratingDistribution,
+            'monthly_ratings_data' => $monthlyRatingsData,
+            'monthly_average_ratings' => $monthlyAverageRatings,
+            'ratings_by_venue' => $ratingsByVenue,
+            'ratings_by_department' => $ratingsByDepartment,
+            'recent_ratings' => $recentRatings,
+            'rating_growth' => $ratingGrowth
+        ];
     }
 } 

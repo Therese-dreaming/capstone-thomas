@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class Reservation extends Model
@@ -53,6 +54,43 @@ class Reservation extends Model
     public function venue(): BelongsTo
     {
         return $this->belongsTo(Venue::class);
+    }
+
+    public function ratings(): HasMany
+    {
+        return $this->hasMany(ReservationRating::class);
+    }
+
+    /**
+     * Get the average rating for this reservation
+     */
+    public function getAverageRatingAttribute()
+    {
+        return $this->ratings()->avg('rating') ?? 0;
+    }
+
+    /**
+     * Get the total number of ratings for this reservation
+     */
+    public function getTotalRatingsAttribute()
+    {
+        return $this->ratings()->count();
+    }
+
+    /**
+     * Check if a user has rated this reservation
+     */
+    public function hasUserRated($userId)
+    {
+        return $this->ratings()->where('user_id', $userId)->exists();
+    }
+
+    /**
+     * Get user's rating for this reservation
+     */
+    public function getUserRating($userId)
+    {
+        return $this->ratings()->where('user_id', $userId)->first();
     }
 
     /**

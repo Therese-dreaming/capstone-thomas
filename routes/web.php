@@ -68,6 +68,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('reservations/{id}/edit', [UserController::class, 'edit'])->name('reservations.edit');
         Route::put('reservations/{id}', [UserController::class, 'update'])->name('reservations.update');
         Route::delete('reservations/{id}', [UserController::class, 'cancel'])->name('reservations.cancel');
+        
+        // User Reservation Rating Routes
+        Route::post('reservations/{reservation}/rate', [UserController::class, 'rateReservation'])->name('reservations.rate');
+        Route::get('reservations/{reservation}/rating', [UserController::class, 'getReservationRating'])->name('reservations.rating');
     });
     Route::get('/profile', [UserController::class, 'profile'])->name('user.profile');
     Route::put('/profile', [UserController::class, 'updateProfile'])->name('user.profile.update');

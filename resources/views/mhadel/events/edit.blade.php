@@ -206,6 +206,77 @@
             </div>
         </div>
 
+        <!-- Equipment Selection Section -->
+        <div class="form-section rounded-xl shadow-md p-6 border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-tools mr-2 text-maroon"></i>
+                Equipment Selection
+            </h3>
+            
+            <div id="equipment-container">
+                @if($event->equipment_details && count($event->equipment_details) > 0)
+                    @foreach($event->equipment_details as $index => $equipment)
+                        <div class="equipment-item bg-gray-50 p-4 rounded-lg border border-gray-200 mb-3">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Equipment Name</label>
+                                    <select name="equipment[{{ $index }}][name]" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 equipment-select" data-index="{{ $index }}">
+                                        <option value="">Select equipment</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                                    <input 
+                                        type="number" 
+                                        name="equipment[{{ $index }}][quantity]" 
+                                        min="1" 
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 equipment-quantity" 
+                                        placeholder="Quantity"
+                                        value="{{ $equipment['quantity'] ?? '' }}"
+                                    >
+                                </div>
+                            </div>
+                            <button type="button" class="remove-equipment mt-2 text-red-600 hover:text-red-800 text-sm" style="display: {{ count($event->equipment_details) > 1 ? 'block' : 'none' }};">
+                                <i class="fas fa-trash mr-1"></i>Remove
+                            </button>
+                        </div>
+                    @endforeach
+                @else
+                    <div class="equipment-item bg-gray-50 p-4 rounded-lg border border-gray-200 mb-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Equipment Name</label>
+                                <select name="equipment[0][name]" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 equipment-select" data-index="0">
+                                    <option value="">Select equipment</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                                <input 
+                                    type="number" 
+                                    name="equipment[0][quantity]" 
+                                    min="1" 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 equipment-quantity" 
+                                    placeholder="Quantity"
+                                    disabled
+                                >
+                            </div>
+                        </div>
+                        <button type="button" class="remove-equipment mt-2 text-red-600 hover:text-red-800 text-sm" style="display: none;">
+                            <i class="fas fa-trash mr-1"></i>Remove
+                        </button>
+                    </div>
+                @endif
+            </div>
+            
+            <button type="button" id="add-equipment" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-2">
+                <i class="fas fa-plus"></i>
+                <span>Add Equipment</span>
+            </button>
+            
+            <p class="text-xs text-gray-500 mt-2">Select equipment available at the chosen venue. Equipment options will update when you select a venue.</p>
+        </div>
+
         <!-- Status Section -->
         <div class="form-section rounded-xl shadow-md p-6 border border-gray-100">
             <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
@@ -282,6 +353,15 @@
     let currentStartDate = '{{ $event->start_date ? $event->start_date->format("Y-m-d\TH:i") : "" }}';
     let currentEndDate = '{{ $event->end_date ? $event->end_date->format("Y-m-d\TH:i") : "" }}';
     
+    // Equipment functionality variables
+    const equipmentContainer = document.getElementById('equipment-container');
+    const addEquipmentBtn = document.getElementById('add-equipment');
+    const venueSelect = document.getElementById('venue_id');
+    let equipmentIndex = {{ $event->equipment_details ? count($event->equipment_details) - 1 : 0 }};
+    
+    // Venue data with equipment
+    const venues = @json($venues);
+    
     // Initialize form
     document.addEventListener('DOMContentLoaded', function() {
         calculateDuration();
@@ -289,6 +369,9 @@
         // Add event listeners
         document.getElementById('start_date').addEventListener('change', calculateDuration);
         document.getElementById('end_date').addEventListener('change', calculateDuration);
+        
+        // Initialize equipment functionality
+        initializeEquipment();
     });
     
     // Calculate duration from start and end times

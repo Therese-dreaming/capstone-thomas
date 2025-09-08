@@ -346,11 +346,37 @@
                                         @endif
                                     </div>
                                     
-                                    <a href="{{ route('user.reservations.show', $reservation->id) }}" 
-                                       class="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center space-x-2 text-sm">
-                                        <i class="fas fa-eye"></i>
-                                        <span>View Details</span>
-                                    </a>
+                                    <div class="flex space-x-2">
+                                        @if($reservation->status === 'completed')
+                                            @if($reservation->hasUserRated(auth()->id()))
+                                                @php $userRating = $reservation->getUserRating(auth()->id()); @endphp
+                                                <div class="flex items-center space-x-2">
+                                                    <div class="flex items-center">
+                                                        @for($i = 1; $i <= 5; $i++)
+                                                            <i class="fas fa-star {{ $i <= $userRating->rating ? 'text-yellow-400' : 'text-gray-300' }} text-sm"></i>
+                                                        @endfor
+                                                    </div>
+                                                    <button onclick="openRatingModal({{ $reservation->id }}, '{{ addslashes($reservation->event_title) }}', {{ $userRating->rating }}, '{{ addslashes($userRating->comment) }}')" 
+                                                            class="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center space-x-2 text-sm">
+                                                        <i class="fas fa-edit"></i>
+                                                        <span>Edit Rate</span>
+                                                    </button>
+                                                </div>
+                                            @else
+                                                <button onclick="openRatingModal({{ $reservation->id }}, '{{ addslashes($reservation->event_title) }}')" 
+                                                        class="px-3 py-1.5 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-lg hover:from-yellow-600 hover:to-yellow-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center space-x-2 text-sm">
+                                                    <i class="fas fa-star"></i>
+                                                    <span>Rate</span>
+                                                </button>
+                                            @endif
+                                        @endif
+                                        
+                                        <a href="{{ route('user.reservations.show', $reservation->id) }}" 
+                                           class="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center space-x-2 text-sm">
+                                            <i class="fas fa-eye"></i>
+                                            <span>View Details</span>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -455,6 +481,69 @@
             </div>
         </div>
     </div>
+    
+    <!-- Rating Modal -->
+    <div id="ratingModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full font-poppins">
+                <div class="p-4 border-b border-gray-200 bg-gradient-to-r from-yellow-50 to-yellow-100">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-yellow-800 flex items-center font-montserrat">
+                            <i class="fas fa-star text-yellow-600 mr-2"></i>
+                            Rate Your Reservation
+                        </h3>
+                        <button onclick="closeRatingModal()" class="text-yellow-400 hover:text-yellow-600 bg-white rounded-full p-1.5 hover:bg-yellow-50 transition-colors">
+                            <i class="fas fa-times text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-4">
+                    <div class="text-center mb-4">
+                        <div class="w-14 h-14 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-star text-yellow-600 text-xl"></i>
+                        </div>
+                        <h4 class="text-base font-semibold text-gray-800 mb-1">How was your experience?</h4>
+                        <p class="text-gray-600 text-sm" id="ratingEventTitle"></p>
+                    </div>
+                    
+                    <form id="ratingForm">
+                        @csrf
+                        <input type="hidden" name="rating" id="ratingInput" value="0">
+                        
+                        <!-- Star Rating -->
+                        <div class="flex justify-center space-x-2 mb-4">
+                            @for($i = 1; $i <= 5; $i++)
+                                <i class="fas fa-star w-8 h-8 text-gray-300 cursor-pointer hover:text-yellow-400 transition-colors duration-200 rating-star" 
+                                   data-rating="{{ $i }}"></i>
+                            @endfor
+                        </div>
+                        
+                        <!-- Comment -->
+                        <div class="mb-4">
+                            <label for="ratingComment" class="block text-sm font-medium text-gray-700 mb-1">Comment (Optional)</label>
+                            <textarea name="comment" 
+                                      id="ratingComment" 
+                                      rows="3" 
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors"
+                                      placeholder="Share your thoughts about this reservation..."></textarea>
+                        </div>
+                        
+                        <div class="flex items-center justify-end space-x-2">
+                            <button type="button" onclick="closeRatingModal()" 
+                                    class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex items-center text-sm">
+                                <i class="fas fa-times mr-1.5"></i> Cancel
+                            </button>
+                            <button type="submit" id="ratingSubmitBtn"
+                                    class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-all duration-300 shadow-md flex items-center text-sm">
+                                <i class="fas fa-star mr-1.5"></i> Submit Rating
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -510,6 +599,10 @@
     let currentReservationId = null;
     let currentEventTitle = null;
     let currentEventDate = null;
+    
+    // Global variables for rating modal
+    let currentRatingReservationId = null;
+    let currentRatingEventTitle = null;
 
     // Function to open cancel modal
     function openCancelModal(reservationId, eventTitle, eventDate) {
@@ -639,5 +732,171 @@
             setTimeout(() => toast.remove(), 500);
         }, 5000);
     }
+
+    // Function to open rating modal
+    function openRatingModal(reservationId, eventTitle, existingRating = null, existingComment = '') {
+        currentRatingReservationId = reservationId;
+        currentRatingEventTitle = eventTitle;
+        
+        // Update modal content
+        document.getElementById('ratingEventTitle').textContent = eventTitle;
+        
+        // Update modal title based on whether it's a new rating or edit
+        const modalTitle = document.querySelector('#ratingModal h3');
+        const submitBtn = document.getElementById('ratingSubmitBtn');
+        if (existingRating) {
+            modalTitle.innerHTML = '<i class="fas fa-edit text-yellow-600 mr-2"></i>Edit Your Rating';
+            submitBtn.innerHTML = '<i class="fas fa-save mr-1.5"></i> Update Rating';
+        } else {
+            modalTitle.innerHTML = '<i class="fas fa-star text-yellow-600 mr-2"></i>Rate Your Reservation';
+            submitBtn.innerHTML = '<i class="fas fa-star mr-1.5"></i> Submit Rating';
+        }
+        
+        // Pre-fill existing rating if editing
+        if (existingRating) {
+            document.getElementById('ratingInput').value = existingRating;
+            document.getElementById('ratingComment').value = existingComment || '';
+            
+            // Update visual stars
+            const stars = document.querySelectorAll('.rating-star');
+            stars.forEach((star, index) => {
+                if (index < existingRating) {
+                    star.classList.remove('text-gray-300');
+                    star.classList.add('text-yellow-400');
+                } else {
+                    star.classList.remove('text-yellow-400');
+                    star.classList.add('text-gray-300');
+                }
+            });
+        } else {
+            // Reset form for new rating
+            document.getElementById('ratingInput').value = '0';
+            document.getElementById('ratingComment').value = '';
+            
+            // Reset stars
+            const stars = document.querySelectorAll('.rating-star');
+            stars.forEach(star => {
+                star.classList.remove('text-yellow-400');
+                star.classList.add('text-gray-300');
+            });
+        }
+        
+        // Show modal
+        document.getElementById('ratingModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        // Add animation
+        const modalContent = document.querySelector('#ratingModal > div > div');
+        modalContent.classList.add('animate-fadeIn');
+    }
+
+    // Function to close rating modal
+    function closeRatingModal() {
+        document.getElementById('ratingModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        
+        // Reset form
+        document.getElementById('ratingInput').value = '0';
+        document.getElementById('ratingComment').value = '';
+        
+        // Reset stars
+        const stars = document.querySelectorAll('.rating-star');
+        stars.forEach(star => {
+            star.classList.remove('text-yellow-400');
+            star.classList.add('text-gray-300');
+        });
+        
+        // Reset variables
+        currentRatingReservationId = null;
+        currentRatingEventTitle = null;
+    }
+
+    // Star rating interaction
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('rating-star')) {
+            const rating = parseInt(e.target.dataset.rating);
+            
+            // Update visual stars
+            const stars = document.querySelectorAll('.rating-star');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.remove('text-gray-300');
+                    star.classList.add('text-yellow-400');
+                } else {
+                    star.classList.remove('text-yellow-400');
+                    star.classList.add('text-gray-300');
+                }
+            });
+            
+            // Update hidden input
+            document.getElementById('ratingInput').value = rating;
+        }
+    });
+
+    // Rating form submission
+    document.getElementById('ratingForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!currentRatingReservationId) return;
+        
+        const rating = document.getElementById('ratingInput').value;
+        if (rating === '0') {
+            showToast('Please select a rating', 'error');
+            return;
+        }
+        
+        // Show loading state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        const isEdit = document.getElementById('ratingInput').value !== '0' && document.getElementById('ratingComment').value !== '';
+        const loadingText = isEdit ? '<i class="fas fa-spinner fa-spin mr-2"></i> Updating...' : '<i class="fas fa-spinner fa-spin mr-2"></i> Submitting...';
+        submitBtn.innerHTML = loadingText;
+        submitBtn.disabled = true;
+        
+        const formData = new FormData(this);
+        
+        fetch(`/user/reservations/${currentRatingReservationId}/rate`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                const isEdit = document.getElementById('ratingInput').value !== '0' && document.getElementById('ratingComment').value !== '';
+                const message = isEdit ? 'Rating updated successfully!' : 'Rating submitted successfully!';
+                showToast(message, 'success');
+                // Close modal
+                closeRatingModal();
+                // Reload the page after a short delay
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showToast(data.message || 'Failed to submit rating', 'error');
+                // Reset button state
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('An error occurred while submitting your rating', 'error');
+            // Reset button state
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    });
+
+    // Close rating modal when clicking outside
+    document.getElementById('ratingModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeRatingModal();
+        }
+    });
 </script>
 @endsection

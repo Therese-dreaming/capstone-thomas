@@ -69,4 +69,5 @@ class EventController extends Controller
         
         return view('drjavier.events.calendar', compact('events', 'reservations'));
     }
+
 }

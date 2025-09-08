@@ -47,7 +47,8 @@ class EventController extends Controller
      */
     public function create()
     {
-        return view('mhadel.events.create');
+        $venues = \App\Models\Venue::where('is_available', true)->get();
+        return view('mhadel.events.create', compact('venues'));
     }
 
     /**
@@ -64,6 +65,9 @@ class EventController extends Controller
             'organizer' => 'required|string|max:255',
             'department' => 'nullable|string|max:255',
             'max_participants' => 'nullable|integer|min:1',
+            'equipment' => 'nullable|array',
+            'equipment.*.name' => 'required_with:equipment|string',
+            'equipment.*.quantity' => 'required_with:equipment|integer|min:1',
         ]);
 
         // Automatically determine event status based on scheduled date
@@ -103,6 +107,19 @@ class EventController extends Controller
             return back()->withErrors(['start_date' => 'This schedule overlaps with another event for the selected venue.'])->withInput();
         }
 
+        // Process equipment details
+        $equipmentDetails = [];
+        if ($request->has('equipment') && is_array($request->equipment)) {
+            foreach ($request->equipment as $equipment) {
+                if (!empty($equipment['name']) && !empty($equipment['quantity'])) {
+                    $equipmentDetails[] = [
+                        'name' => $equipment['name'],
+                        'quantity' => (int) $equipment['quantity']
+                    ];
+                }
+            }
+        }
+
         Event::create([
             'title' => $request->title,
             'description' => $request->description,
@@ -113,6 +130,7 @@ class EventController extends Controller
             'department' => $request->department,
             'status' => $status,
             'max_participants' => $request->max_participants,
+            'equipment_details' => $equipmentDetails,
         ]);
 
         return redirect()->route('mhadel.events.index')
@@ -437,4 +455,5 @@ class EventController extends Controller
             'conflicts' => $allConflicts
         ]);
     }
+
 }

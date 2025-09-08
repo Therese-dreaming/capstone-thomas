@@ -150,6 +150,9 @@
                 <button onclick="showTab('reports')" id="tab-reports" class="tab-button px-6 py-3 rounded-lg text-sm font-bold transition-all duration-300">
                     <i class="fas fa-file-alt mr-2"></i>Reports
                 </button>
+                <button onclick="showTab('ratings')" id="tab-ratings" class="tab-button px-6 py-3 rounded-lg text-sm font-bold transition-all duration-300">
+                    <i class="fas fa-star mr-2"></i>Ratings
+                </button>
             </div>
         </div>
         
@@ -524,6 +527,122 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Ratings Tab -->
+            <div id="content-ratings" class="tab-content hidden">
+                <!-- Rating Overview Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 text-center">
+                        <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-star text-yellow-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 font-poppins">{{ $ratingsData['total_ratings'] ?? 0 }}</h3>
+                        <p class="text-sm text-gray-600 font-inter">Total Ratings</p>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 text-center">
+                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-chart-line text-green-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 font-poppins">{{ $ratingsData['average_rating'] ?? 0 }}/5</h3>
+                        <p class="text-sm text-gray-600 font-inter">Average Rating</p>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 text-center">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-calendar-alt text-blue-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 font-poppins">{{ $ratingsData['ratings_this_month'] ?? 0 }}</h3>
+                        <p class="text-sm text-gray-600 font-inter">This Month</p>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 text-center">
+                        <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-trending-up text-purple-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 font-poppins">{{ $ratingsData['rating_growth'] ?? 0 }}%</h3>
+                        <p class="text-sm text-gray-600 font-inter">Growth Rate</p>
+                    </div>
+                </div>
+
+                <!-- Rating Distribution Chart -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                        <h3 class="text-lg font-bold text-gray-800 font-poppins mb-6 flex items-center">
+                            <i class="fas fa-chart-pie text-maroon mr-2"></i>
+                            Rating Distribution
+                        </h3>
+                        <div style="height: 300px;"><canvas id="ratingDistributionChart"></canvas></div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                        <h3 class="text-lg font-bold text-gray-800 font-poppins mb-6 flex items-center">
+                            <i class="fas fa-chart-line text-maroon mr-2"></i>
+                            Monthly Ratings Trend
+                        </h3>
+                        <div style="height: 300px;"><canvas id="monthlyRatingsChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Ratings by Venue and Department -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                        <h3 class="text-lg font-bold text-gray-800 font-poppins mb-6 flex items-center">
+                            <i class="fas fa-building text-maroon mr-2"></i>
+                            Top Venues by Ratings
+                        </h3>
+                        <div style="height: 300px;"><canvas id="ratingsByVenueChart"></canvas></div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                        <h3 class="text-lg font-bold text-gray-800 font-poppins mb-6 flex items-center">
+                            <i class="fas fa-users text-maroon mr-2"></i>
+                            Ratings by Department
+                        </h3>
+                        <div style="height: 300px;"><canvas id="ratingsByDepartmentChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Recent Ratings with Comments -->
+                <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                    <h3 class="text-lg font-bold text-gray-800 font-poppins mb-6 flex items-center">
+                        <i class="fas fa-comments text-maroon mr-2"></i>
+                        Recent Ratings with Comments
+                    </h3>
+                    @if(isset($ratingsData['recent_ratings']) && count($ratingsData['recent_ratings']) > 0)
+                        <div class="space-y-4">
+                            @foreach($ratingsData['recent_ratings'] as $rating)
+                                <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div class="flex items-start justify-between mb-2">
+                                        <div class="flex items-center">
+                                            <div class="flex items-center mr-3">
+                                                @for($i = 1; $i <= 5; $i++)
+                                                    <i class="fas fa-star {{ $i <= $rating['rating'] ? 'text-yellow-400' : 'text-gray-300' }} text-sm"></i>
+                                                @endfor
+                                            </div>
+                                            <span class="text-sm font-medium text-gray-700">{{ $rating['rating'] }}/5</span>
+                                        </div>
+                                        <span class="text-xs text-gray-500">{{ $rating['created_at'] }}</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <p class="text-sm text-gray-800 font-medium">{{ $rating['event_title'] }}</p>
+                                        <p class="text-xs text-gray-600">{{ $rating['venue_name'] }} • {{ $rating['user_name'] }}</p>
+                                    </div>
+                                    <p class="text-sm text-gray-700 italic">"{{ $rating['comment'] }}"</p>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center py-8">
+                            <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-comments text-3xl text-gray-400"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-600 font-poppins mb-2">No Recent Comments</h3>
+                            <p class="text-gray-500 font-inter">No ratings with comments found</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -558,7 +677,7 @@ function showTab(tabName) {
     }
     
     // Initialize charts if needed
-    if (tabName === 'analytics') {
+    if (tabName === 'analytics' || tabName === 'ratings') {
         initializeCharts();
     }
 }
@@ -580,6 +699,14 @@ var utilizationWeeks = @json($utilizationWeeks ?? []);
 var statusFlow = @json($statusFlow ?? []);
 var peakHours = @json($peakHours ?? []);
 var monthlyComparison = @json($monthlyComparison ?? []);
+
+// Ratings data
+var ratingsData = @json($ratingsData ?? []);
+var ratingDistribution = @json($ratingsData['rating_distribution'] ?? []);
+var monthlyRatingsData = @json($ratingsData['monthly_ratings_data'] ?? []);
+var monthlyAverageRatings = @json($ratingsData['monthly_average_ratings'] ?? []);
+var ratingsByVenue = @json($ratingsData['ratings_by_venue'] ?? []);
+var ratingsByDepartment = @json($ratingsData['ratings_by_department'] ?? []);
 
 // Utility functions
 function peso(v){ 
@@ -668,6 +795,12 @@ function initializeCharts() {
     initializeTopVenuesChart();
     initializeDepartmentsChart();
     initializeTrendChart();
+    
+    // Initialize ratings charts
+    initializeRatingDistributionChart();
+    initializeMonthlyRatingsChart();
+    initializeRatingsByVenueChart();
+    initializeRatingsByDepartmentChart();
     
     window.chartsInitialized = true;
 }
@@ -1069,6 +1202,300 @@ function updateVenueChart(metric) {
     }
     
     chart.update();
+}
+
+// Ratings Chart Initialization Functions
+function initializeRatingDistributionChart() {
+    var ctx = prepareCanvas('ratingDistributionChart', 300);
+    if (!ctx) return;
+    
+    if (!ratingDistribution || Object.keys(ratingDistribution).length === 0) {
+        ctx.style.display = 'none';
+        const emptyDiv = document.createElement('div');
+        emptyDiv.innerHTML = '<div class="text-center py-8"><i class="fas fa-star text-3xl text-gray-300 mb-2"></i><p class="text-sm text-gray-600">No rating data available</p></div>';
+        emptyDiv.className = 'flex items-center justify-center h-full';
+        ctx.parentNode.appendChild(emptyDiv);
+        return;
+    }
+    
+    const distributionData = {
+        labels: ['1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'],
+        datasets: [{
+            data: [
+                ratingDistribution[1] || 0,
+                ratingDistribution[2] || 0,
+                ratingDistribution[3] || 0,
+                ratingDistribution[4] || 0,
+                ratingDistribution[5] || 0
+            ],
+            backgroundColor: ['#EF4444', '#F97316', '#EAB308', '#22C55E', '#10B981'],
+            borderColor: '#ffffff',
+            borderWidth: 2,
+            borderRadius: 6,
+            borderSkipped: false
+        }]
+    };
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: distributionData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        font: { size: 12 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(17,24,39,0.95)',
+                    titleColor: '#E5E7EB',
+                    bodyColor: '#E5E7EB',
+                    padding: 12,
+                    cornerRadius: 8
+                }
+            }
+        }
+    });
+}
+
+function initializeMonthlyRatingsChart() {
+    var ctx = prepareCanvas('monthlyRatingsChart', 300);
+    if (!ctx) return;
+    
+    if (!monthlyRatingsData || monthlyRatingsData.length === 0) {
+        ctx.style.display = 'none';
+        const emptyDiv = document.createElement('div');
+        emptyDiv.innerHTML = '<div class="text-center py-8"><i class="fas fa-chart-line text-3xl text-gray-300 mb-2"></i><p class="text-sm text-gray-600">No monthly rating data available</p></div>';
+        emptyDiv.className = 'flex items-center justify-center h-full';
+        ctx.parentNode.appendChild(emptyDiv);
+        return;
+    }
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labelsMonths,
+            datasets: [{
+                label: 'Number of Ratings',
+                data: monthlyRatingsData,
+                borderColor: '#8B1818',
+                backgroundColor: 'rgba(139, 24, 24, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                borderWidth: 3,
+                pointBackgroundColor: '#8B1818',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2
+            }, {
+                label: 'Average Rating',
+                data: monthlyAverageRatings,
+                borderColor: '#F59E0B',
+                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                tension: 0.4,
+                fill: false,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                borderWidth: 3,
+                pointBackgroundColor: '#F59E0B',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        font: { size: 12 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(17,24,39,0.95)',
+                    titleColor: '#E5E7EB',
+                    bodyColor: '#E5E7EB',
+                    padding: 12,
+                    cornerRadius: 8
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                    ticks: { color: '#6B7280', font: { size: 11 } }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    min: 0,
+                    max: 5,
+                    grid: { drawOnChartArea: false },
+                    ticks: { color: '#6B7280', font: { size: 11 } }
+                },
+                x: {
+                    grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                    ticks: { color: '#6B7280', font: { size: 11 } }
+                }
+            }
+        }
+    });
+}
+
+function initializeRatingsByVenueChart() {
+    var ctx = prepareCanvas('ratingsByVenueChart', 300);
+    if (!ctx) return;
+    
+    if (!ratingsByVenue || ratingsByVenue.length === 0) {
+        ctx.style.display = 'none';
+        const emptyDiv = document.createElement('div');
+        emptyDiv.innerHTML = '<div class="text-center py-8"><i class="fas fa-building text-3xl text-gray-300 mb-2"></i><p class="text-sm text-gray-600">No venue rating data available</p></div>';
+        emptyDiv.className = 'flex items-center justify-center h-full';
+        ctx.parentNode.appendChild(emptyDiv);
+        return;
+    }
+    
+    const venueLabels = ratingsByVenue.map(v => v.venue);
+    const venueRatings = ratingsByVenue.map(v => v.avg_rating);
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: venueLabels,
+            datasets: [{
+                label: 'Average Rating',
+                data: venueRatings,
+                backgroundColor: 'rgba(139, 24, 24, 0.8)',
+                borderColor: '#8B1818',
+                borderWidth: 2,
+                borderRadius: 6,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(17,24,39,0.95)',
+                    titleColor: '#E5E7EB',
+                    bodyColor: '#E5E7EB',
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            return 'Average Rating: ' + context.parsed.x + '/5';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    min: 0,
+                    max: 5,
+                    grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                    ticks: { 
+                        color: '#6B7280', 
+                        font: { size: 11 },
+                        callback: function(value) {
+                            return value + '/5';
+                        }
+                    }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { color: '#6B7280', font: { size: 11 } }
+                }
+            }
+        }
+    });
+}
+
+function initializeRatingsByDepartmentChart() {
+    var ctx = prepareCanvas('ratingsByDepartmentChart', 300);
+    if (!ctx) return;
+    
+    if (!ratingsByDepartment || ratingsByDepartment.length === 0) {
+        ctx.style.display = 'none';
+        const emptyDiv = document.createElement('div');
+        emptyDiv.innerHTML = '<div class="text-center py-8"><i class="fas fa-users text-3xl text-gray-300 mb-2"></i><p class="text-sm text-gray-600">No department rating data available</p></div>';
+        emptyDiv.className = 'flex items-center justify-center h-full';
+        ctx.parentNode.appendChild(emptyDiv);
+        return;
+    }
+    
+    const deptLabels = ratingsByDepartment.map(d => d.department);
+    const deptRatings = ratingsByDepartment.map(d => d.avg_rating);
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: deptLabels,
+            datasets: [{
+                label: 'Average Rating',
+                data: deptRatings,
+                backgroundColor: 'rgba(139, 24, 24, 0.8)',
+                borderColor: '#8B1818',
+                borderWidth: 2,
+                borderRadius: 6,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(17,24,39,0.95)',
+                    titleColor: '#E5E7EB',
+                    bodyColor: '#E5E7EB',
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            return 'Average Rating: ' + context.parsed.x + '/5';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    min: 0,
+                    max: 5,
+                    grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                    ticks: { 
+                        color: '#6B7280', 
+                        font: { size: 11 },
+                        callback: function(value) {
+                            return value + '/5';
+                        }
+                    }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { color: '#6B7280', font: { size: 11 } }
+                }
+            }
+        }
+    });
 }
 
 // Initialize overview tab by default

@@ -320,4 +320,5 @@ class EventController extends Controller
         // Create notifications for different roles
         $this->createReportNotifications($report, $type);
     }
+
 } 

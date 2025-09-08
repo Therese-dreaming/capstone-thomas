@@ -403,6 +403,43 @@
                 </div>
             </div>
 
+            <!-- Equipment Selection Section -->
+            <div class="form-group">
+                <label class="form-label">
+                    Equipment Selection
+                </label>
+                <div id="equipment-container">
+                    <div class="equipment-item bg-gray-50 p-4 rounded-lg border border-gray-200 mb-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="form-label text-sm">Equipment Name</label>
+                                <select name="equipment[0][name]" class="form-select equipment-select" data-index="0">
+                                    <option value="">Select equipment</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label text-sm">Quantity</label>
+                                <input 
+                                    type="number" 
+                                    name="equipment[0][quantity]" 
+                                    min="1" 
+                                    class="form-input equipment-quantity" 
+                                    placeholder="Quantity"
+                                    disabled
+                                >
+                            </div>
+                        </div>
+                        <button type="button" class="remove-equipment mt-2 text-red-600 hover:text-red-800 text-sm" style="display: none;">
+                            <i class="fas fa-trash mr-1"></i>Remove
+                        </button>
+                    </div>
+                </div>
+                <button type="button" id="add-equipment" class="btn btn-outline text-sm">
+                    <i class="fas fa-plus mr-2"></i>Add Equipment
+                </button>
+                <p class="help-text">Select equipment available at the chosen venue. Equipment options will update when you select a venue.</p>
+            </div>
+
             <!-- Description Section -->
             <div class="form-group">
                 <label for="description" class="form-label">
@@ -500,6 +537,284 @@ document.addEventListener('DOMContentLoaded', function() {
             this.value = '';
         }
     });
+
+    // Equipment selection functionality
+    const venueSelect = document.getElementById('venue_id');
+    const equipmentContainer = document.getElementById('equipment-container');
+    const addEquipmentBtn = document.getElementById('add-equipment');
+    let equipmentIndex = 0;
+
+    // Venue data with equipment
+    const venues = @json($venues);
+
+    // Update equipment options when venue changes
+    venueSelect.addEventListener('change', function() {
+        const selectedVenueId = this.value;
+        const selectedVenue = venues.find(venue => venue.id == selectedVenueId);
+        
+        // Clear existing equipment selections
+        clearEquipmentSelections();
+        
+        if (selectedVenue && selectedVenue.available_equipment) {
+            updateEquipmentOptions(selectedVenue.available_equipment);
+        } else {
+            updateEquipmentOptions([]);
+        }
+    });
+
+    function clearEquipmentSelections() {
+        const equipmentSelects = document.querySelectorAll('.equipment-select');
+        const equipmentQuantities = document.querySelectorAll('.equipment-quantity');
+        
+        equipmentSelects.forEach(select => {
+            select.innerHTML = '<option value="">Select equipment</option>';
+            select.disabled = true;
+        });
+        
+        equipmentQuantities.forEach(input => {
+            input.value = '';
+            input.disabled = true;
+        });
+    }
+
+    function updateEquipmentOptions(equipment) {
+        const equipmentSelects = document.querySelectorAll('.equipment-select');
+        
+        equipmentSelects.forEach(select => {
+            select.innerHTML = '<option value="">Select equipment</option>';
+            
+            if (equipment && equipment.length > 0) {
+                select.disabled = false;
+                equipment.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.name;
+                    option.textContent = `${item.name} (Available: ${item.quantity})`;
+                    option.dataset.maxQuantity = item.quantity;
+                    select.appendChild(option);
+                });
+            } else {
+                select.disabled = true;
+            }
+        });
+    }
+
+    function updateEquipmentOptionsForNewSelect(selectElement) {
+        const selectedVenueId = venueSelect.value;
+        const selectedVenue = venues.find(venue => venue.id == selectedVenueId);
+        
+        selectElement.innerHTML = '<option value="">Select equipment</option>';
+        
+        if (selectedVenue && selectedVenue.available_equipment) {
+            selectElement.disabled = false;
+            
+            // Get already selected equipment names
+            const selectedEquipment = getSelectedEquipmentNames();
+            
+            selectedVenue.available_equipment.forEach(item => {
+                // Only add equipment that hasn't been selected yet
+                if (!selectedEquipment.includes(item.name)) {
+                    const option = document.createElement('option');
+                    option.value = item.name;
+                    option.textContent = `${item.name} (Available: ${item.quantity})`;
+                    option.dataset.maxQuantity = item.quantity;
+                    selectElement.appendChild(option);
+                }
+            });
+        } else {
+            selectElement.disabled = true;
+        }
+    }
+
+    function getSelectedEquipmentNames() {
+        const selectedEquipment = [];
+        const equipmentSelects = document.querySelectorAll('.equipment-select');
+        
+        equipmentSelects.forEach(select => {
+            if (select.value && select.value !== '') {
+                selectedEquipment.push(select.value);
+            }
+        });
+        
+        return selectedEquipment;
+    }
+
+    function updateAllEquipmentDropdowns() {
+        const selectedVenueId = venueSelect.value;
+        const selectedVenue = venues.find(venue => venue.id == selectedVenueId);
+        const selectedEquipment = getSelectedEquipmentNames();
+        
+        if (!selectedVenue || !selectedVenue.available_equipment) {
+            return;
+        }
+        
+        const equipmentSelects = document.querySelectorAll('.equipment-select');
+        
+        equipmentSelects.forEach(select => {
+            const currentValue = select.value;
+            const currentIndex = select.dataset.index;
+            
+            // Clear and rebuild options
+            select.innerHTML = '<option value="">Select equipment</option>';
+            
+            selectedVenue.available_equipment.forEach(item => {
+                // Check if this equipment is selected in other dropdowns
+                const isSelectedElsewhere = selectedEquipment.includes(item.name) && item.name !== currentValue;
+                
+                if (!isSelectedElsewhere) {
+                    const option = document.createElement('option');
+                    option.value = item.name;
+                    option.textContent = `${item.name} (Available: ${item.quantity})`;
+                    option.dataset.maxQuantity = item.quantity;
+                    
+                    // Restore the current selection
+                    if (item.name === currentValue) {
+                        option.selected = true;
+                    }
+                    
+                    select.appendChild(option);
+                }
+            });
+        });
+    }
+
+    // Handle equipment selection change
+    equipmentContainer.addEventListener('change', function(e) {
+        if (e.target.classList.contains('equipment-select')) {
+            const quantityInput = e.target.closest('.equipment-item').querySelector('.equipment-quantity');
+            const maxQuantity = e.target.selectedOptions[0]?.dataset.maxQuantity;
+            
+            if (e.target.value && maxQuantity) {
+                quantityInput.disabled = false;
+                quantityInput.max = maxQuantity;
+                quantityInput.placeholder = `Max: ${maxQuantity}`;
+                
+                // Clear any invalid quantity
+                if (parseInt(quantityInput.value) > parseInt(maxQuantity)) {
+                    quantityInput.value = '';
+                }
+            } else {
+                quantityInput.disabled = true;
+                quantityInput.value = '';
+                quantityInput.placeholder = 'Quantity';
+            }
+            
+            // Update other equipment dropdowns to remove/restore the selected equipment
+            updateAllEquipmentDropdowns();
+        }
+    });
+
+    // Handle quantity input validation
+    equipmentContainer.addEventListener('input', function(e) {
+        if (e.target.classList.contains('equipment-quantity')) {
+            const equipmentSelect = e.target.closest('.equipment-item').querySelector('.equipment-select');
+            const maxQuantity = equipmentSelect.selectedOptions[0]?.dataset.maxQuantity;
+            const currentValue = parseInt(e.target.value);
+            
+            if (maxQuantity && currentValue > parseInt(maxQuantity)) {
+                e.target.value = maxQuantity;
+                showQuantityWarning(`Maximum quantity for ${equipmentSelect.value} is ${maxQuantity}`);
+            }
+        }
+    });
+
+    // Handle quantity input on blur (when user finishes typing)
+    equipmentContainer.addEventListener('blur', function(e) {
+        if (e.target.classList.contains('equipment-quantity')) {
+            const equipmentSelect = e.target.closest('.equipment-item').querySelector('.equipment-select');
+            const maxQuantity = equipmentSelect.selectedOptions[0]?.dataset.maxQuantity;
+            const currentValue = parseInt(e.target.value);
+            
+            if (maxQuantity && currentValue > parseInt(maxQuantity)) {
+                e.target.value = maxQuantity;
+                showQuantityWarning(`Maximum quantity for ${equipmentSelect.value} is ${maxQuantity}`);
+            }
+        }
+    });
+
+    function showQuantityWarning(message) {
+        // Remove any existing warning
+        const existingWarning = document.querySelector('.quantity-warning');
+        if (existingWarning) {
+            existingWarning.remove();
+        }
+        
+        // Create warning message
+        const warning = document.createElement('div');
+        warning.className = 'quantity-warning bg-yellow-100 border border-yellow-400 text-yellow-700 px-3 py-2 rounded text-sm mt-2';
+        warning.innerHTML = `<i class="fas fa-exclamation-triangle mr-1"></i>${message}`;
+        
+        // Add warning to the equipment container
+        equipmentContainer.appendChild(warning);
+        
+        // Remove warning after 3 seconds
+        setTimeout(() => {
+            if (warning.parentNode) {
+                warning.remove();
+            }
+        }, 3000);
+    }
+
+    // Add new equipment row
+    addEquipmentBtn.addEventListener('click', function() {
+        equipmentIndex++;
+        const equipmentItem = document.createElement('div');
+        equipmentItem.className = 'equipment-item bg-gray-50 p-4 rounded-lg border border-gray-200 mb-3';
+        equipmentItem.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="form-label text-sm">Equipment Name</label>
+                    <select name="equipment[${equipmentIndex}][name]" class="form-select equipment-select" data-index="${equipmentIndex}">
+                        <option value="">Select equipment</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label text-sm">Quantity</label>
+                    <input 
+                        type="number" 
+                        name="equipment[${equipmentIndex}][quantity]" 
+                        min="1" 
+                        class="form-input equipment-quantity" 
+                        placeholder="Quantity"
+                        disabled
+                    >
+                </div>
+            </div>
+            <button type="button" class="remove-equipment mt-2 text-red-600 hover:text-red-800 text-sm">
+                <i class="fas fa-trash mr-1"></i>Remove
+            </button>
+        `;
+        
+        equipmentContainer.appendChild(equipmentItem);
+        
+        // Update equipment options for the new select only (preserve existing selections)
+        updateEquipmentOptionsForNewSelect(equipmentItem.querySelector('.equipment-select'));
+        
+        // Show remove buttons if there are multiple equipment items
+        updateRemoveButtons();
+    });
+
+    // Remove equipment row
+    equipmentContainer.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-equipment')) {
+            e.target.closest('.equipment-item').remove();
+            updateRemoveButtons();
+            
+            // Update all equipment dropdowns to restore removed equipment options
+            updateAllEquipmentDropdowns();
+        }
+    });
+
+    function updateRemoveButtons() {
+        const equipmentItems = document.querySelectorAll('.equipment-item');
+        const removeButtons = document.querySelectorAll('.remove-equipment');
+        
+        removeButtons.forEach(button => {
+            button.style.display = equipmentItems.length > 1 ? 'block' : 'none';
+        });
+    }
+
+    // Initialize remove buttons visibility
+    updateRemoveButtons();
 });
 </script>
 @endsection

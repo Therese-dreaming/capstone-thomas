@@ -150,12 +150,16 @@
 
 @section('header-actions')
     <div class="flex items-center space-x-3">
+        @if($event->status !== 'completed' && $event->status !== 'cancelled')
         <a href="{{ route('mhadel.events.edit', $event) }}" class="action-button btn-secondary">
             <i class="fas fa-edit"></i>Edit Event
         </a>
+        @endif
+        @if($event->status !== 'completed')
         <button type="button" onclick="openDeleteModal()" class="action-button btn-danger">
             <i class="fas fa-trash"></i>Delete Event
         </button>
+        @endif
         <a href="{{ route('mhadel.events.index') }}" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition shadow-sm flex items-center">
             <i class="fas fa-arrow-left mr-2"></i>Back to Events
         </a>
@@ -398,6 +402,47 @@
             </div>
             @endif
 
+            <!-- Equipment Details -->
+            @if($event->equipment_details && count($event->equipment_details) > 0)
+            <div class="category-card animate-fadeIn">
+                <div class="category-header">
+                    <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
+                        <i class="fas fa-tools text-maroon mr-3 text-2xl"></i>
+                        Equipment Details
+                    </h2>
+                </div>
+                <div class="category-content">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        @foreach($event->equipment_details as $equipment)
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <div class="flex items-center gap-3 mb-2">
+                                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-cog text-blue-600 text-sm"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-gray-800">{{ $equipment['name'] }}</h3>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 text-sm text-gray-600">
+                                <i class="fas fa-hashtag text-maroon"></i>
+                                <span>Quantity: <span class="font-medium">{{ $equipment['quantity'] }}</span></span>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    
+                    @if(count($event->equipment_details) > 0)
+                    <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div class="flex items-center gap-2 text-sm text-blue-700">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Total equipment items: <span class="font-semibold">{{ count($event->equipment_details) }}</span></span>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endif
+
             <!-- Additional Details -->
             @if($event->purpose || $event->notes)
             <div class="category-card animate-fadeIn">
@@ -486,19 +531,23 @@
                 </div>
                 <div class="category-content">
                     <div class="space-y-3">
+                        @if($event->status !== 'completed' && $event->status !== 'cancelled')
                         <a href="{{ route('mhadel.events.edit', $event) }}" class="action-button btn-secondary w-full justify-center">
                             <i class="fas fa-edit"></i>Edit Event
                         </a>
+                        @endif
                         
-                        @if($event->status !== 'cancelled')
+                        @if($event->status !== 'cancelled' && $event->status !== 'completed')
                         <button type="button" onclick="openCancelModal()" class="action-button btn-outline w-full justify-center">
                             <i class="fas fa-ban"></i>Cancel Event
                         </button>
                         @endif
                         
+                        @if($event->status !== 'completed')
                         <button type="button" onclick="openDeleteModal()" class="action-button btn-danger w-full justify-center">
                             <i class="fas fa-trash"></i>Delete Event
                         </button>
+                        @endif
                     </div>
                 </div>
             </div>

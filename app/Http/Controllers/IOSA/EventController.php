@@ -69,5 +69,6 @@ class EventController extends Controller
         
         return view('iosa.events.calendar', compact('events', 'reservations'));
     }
+
 }
 

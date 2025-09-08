@@ -19,6 +19,7 @@ class Event extends Model
         'department',
         'status',
         'max_participants',
+        'equipment_details',
         'completion_notes',
         'completion_date',
         'completed_by',
@@ -28,6 +29,7 @@ class Event extends Model
         'start_date' => 'datetime',
         'end_date' => 'datetime',
         'max_participants' => 'integer',
+        'equipment_details' => 'array',
         'completion_date' => 'datetime',
     ];
 

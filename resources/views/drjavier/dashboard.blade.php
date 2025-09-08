@@ -24,6 +24,9 @@
                 <button onclick="showOtpTab('trends')" id="otp-tab-trends" class="otp-tab-button px-6 py-3 rounded-lg text-sm font-bold transition-all duration-300">
                     <i class="fas fa-trending-up mr-2"></i>Trends
                 </button>
+                <button onclick="showOtpTab('ratings')" id="otp-tab-ratings" class="otp-tab-button px-6 py-3 rounded-lg text-sm font-bold transition-all duration-300">
+                    <i class="fas fa-star mr-2"></i>Ratings
+                </button>
             </div>
         </div>
 
@@ -312,6 +315,122 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Ratings Tab -->
+            <div id="otp-content-ratings" class="otp-tab-content hidden">
+                <!-- Rating Overview Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 text-center">
+                        <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-star text-yellow-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 font-poppins">{{ $ratingsData['total_ratings'] ?? 0 }}</h3>
+                        <p class="text-sm text-gray-600 font-inter">Total Ratings</p>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 text-center">
+                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-chart-line text-green-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 font-poppins">{{ $ratingsData['average_rating'] ?? 0 }}/5</h3>
+                        <p class="text-sm text-gray-600 font-inter">Average Rating</p>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 text-center">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-calendar-alt text-blue-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 font-poppins">{{ $ratingsData['ratings_this_month'] ?? 0 }}</h3>
+                        <p class="text-sm text-gray-600 font-inter">This Month</p>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 text-center">
+                        <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-trending-up text-purple-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 font-poppins">{{ $ratingsData['rating_growth'] ?? 0 }}%</h3>
+                        <p class="text-sm text-gray-600 font-inter">Growth Rate</p>
+                    </div>
+                </div>
+
+                <!-- Rating Distribution Chart -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                        <h3 class="text-lg font-bold text-gray-800 font-poppins mb-6 flex items-center">
+                            <i class="fas fa-chart-pie text-maroon mr-2"></i>
+                            Rating Distribution
+                        </h3>
+                        <div style="height: 300px;"><canvas id="otpRatingDistributionChart"></canvas></div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                        <h3 class="text-lg font-bold text-gray-800 font-poppins mb-6 flex items-center">
+                            <i class="fas fa-chart-line text-maroon mr-2"></i>
+                            Monthly Ratings Trend
+                        </h3>
+                        <div style="height: 300px;"><canvas id="otpMonthlyRatingsChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Ratings by Venue and Department -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                        <h3 class="text-lg font-bold text-gray-800 font-poppins mb-6 flex items-center">
+                            <i class="fas fa-building text-maroon mr-2"></i>
+                            Top Venues by Ratings
+                        </h3>
+                        <div style="height: 300px;"><canvas id="otpRatingsByVenueChart"></canvas></div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                        <h3 class="text-lg font-bold text-gray-800 font-poppins mb-6 flex items-center">
+                            <i class="fas fa-users text-maroon mr-2"></i>
+                            Ratings by Department
+                        </h3>
+                        <div style="height: 300px;"><canvas id="otpRatingsByDepartmentChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Recent Ratings with Comments -->
+                <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                    <h3 class="text-lg font-bold text-gray-800 font-poppins mb-6 flex items-center">
+                        <i class="fas fa-comments text-maroon mr-2"></i>
+                        Recent Ratings with Comments
+                    </h3>
+                    @if(isset($ratingsData['recent_ratings']) && count($ratingsData['recent_ratings']) > 0)
+                        <div class="space-y-4">
+                            @foreach($ratingsData['recent_ratings'] as $rating)
+                                <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div class="flex items-start justify-between mb-2">
+                                        <div class="flex items-center">
+                                            <div class="flex items-center mr-3">
+                                                @for($i = 1; $i <= 5; $i++)
+                                                    <i class="fas fa-star {{ $i <= $rating['rating'] ? 'text-yellow-400' : 'text-gray-300' }} text-sm"></i>
+                                                @endfor
+                                            </div>
+                                            <span class="text-sm font-medium text-gray-700">{{ $rating['rating'] }}/5</span>
+                                        </div>
+                                        <span class="text-xs text-gray-500">{{ $rating['created_at'] }}</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <p class="text-sm text-gray-800 font-medium">{{ $rating['event_title'] }}</p>
+                                        <p class="text-xs text-gray-600">{{ $rating['venue_name'] }} • {{ $rating['user_name'] }}</p>
+                                    </div>
+                                    <p class="text-sm text-gray-700 italic">"{{ $rating['comment'] }}"</p>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center py-8">
+                            <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-comments text-3xl text-gray-400"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-600 font-poppins mb-2">No Recent Comments</h3>
+                            <p class="text-gray-500 font-inter">No ratings with comments found</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -343,6 +462,14 @@ var otpExpectedRevenueQuarterly = @json($expectedRevenueQuarterly ?? []);
 var otpByDepartment = @json($byDepartment ?? []);
 var otpUtilizationWeeks = @json($utilizationWeeks ?? []);
 
+// Ratings data
+var otpRatingsData = @json($ratingsData ?? []);
+var otpRatingDistribution = @json($ratingsData['rating_distribution'] ?? []);
+var otpMonthlyRatingsData = @json($ratingsData['monthly_ratings_data'] ?? []);
+var otpMonthlyAverageRatings = @json($ratingsData['monthly_average_ratings'] ?? []);
+var otpRatingsByVenue = @json($ratingsData['ratings_by_venue'] ?? []);
+var otpRatingsByDepartment = @json($ratingsData['ratings_by_department'] ?? []);
+
 function otpPeso(v){ try { return '\u20B1' + Number(v||0).toLocaleString(); } catch(e){ return 'PHP ' + (v||0); } }
 function otpPrepareCanvas(id, h){ var c=document.getElementById(id); if(!c) return null; c.style.height=h+'px'; c.style.maxHeight=h+'px'; if(Chart && Chart.getChart){ var old=Chart.getChart(c); if(old) old.destroy(); } return c; }
 function otpOptions(){ return { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false }, tooltip:{ backgroundColor:'rgba(17,24,39,0.95)', titleColor:'#E5E7EB', bodyColor:'#E5E7EB', padding:12 } }, scales:{ x:{ grid:{ color:'rgba(17,24,39,0.06)', drawBorder:false }, ticks:{ color:'#6B7280', font:{ size:11 } } }, y:{ grid:{ color:'rgba(17,24,39,0.06)', drawBorder:false }, ticks:{ color:'#6B7280', font:{ size:11 } } } } }; }
@@ -352,7 +479,7 @@ function showOtpTab(name){
     document.querySelectorAll('.otp-tab-button').forEach(n=>n.classList.remove('active'));
     var content=document.getElementById('otp-content-'+name); if(content){ content.classList.remove('hidden'); content.classList.add('active'); }
     var btn=document.getElementById('otp-tab-'+name); if(btn){ btn.classList.add('active'); }
-    if(name==='finance' || name==='trends'){ otpInitCharts(); }
+    if(name==='finance' || name==='trends' || name==='ratings'){ otpInitCharts(); }
 }
 
 function otpInitCharts(){ if(window.otpChartsInitialized) return; 
@@ -360,12 +487,313 @@ function otpInitCharts(){ if(window.otpChartsInitialized) return;
     var exp=otpPrepareCanvas('otpChartExpectedRevenue',280); if(exp){ new Chart(exp,{ type:'line', data:{ labels:otpLabelsMonths, datasets:[{ label:'Expected', data:otpExpectedRevenueSeries, borderColor:'#2563EB', backgroundColor:'rgba(37,99,235,0.1)', fill:true, tension:0.4, pointRadius:4, pointHoverRadius:6, borderWidth:3 }] }, options:(function(){ var o=otpOptions(); o.scales.y.ticks.callback=function(v){return otpPeso(v)}; return o; })() }); }
     var dept=otpPrepareCanvas('otpChartDepartments',280); if(dept){ if(!otpByDepartment || otpByDepartment.length===0){ dept.style.display='none'; var empty=document.createElement('div'); empty.className='flex items-center justify-center h-full'; empty.innerHTML='<div class="text-center py-8"><i class="fas fa-building text-3xl text-gray-300 mb-2"></i><p class="text-sm text-gray-600">No department data available</p></div>'; dept.parentNode.appendChild(empty); } else { new Chart(dept,{ type:'bar', data:{ labels:otpByDepartment.map(d=>d.department), datasets:[{ label:'Reservations', data:otpByDepartment.map(d=>d.count), backgroundColor:['#2563EB','#10B981','#8B1818','#F59E0B','#6B7280','#A855F7'], borderColor:'#ffffff', borderWidth:1 }] }, options:otpOptions() }); } }
     var util=otpPrepareCanvas('otpChartUtilization',280); if(util){ if(!otpUtilizationWeeks || otpUtilizationWeeks.length===0){ util.style.display='none'; var empty2=document.createElement('div'); empty2.className='flex items-center justify-center h-full'; empty2.innerHTML='<div class="text-center py-8"><i class="fas fa-chart-line text-3xl text-gray-300 mb-2"></i><p class="text-sm text-gray-600">No utilization data available</p></div>'; util.parentNode.appendChild(empty2); } else { new Chart(util,{ type:'line', data:{ labels:otpUtilizationWeeks.map(function(u){ return (u.label || ('W'+u.week)); }), datasets:[{ data:otpUtilizationWeeks.map(function(u){ return u.hours; }), borderColor:'#2563EB', backgroundColor:'rgba(37,99,235,0.1)', fill:true, tension:0.4, pointRadius:4, pointHoverRadius:6, borderWidth:3 }] }, options:otpOptions() }); } }
+    
+    // Initialize ratings charts
+    otpInitRatingDistributionChart();
+    otpInitMonthlyRatingsChart();
+    otpInitRatingsByVenueChart();
+    otpInitRatingsByDepartmentChart();
+    
     window.otpChartsInitialized=true;
 }
 
 function otpUpdateRevenueChart(period){ var c=Chart.getChart('otpChartRevenue'); if(!c) return; if(period==='monthly'){ c.data.labels=otpLabelsMonths; c.data.datasets[0].data=otpRevenueSeries; } else { c.data.labels=otpLabelsQuarters; c.data.datasets[0].data=otpRevenueQuarterly; } c.update(); }
 function otpUpdateExpectedRevenueChart(period){ var c=Chart.getChart('otpChartExpectedRevenue'); if(!c) return; if(period==='monthly'){ c.data.labels=otpLabelsMonths; c.data.datasets[0].data=otpExpectedRevenueSeries; } else { c.data.labels=otpLabelsQuarters; c.data.datasets[0].data=otpExpectedRevenueQuarterly; } c.update(); }
 function otpUpdateDepartmentChart(metric){ var c=Chart.getChart('otpChartDepartments'); if(!c) return; if(metric==='count'){ c.data.labels=otpByDepartment.map(d=>d.department); c.data.datasets[0].data=otpByDepartment.map(d=>d.count); c.options.plugins.tooltip={}; } c.update(); }
+
+// Ratings Chart Initialization Functions
+function otpInitRatingDistributionChart() {
+    var ctx = otpPrepareCanvas('otpRatingDistributionChart', 300);
+    if (!ctx) return;
+    
+    if (!otpRatingDistribution || Object.keys(otpRatingDistribution).length === 0) {
+        ctx.style.display = 'none';
+        const emptyDiv = document.createElement('div');
+        emptyDiv.innerHTML = '<div class="text-center py-8"><i class="fas fa-star text-3xl text-gray-300 mb-2"></i><p class="text-sm text-gray-600">No rating data available</p></div>';
+        emptyDiv.className = 'flex items-center justify-center h-full';
+        ctx.parentNode.appendChild(emptyDiv);
+        return;
+    }
+    
+    const distributionData = {
+        labels: ['1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'],
+        datasets: [{
+            data: [
+                otpRatingDistribution[1] || 0,
+                otpRatingDistribution[2] || 0,
+                otpRatingDistribution[3] || 0,
+                otpRatingDistribution[4] || 0,
+                otpRatingDistribution[5] || 0
+            ],
+            backgroundColor: ['#EF4444', '#F97316', '#EAB308', '#22C55E', '#10B981'],
+            borderColor: '#ffffff',
+            borderWidth: 2,
+            borderRadius: 6,
+            borderSkipped: false
+        }]
+    };
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: distributionData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        font: { size: 12 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(17,24,39,0.95)',
+                    titleColor: '#E5E7EB',
+                    bodyColor: '#E5E7EB',
+                    padding: 12,
+                    cornerRadius: 8
+                }
+            }
+        }
+    });
+}
+
+function otpInitMonthlyRatingsChart() {
+    var ctx = otpPrepareCanvas('otpMonthlyRatingsChart', 300);
+    if (!ctx) return;
+    
+    if (!otpMonthlyRatingsData || otpMonthlyRatingsData.length === 0) {
+        ctx.style.display = 'none';
+        const emptyDiv = document.createElement('div');
+        emptyDiv.innerHTML = '<div class="text-center py-8"><i class="fas fa-chart-line text-3xl text-gray-300 mb-2"></i><p class="text-sm text-gray-600">No monthly rating data available</p></div>';
+        emptyDiv.className = 'flex items-center justify-center h-full';
+        ctx.parentNode.appendChild(emptyDiv);
+        return;
+    }
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: otpLabelsMonths,
+            datasets: [{
+                label: 'Number of Ratings',
+                data: otpMonthlyRatingsData,
+                borderColor: '#8B1818',
+                backgroundColor: 'rgba(139, 24, 24, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                borderWidth: 3,
+                pointBackgroundColor: '#8B1818',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2
+            }, {
+                label: 'Average Rating',
+                data: otpMonthlyAverageRatings,
+                borderColor: '#F59E0B',
+                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                tension: 0.4,
+                fill: false,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                borderWidth: 3,
+                pointBackgroundColor: '#F59E0B',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        font: { size: 12 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(17,24,39,0.95)',
+                    titleColor: '#E5E7EB',
+                    bodyColor: '#E5E7EB',
+                    padding: 12,
+                    cornerRadius: 8
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                    ticks: { color: '#6B7280', font: { size: 11 } }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    min: 0,
+                    max: 5,
+                    grid: { drawOnChartArea: false },
+                    ticks: { color: '#6B7280', font: { size: 11 } }
+                },
+                x: {
+                    grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                    ticks: { color: '#6B7280', font: { size: 11 } }
+                }
+            }
+        }
+    });
+}
+
+function otpInitRatingsByVenueChart() {
+    var ctx = otpPrepareCanvas('otpRatingsByVenueChart', 300);
+    if (!ctx) return;
+    
+    if (!otpRatingsByVenue || otpRatingsByVenue.length === 0) {
+        ctx.style.display = 'none';
+        const emptyDiv = document.createElement('div');
+        emptyDiv.innerHTML = '<div class="text-center py-8"><i class="fas fa-building text-3xl text-gray-300 mb-2"></i><p class="text-sm text-gray-600">No venue rating data available</p></div>';
+        emptyDiv.className = 'flex items-center justify-center h-full';
+        ctx.parentNode.appendChild(emptyDiv);
+        return;
+    }
+    
+    const venueLabels = otpRatingsByVenue.map(v => v.venue);
+    const venueRatings = otpRatingsByVenue.map(v => v.avg_rating);
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: venueLabels,
+            datasets: [{
+                label: 'Average Rating',
+                data: venueRatings,
+                backgroundColor: 'rgba(139, 24, 24, 0.8)',
+                borderColor: '#8B1818',
+                borderWidth: 2,
+                borderRadius: 6,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(17,24,39,0.95)',
+                    titleColor: '#E5E7EB',
+                    bodyColor: '#E5E7EB',
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            return 'Average Rating: ' + context.parsed.x + '/5';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    min: 0,
+                    max: 5,
+                    grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                    ticks: { 
+                        color: '#6B7280', 
+                        font: { size: 11 },
+                        callback: function(value) {
+                            return value + '/5';
+                        }
+                    }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { color: '#6B7280', font: { size: 11 } }
+                }
+            }
+        }
+    });
+}
+
+function otpInitRatingsByDepartmentChart() {
+    var ctx = otpPrepareCanvas('otpRatingsByDepartmentChart', 300);
+    if (!ctx) return;
+    
+    if (!otpRatingsByDepartment || otpRatingsByDepartment.length === 0) {
+        ctx.style.display = 'none';
+        const emptyDiv = document.createElement('div');
+        emptyDiv.innerHTML = '<div class="text-center py-8"><i class="fas fa-users text-3xl text-gray-300 mb-2"></i><p class="text-sm text-gray-600">No department rating data available</p></div>';
+        emptyDiv.className = 'flex items-center justify-center h-full';
+        ctx.parentNode.appendChild(emptyDiv);
+        return;
+    }
+    
+    const deptLabels = otpRatingsByDepartment.map(d => d.department);
+    const deptRatings = otpRatingsByDepartment.map(d => d.avg_rating);
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: deptLabels,
+            datasets: [{
+                label: 'Average Rating',
+                data: deptRatings,
+                backgroundColor: 'rgba(139, 24, 24, 0.8)',
+                borderColor: '#8B1818',
+                borderWidth: 2,
+                borderRadius: 6,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(17,24,39,0.95)',
+                    titleColor: '#E5E7EB',
+                    bodyColor: '#E5E7EB',
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            return 'Average Rating: ' + context.parsed.x + '/5';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    min: 0,
+                    max: 5,
+                    grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                    ticks: { 
+                        color: '#6B7280', 
+                        font: { size: 11 },
+                        callback: function(value) {
+                            return value + '/5';
+                        }
+                    }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { color: '#6B7280', font: { size: 11 } }
+                }
+            }
+        }
+    });
+}
 
 document.addEventListener('DOMContentLoaded', function(){ showOtpTab('overview'); });
 </script>
