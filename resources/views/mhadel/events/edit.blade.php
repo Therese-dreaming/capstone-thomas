@@ -154,7 +154,7 @@
                         @foreach($venues as $venue)
                             <option value="{{ $venue->id }}" 
                                     {{ old('venue_id', $event->venue_id) == $venue->id ? 'selected' : '' }}>
-                                {{ $venue->name }}
+                                {{ $venue->name }} (Capacity: {{ $venue->capacity }})
                             </option>
                         @endforeach
                     </select>
@@ -206,75 +206,48 @@
             </div>
         </div>
 
-        <!-- Equipment Selection Section -->
+        <!-- Equipment Details Section (Read Only) -->
         <div class="form-section rounded-xl shadow-md p-6 border border-gray-100">
             <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <i class="fas fa-tools mr-2 text-maroon"></i>
-                Equipment Selection
+                Equipment Details
             </h3>
             
             <div id="equipment-container">
                 @if($event->equipment_details && count($event->equipment_details) > 0)
-                    @foreach($event->equipment_details as $index => $equipment)
-                        <div class="equipment-item bg-gray-50 p-4 rounded-lg border border-gray-200 mb-3">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Equipment Name</label>
-                                    <select name="equipment[{{ $index }}][name]" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 equipment-select" data-index="{{ $index }}">
-                                        <option value="">Select equipment</option>
-                                    </select>
+                    <div class="space-y-3">
+                        @foreach($event->equipment_details as $equipment)
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Equipment Name</label>
+                                        <input type="text" 
+                                               value="{{ $equipment['name'] }}" 
+                                               class="w-full px-4 py-3 border border-gray-100 rounded-lg bg-gray-100 text-gray-700" 
+                                               readonly>
+                                        <input type="hidden" name="equipment[][name]" value="{{ $equipment['name'] }}">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                                        <input type="number" 
+                                               value="{{ $equipment['quantity'] }}" 
+                                               class="w-full px-4 py-3 border border-gray-100 rounded-lg bg-gray-100 text-gray-700" 
+                                               readonly>
+                                        <input type="hidden" name="equipment[][quantity]" value="{{ $equipment['quantity'] }}">
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
-                                    <input 
-                                        type="number" 
-                                        name="equipment[{{ $index }}][quantity]" 
-                                        min="1" 
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 equipment-quantity" 
-                                        placeholder="Quantity"
-                                        value="{{ $equipment['quantity'] ?? '' }}"
-                                    >
-                                </div>
                             </div>
-                            <button type="button" class="remove-equipment mt-2 text-red-600 hover:text-red-800 text-sm" style="display: {{ count($event->equipment_details) > 1 ? 'block' : 'none' }};">
-                                <i class="fas fa-trash mr-1"></i>Remove
-                            </button>
-                        </div>
-                    @endforeach
-                @else
-                    <div class="equipment-item bg-gray-50 p-4 rounded-lg border border-gray-200 mb-3">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Equipment Name</label>
-                                <select name="equipment[0][name]" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 equipment-select" data-index="0">
-                                    <option value="">Select equipment</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
-                                <input 
-                                    type="number" 
-                                    name="equipment[0][quantity]" 
-                                    min="1" 
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 equipment-quantity" 
-                                    placeholder="Quantity"
-                                    disabled
-                                >
-                            </div>
-                        </div>
-                        <button type="button" class="remove-equipment mt-2 text-red-600 hover:text-red-800 text-sm" style="display: none;">
-                            <i class="fas fa-trash mr-1"></i>Remove
-                        </button>
+                        @endforeach
                     </div>
+                @else
+                    <p class="text-gray-500 text-center py-4">No equipment has been requested for this event.</p>
                 @endif
             </div>
             
-            <button type="button" id="add-equipment" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-2">
-                <i class="fas fa-plus"></i>
-                <span>Add Equipment</span>
-            </button>
-            
-            <p class="text-xs text-gray-500 mt-2">Select equipment available at the chosen venue. Equipment options will update when you select a venue.</p>
+            <p class="text-xs text-gray-500 mt-4">
+                <i class="fas fa-info-circle mr-1"></i>
+                Equipment details are managed by IOSA and cannot be modified here.
+            </p>
         </div>
 
         <!-- Status Section -->
@@ -287,16 +260,9 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="input-group">
                     <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                    <select id="status" name="status" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200">
-                        <option value="upcoming" {{ $event->status === 'upcoming' ? 'selected' : '' }}>Upcoming</option>
-                        <option value="ongoing" {{ $event->status === 'ongoing' ? 'selected' : '' }}>Ongoing</option>
-                        <option value="completed" {{ $event->status === 'completed' ? 'selected' : '' }}>Completed</option>
-                        <option value="cancelled" {{ $event->status === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                    </select>
-                    @error('status')
-                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                    @enderror
+                    <input type="text" id="status_display" value="{{ $event->status === 'pending_venue' ? 'Pending Venue' : str_replace('_', ' ', ucwords($event->status)) }}" readonly
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600">
+                    <input type="hidden" id="status" name="status" value="{{ $event->status }}">
                 </div>
                 
                 <div class="input-group">
@@ -349,18 +315,12 @@
 @push('scripts')
 <script>
     // Global variables
-    let currentVenueId = {{ $event->venue_id }};
+    let currentVenueId = {{ $event->venue_id ?? 'null' }};
     let currentStartDate = '{{ $event->start_date ? $event->start_date->format("Y-m-d\TH:i") : "" }}';
     let currentEndDate = '{{ $event->end_date ? $event->end_date->format("Y-m-d\TH:i") : "" }}';
     
-    // Equipment functionality variables
-    const equipmentContainer = document.getElementById('equipment-container');
-    const addEquipmentBtn = document.getElementById('add-equipment');
-    const venueSelect = document.getElementById('venue_id');
-    let equipmentIndex = {{ $event->equipment_details ? count($event->equipment_details) - 1 : 0 }};
-    
-    // Venue data with equipment
-    const venues = @json($venues);
+    // Venue data
+    const venues = {!! json_encode($venues) !!};
     
     // Initialize form
     document.addEventListener('DOMContentLoaded', function() {
@@ -369,26 +329,33 @@
         // Add event listeners
         document.getElementById('start_date').addEventListener('change', calculateDuration);
         document.getElementById('end_date').addEventListener('change', calculateDuration);
-        
-        // Initialize equipment functionality
-        initializeEquipment();
     });
     
     // Calculate duration from start and end times
     function calculateDuration() {
-        const startDate = document.getElementById('start_date').value;
-        const endDate = document.getElementById('end_date').value;
+        const startDateInput = document.getElementById('start_date');
+        const endDateInput = document.getElementById('end_date');
         const durationInput = document.getElementById('duration_hours');
         
-        if (startDate && endDate) {
-            const start = new Date(startDate);
-            const end = new Date(endDate);
+        if (startDateInput.value && endDateInput.value) {
+            const start = new Date(startDateInput.value);
+            const end = new Date(endDateInput.value);
             const diffMs = end - start;
             const diffHours = diffMs / (1000 * 60 * 60);
             
             if (diffHours > 0) {
-                durationInput.value = diffHours.toFixed(1);
+                // Format duration to whole number if it's a whole number, otherwise use 1 decimal place
+                const formattedDuration = Number.isInteger(diffHours) ? diffHours.toFixed(0) : diffHours.toFixed(1);
+                durationInput.value = formattedDuration;
+            } else {
+                durationInput.value = "0";
+                if (diffHours < 0) {
+                    alert('End date must be after start date');
+                    endDateInput.value = '';
+                }
             }
+        } else {
+            durationInput.value = "0";
         }
     }
     
@@ -420,8 +387,9 @@
             },
             body: JSON.stringify({
                 venue_id: venueId,
-                start_datetime: startDate,
-                end_datetime: endDate
+                start_date: startDate,
+                end_date: endDate,
+                _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             })
         })
         .then(response => response.json())

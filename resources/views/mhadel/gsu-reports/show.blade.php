@@ -496,6 +496,7 @@
                                         <option value="pending" {{ $report->status == 'pending' ? 'selected' : '' }}>Pending</option>
                                         <option value="investigating" {{ $report->status == 'investigating' ? 'selected' : '' }}>Investigating</option>
                                         <option value="resolved" {{ $report->status == 'resolved' ? 'selected' : '' }}>Resolved</option>
+                                        <option value="dismissed" {{ $report->status == 'dismissed' ? 'selected' : '' }}>Dismissed</option>
                                     </select>
                                 </div>
                                 

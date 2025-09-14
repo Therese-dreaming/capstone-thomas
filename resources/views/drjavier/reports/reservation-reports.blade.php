@@ -407,7 +407,7 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 text-center">
-                                        <a href="{{ route('iosa.reservations.show', $r->id) }}" class="btn-dark-blue px-3 py-2 rounded-lg text-xs font-medium transition-colors">
+                                        <a href="{{ route('drjavier.reservations.show', $r->id) }}" class="btn-dark-blue px-3 py-2 rounded-lg text-xs font-medium transition-colors">
                                             <i class="fas fa-eye mr-1"></i>
                                         </a>
                                     </td>

@@ -112,7 +112,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         
         // IOSA Events Routes
         Route::get('events', [IOSAEventController::class, 'index'])->name('events.index');
+        Route::get('events/create', [IOSAEventController::class, 'create'])->name('events.create');
+        Route::post('events', [IOSAEventController::class, 'store'])->name('events.store');
         Route::get('events/{event}', [IOSAEventController::class, 'show'])->name('events.show');
+        Route::get('events/{event}/edit', [IOSAEventController::class, 'edit'])->name('events.edit');
+        Route::put('events/{event}', [IOSAEventController::class, 'update'])->name('events.update');
         Route::get('events-calendar', [IOSAEventController::class, 'calendar'])->name('events.calendar');
         
         // IOSA Profile Routes
@@ -186,6 +190,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // GSU Routes
     Route::group(['prefix' => 'gsu', 'as' => 'gsu.', 'middleware' => ['auth', 'gsu.role']], function () {
         Route::get('/dashboard', [GSUController::class, 'dashboard'])->name('dashboard');
+        
+        // GSU Profile Routes
+        Route::get('profile', [GSUController::class, 'profile'])->name('profile');
+        Route::put('profile', [GSUController::class, 'updateProfile'])->name('profile.update');
+        
         Route::resource('reservations', GSUReservationController::class);
         Route::get('reservations/{id}/pdf', [GSUReservationController::class, 'pdf'])->name('reservations.pdf');
         Route::get('reservations-export', [GSUReservationController::class, 'export'])->name('reservations.export');

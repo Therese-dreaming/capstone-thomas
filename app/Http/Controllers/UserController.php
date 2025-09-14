@@ -151,6 +151,10 @@ class UserController extends Controller
 			'equipment.*' => 'string',
 			'equipment_quantity' => 'nullable|array',
 			'equipment_quantity.*' => 'integer|min:1',
+			'custom_equipment_name' => 'nullable|array',
+			'custom_equipment_name.*' => 'nullable|string|max:255',
+			'custom_equipment_quantity' => 'nullable|array',
+			'custom_equipment_quantity.*' => 'nullable|integer|min:1',
 			'price_per_hour' => 'required|numeric|min:0',
 			'base_price' => 'required|numeric|min:0',
 			'department' => 'required|string|max:255',
@@ -218,6 +222,26 @@ class UserController extends Controller
 				}
 			}
 			$data['equipment_details'] = $equipmentDetails;
+		}
+
+		// Handle custom equipment requests
+		if ($request->has('custom_equipment_name') && is_array($request->custom_equipment_name)) {
+			$customEquipmentRequests = [];
+			$customNames = $request->input('custom_equipment_name', []);
+			$customQuantities = $request->input('custom_equipment_quantity', []);
+			
+			foreach ($customNames as $index => $name) {
+				if (!empty(trim($name))) {
+					$quantity = isset($customQuantities[$index]) ? (int)$customQuantities[$index] : 1;
+					$customEquipmentRequests[] = [
+						'name' => trim($name),
+						'quantity' => max(1, $quantity)
+					];
+				}
+			}
+			if (!empty($customEquipmentRequests)) {
+				$data['custom_equipment_requests'] = $customEquipmentRequests;
+			}
 		}
 
 		$startDate = Carbon::parse($request->start_date);
@@ -670,7 +694,7 @@ class UserController extends Controller
 		}
 
 		// Notify Ms. Mhadel users
-		$mhadelUsers = \App\Models\User::where('role', 'Mhadel')->get();
+		$mhadelUsers = \App\Models\User::where('role', 'Ms. Mhadel')->get();
 		foreach ($mhadelUsers as $user) {
 			\App\Models\Notification::create([
 				'user_id' => $user->id,

@@ -70,6 +70,9 @@
 								Event ID: {{ $event->event_id ?? 'N/A' }}
 							</div>
 							@switch($event->status)
+								@case('pending_venue')
+									<span class="status-badge bg-yellow-100 text-yellow-800 border border-yellow-200">Pending Venue</span>
+									@break
 								@case('upcoming')
 									<span class="status-badge bg-blue-100 text-blue-800 border border-blue-200">Upcoming</span>
 									@break
@@ -105,6 +108,11 @@
 					<div class="w-full bg-red-100 text-red-800 px-6 py-3 rounded-xl flex items-center justify-center font-medium">
 						<i class="fas fa-times-circle mr-2"></i>
 						<span>Event Cancelled</span>
+					</div>
+					@elseif($event->status === 'pending_venue')
+					<div class="w-full bg-yellow-100 text-yellow-800 px-6 py-3 rounded-xl flex items-center justify-center font-medium">
+						<i class="fas fa-clock mr-2"></i>
+						<span>Pending Venue Assignment</span>
 					</div>
 					@else
 					<div class="w-full bg-blue-100 text-blue-800 px-6 py-3 rounded-xl flex items-center justify-center font-medium">
@@ -233,6 +241,24 @@
 					</div>
 				</div>
 			</div>
+			@elseif($event->status === 'pending_venue')
+			<div class="info-card pending-venue-card">
+				<div class="p-6 border-b border-yellow-200 bg-yellow-50">
+					<h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
+						<i class="fas fa-clock text-yellow-600 mr-3"></i>
+						Venue Assignment
+					</h2>
+				</div>
+				<div class="p-6">
+					<div class="flex items-center text-yellow-700">
+						<i class="fas fa-info-circle mr-3 text-yellow-600 w-5"></i>
+						<div>
+							<div class="font-medium">Venue Assignment Pending</div>
+							<div class="text-sm text-yellow-600">This event is waiting for Ms. Mhadel to assign a venue. You will be notified once a venue is assigned.</div>
+						</div>
+					</div>
+				</div>
+			</div>
 			@endif
 		</div>
 
@@ -249,6 +275,20 @@
 				<div class="p-6">
 					<div class="text-center">
 						@switch($event->status)
+							@case('pending_venue')
+								<div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+									<i class="fas fa-clock text-yellow-600 text-2xl"></i>
+								</div>
+								<div class="text-lg font-semibold text-yellow-800 mb-2">Pending Venue</div>
+								<div class="text-sm text-gray-600">Waiting for venue assignment from Ms. Mhadel</div>
+								<div class="mt-4">
+									<a href="{{ route('iosa.events.edit', $event) }}" 
+									   class="inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-maroon rounded-lg hover:bg-red-800 transition-colors duration-300">
+										<i class="fas fa-edit mr-2"></i>
+										Edit Event
+									</a>
+								</div>
+								@break
 							@case('upcoming')
 								<div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
 									<i class="fas fa-clock text-blue-600 text-2xl"></i>
@@ -299,6 +339,16 @@
 								<div class="text-sm text-gray-600">{{ $event->created_at->format('M d, Y g:i A') }}</div>
 							</div>
 						</div>
+						
+						@if($event->status === 'pending_venue')
+						<div class="flex items-start">
+							<div class="w-3 h-3 bg-yellow-500 rounded-full mt-2 mr-3"></div>
+							<div>
+								<div class="font-medium text-gray-800">Venue Assignment Pending</div>
+								<div class="text-sm text-gray-600">Waiting for Ms. Mhadel to assign venue</div>
+							</div>
+						</div>
+						@endif
 						
 						<div class="flex items-start">
 							<div class="w-3 h-3 bg-blue-500 rounded-full mt-2 mr-3"></div>

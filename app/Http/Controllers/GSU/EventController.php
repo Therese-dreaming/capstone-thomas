@@ -130,7 +130,7 @@ class EventController extends Controller
         }
 
         // Notify Ms. Mhadel users
-        $mhadelUsers = \App\Models\User::where('role', 'Mhadel')->get();
+        $mhadelUsers = \App\Models\User::where('role', 'Ms. Mhadel')->get();
         foreach ($mhadelUsers as $user) {
             \App\Models\Notification::create([
                 'user_id' => $user->id,
@@ -271,7 +271,7 @@ class EventController extends Controller
         }
 
         // Notify Ms. Mhadel users
-        $mhadelUsers = \App\Models\User::where('role', 'Mhadel')->get();
+        $mhadelUsers = \App\Models\User::where('role', 'Ms. Mhadel')->get();
         foreach ($mhadelUsers as $user) {
             \App\Models\Notification::create([
                 'user_id' => $user->id,

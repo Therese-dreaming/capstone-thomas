@@ -143,16 +143,23 @@
 					<h1 class="text-3xl font-bold text-gray-800 font-poppins mb-2">Events Management</h1>
 					<p class="text-gray-600 text-lg">View all events in the system</p>
 				</div>
-				<div class="search-container">
-					<form method="GET" action="{{ route('iosa.events.index') }}">
-						<input type="text" name="search" value="{{ request('search') }}" placeholder="Search by title, ID, description, organizer, or venue..." class="search-input">
-						@if(request('status') && request('status') !== 'all')
-							<input type="hidden" name="status" value="{{ request('status') }}">
-						@endif
-						<div class="search-icon">
-							<i class="fas fa-search"></i>
-						</div>
-					</form>
+				<div class="flex flex-col lg:flex-row items-center gap-4">
+					<a href="{{ route('iosa.events.create') }}" 
+					   class="bg-maroon text-white px-6 py-3 rounded-xl hover:bg-red-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center">
+						<i class="fas fa-plus mr-2"></i>
+						<span>Create Event</span>
+					</a>
+					<div class="search-container">
+						<form method="GET" action="{{ route('iosa.events.index') }}">
+							<input type="text" name="search" value="{{ request('search') }}" placeholder="Search by title, ID, description, organizer, or venue..." class="search-input">
+							@if(request('status') && request('status') !== 'all')
+								<input type="hidden" name="status" value="{{ request('status') }}">
+							@endif
+							<div class="search-icon">
+								<i class="fas fa-search"></i>
+							</div>
+						</form>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -211,6 +218,14 @@
 		</div>
 		
 		<div class="stats-card">
+			<div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+				<i class="fas fa-clock text-yellow-600 text-lg"></i>
+			</div>
+			<div class="stats-number">{{ $events->where('status', 'pending_venue')->count() }}</div>
+			<div class="stats-label">Pending Venue</div>
+		</div>
+		
+		<div class="stats-card">
 			<div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-2">
 				<i class="fas fa-times text-red-600 text-lg"></i>
 			</div>
@@ -234,9 +249,14 @@
 					<i class="fas fa-list mr-2"></i>All Events
 				</a>
 				
+				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'pending_venue'])) }}" 
+				   class="tab-button {{ $current == 'pending_venue' ? 'active' : '' }}">
+					<i class="fas fa-clock mr-2"></i>Pending Venue
+				</a>
+				
 				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'upcoming'])) }}" 
 				   class="tab-button {{ $current == 'upcoming' ? 'active' : '' }}">
-					<i class="fas fa-clock mr-2"></i>Upcoming
+					<i class="fas fa-calendar mr-2"></i>Upcoming
 				</a>
 				
 				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'ongoing'])) }}" 
@@ -293,6 +313,9 @@
 							<!-- Status Badge -->
 							<div class="absolute top-4 right-4 z-20">
 								@switch($event->status)
+									@case('pending_venue')
+										<span class="status-badge bg-yellow-100 text-yellow-800 border border-yellow-200">Pending Venue</span>
+										@break
 									@case('upcoming')
 										<span class="status-badge bg-blue-100 text-blue-800 border border-blue-200">Upcoming</span>
 										@break
@@ -342,6 +365,11 @@
 											<i class="fas fa-map-marker-alt mr-3 text-maroon w-4"></i>
 											<span>{{ $event->venue->name }}</span>
 										</div>
+									@elseif($event->status === 'pending_venue')
+										<div class="flex items-center text-sm text-yellow-600">
+											<i class="fas fa-clock mr-3 text-yellow-600 w-4"></i>
+											<span>Venue assignment pending</span>
+										</div>
 									@endif
 									@if($event->organizer)
 										<div class="flex items-center text-sm text-gray-700">
@@ -373,6 +401,12 @@
 										Created {{ $event->created_at->diffForHumans() }}
 									</div>
 									<div class="flex space-x-2">
+										@if($event->status === 'pending_venue')
+											<a href="{{ route('iosa.events.edit', $event) }}" 
+											   class="action-button bg-yellow-50 text-yellow-600 hover:bg-yellow-100" title="Edit Event">
+												<i class="fas fa-edit"></i>
+											</a>
+										@endif
 										<a href="{{ route('iosa.events.show', $event) }}" 
 										   class="action-button bg-blue-50 text-blue-600 hover:bg-blue-100" title="View Details">
 											<i class="fas fa-eye"></i>

@@ -251,53 +251,47 @@ use Illuminate\Support\Facades\Storage;
                 </div>
             </div>
 
-            <!-- Activity Grid -->
-            @if($reservation->activity_grid)
-                <div class="category-card animate-fadeIn">
-                    <div class="category-header">
-                        <div class="flex items-center justify-between">
-                            <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
-                                <i class="fas fa-table text-maroon mr-3 text-2xl"></i>
-                                Activity Grid
-                            </h2>
-                            <div class="flex items-center space-x-2">
-                                @if(Storage::disk('public')->exists($reservation->activity_grid))
-                                    <a href="{{ asset('storage/' . $reservation->activity_grid) }}" target="_blank" 
-                                       class="btn-dark-blue px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
-                                        <i class="fas fa-eye mr-2"></i>View File
-                                    </a>
-                                @else
-                                    <button onclick="openActivityGridModal()" class="btn-dark-blue px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
-                                        <i class="fas fa-eye mr-2"></i>View Text
-                                    </button>
-                                @endif
-                                <a href="{{ route('drjavier.reservations.download-activity-grid', $reservation->id) }}" 
-                                   class="btn-dark-blue px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
-                                    <i class="fas fa-download mr-2"></i>Download
-                                </a>
+            <!-- Custom Equipment Requests -->
+            @if($reservation && !empty($reservation->custom_equipment_requests))
+            <div class="category-card animate-fadeIn">
+                <div class="category-header">
+                    <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
+                        <i class="fas fa-plus-circle text-maroon mr-3 text-2xl"></i>
+                        Custom Equipment Requests
+                    </h2>
+                </div>
+                <div class="category-content">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        @foreach($reservation->custom_equipment_requests as $customEquipment)
+                            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                                            <i class="fas fa-wrench text-blue-600"></i>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-800 font-medium">{{ $customEquipment['name'] ?? 'Custom Equipment' }}</span>
+                                            <div class="text-xs text-blue-600 mt-1">Custom Request</div>
+                                        </div>
+                                    </div>
+                                    <span class="text-blue-600 bg-white px-3 py-1 rounded-full border border-blue-200 font-medium">× {{ $customEquipment['quantity'] ?? 1 }}</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    
+                    <div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 mt-0.5">
+                                <i class="fas fa-info-circle text-blue-600"></i>
+                            </div>
+                            <div class="text-sm text-blue-800">
+                                <strong>Note:</strong> Custom equipment requests are subject to availability and admin approval. Additional charges may apply.
                             </div>
                         </div>
                     </div>
-                    <div class="category-content">
-                        @if(Storage::disk('public')->exists($reservation->activity_grid))
-                            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <h4 class="font-medium text-blue-800 text-sm">File Uploaded</h4>
-                                        <p class="text-xs text-blue-600 mt-1">{{ basename($reservation->activity_grid) }}</p>
-                                    </div>
-                                    <div class="text-blue-600">
-                                        <i class="fas fa-file-alt"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        @else
-                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                <pre class="text-sm text-gray-800 whitespace-pre-wrap font-mono">{{ $reservation->activity_grid }}</pre>
-                            </div>
-                        @endif
-                    </div>
                 </div>
+            </div>
             @endif
 
             <!-- Notes & History -->
@@ -663,36 +657,7 @@ use Illuminate\Support\Facades\Storage;
     </div>
 </div>
 
-<!-- Activity Grid Modal -->
-<div id="activityGridModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full font-poppins animate-fadeIn">
-            <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
-                        <i class="fas fa-table text-blue-500 mr-2"></i>
-                        Activity Grid Preview
-                    </h3>
-                    <button onclick="closeActivityGridModal()" class="text-gray-400 hover:text-gray-600 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="p-6">
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <pre id="activityGridContent" class="text-sm text-gray-800 whitespace-pre-wrap font-mono"></pre>
-                </div>
-            </div>
-            
-            <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
-                <button onclick="closeActivityGridModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                    Close
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <script>
     // Approve Modal Functions
@@ -723,19 +688,7 @@ use Illuminate\Support\Facades\Storage;
         document.body.style.overflow = 'auto';
     }
     
-    // Activity Grid Modal Functions
-    function openActivityGridModal() {
-        const activityGridContent = `{{ $reservation->activity_grid }}`;
-        const el = document.getElementById('activityGridContent');
-        if (el) el.textContent = activityGridContent;
-        document.getElementById('activityGridModal').classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
 
-    function closeActivityGridModal() {
-        document.getElementById('activityGridModal').classList.add('hidden');
-        document.body.style.overflow = 'auto';
-    }
     
     // Form submission handlers
     document.addEventListener('DOMContentLoaded', function() {

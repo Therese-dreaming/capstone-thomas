@@ -240,6 +240,73 @@
                     </div>
                 @endif
             </div>
+
+            <!-- Issues Reported Card (Only show if reservation is completed and has reports) -->
+            @if($reservation->status === 'completed' && $reservation->reports && $reservation->reports->count() > 0)
+                <div class="info-card rounded-xl p-6 border-l-4 border-red-500 bg-red-50">
+                    <div class="flex items-center mb-4">
+                        <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-exclamation-triangle text-red-600"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800">Issues Reported</h3>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        @foreach($reservation->reports as $report)
+                            <div class="bg-white border border-red-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="px-3 py-1 rounded-full text-xs font-semibold text-white
+                                        @if($report->severity === 'low') bg-blue-500
+                                        @elseif($report->severity === 'medium') bg-yellow-500
+                                        @elseif($report->severity === 'high') bg-red-500
+                                        @elseif($report->severity === 'critical') bg-red-800
+                                        @else bg-gray-500
+                                        @endif">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        {{ ucfirst($report->severity) }} - {{ ucfirst($report->type) }}
+                                    </span>
+                                    <span class="text-xs text-gray-500">
+                                        {{ $report->created_at->format('M d, Y H:i') }}
+                                    </span>
+                                </div>
+                                
+                                <div class="space-y-3">
+                                    <div>
+                                        <p class="text-xs text-gray-500 font-medium mb-1">Description</p>
+                                        <p class="text-sm text-gray-700 leading-relaxed">{{ $report->description }}</p>
+                                    </div>
+                                    
+                                    @if($report->actions_taken)
+                                        <div>
+                                            <p class="text-xs text-gray-500 font-medium mb-1">Actions Taken</p>
+                                            <p class="text-sm text-gray-700 leading-relaxed">{{ $report->actions_taken }}</p>
+                                        </div>
+                                    @endif
+                                    
+                                    <div class="flex items-center justify-between pt-3 border-t border-gray-200">
+                                        <div class="flex items-center space-x-4">
+                                            <span class="text-xs text-gray-500">
+                                                <strong>Status:</strong> 
+                                                <span class="px-2 py-1 rounded-full text-xs font-medium
+                                                    @if($report->status === 'pending') bg-yellow-100 text-yellow-800
+                                                    @elseif($report->status === 'resolved') bg-green-100 text-green-800
+                                                    @else bg-gray-100 text-gray-800
+                                                    @endif">
+                                                    {{ ucfirst($report->status) }}
+                                                </span>
+                                            </span>
+                                            <span class="text-xs text-gray-500">
+                                                <strong>Reported by:</strong> {{ $report->reporter->name ?? 'GSU' }}
+                                            </span>
+                                        </div>
+                                        <span class="text-xs text-gray-500 font-mono">Report #{{ $report->id }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         </div>
 
         <!-- Right Column - Pricing & Actions -->
@@ -378,12 +445,6 @@
                        class="w-full px-4 py-3 bg-maroon text-white rounded-lg hover:bg-red-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg flex items-center justify-center space-x-2 text-sm">
                         <i class="fas fa-list mr-1.5"></i>
                         <span>View All Reservations</span>
-                    </a>
-                    
-                    <a href="{{ route('gsu.reservations.pdf', $reservation->id) }}" 
-                       class="w-full px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg flex items-center justify-center space-x-2 text-sm">
-                        <i class="fas fa-eye mr-1.5"></i>
-                        <span>View PDF Receipt</span>
                     </a>
                     
                     @if($reservation->status !== 'completed')

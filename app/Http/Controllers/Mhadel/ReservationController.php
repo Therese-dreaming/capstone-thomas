@@ -46,9 +46,7 @@ class ReservationController extends Controller
             $query->where('venue_id', $request->venue);
         }
         if ($request->filled('department')) {
-            $query->whereHas('user', function($q) use ($request) {
-                $q->where('department', $request->department);
-            });
+            $query->where('department', $request->department);
         }
         
         // Add search functionality
@@ -83,7 +81,14 @@ class ReservationController extends Controller
         
         $venues = \App\Models\Venue::orderBy('name')->get();
         
-        return view('mhadel.reservations.index', compact('reservations', 'stats', 'venues'));
+        // Get unique departments from reservations
+        $departments = Reservation::whereNotNull('department')
+            ->distinct()
+            ->pluck('department')
+            ->sort()
+            ->values();
+        
+        return view('mhadel.reservations.index', compact('reservations', 'stats', 'venues', 'departments'));
     }
 
     /**

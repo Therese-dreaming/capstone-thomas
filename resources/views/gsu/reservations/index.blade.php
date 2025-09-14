@@ -69,6 +69,38 @@
         color: #ffffff; 
     }
     
+    .status-completed { 
+        background-color: #10B981; 
+        color: #ffffff; 
+    }
+    
+    .issue-indicator {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+    }
+    
+    .issue-badge {
+        background: linear-gradient(135deg, #EF4444, #DC2626);
+        color: white;
+        font-size: 0.65rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.375rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+        animation: pulse 2s infinite;
+    }
+    
+    .issue-badge.severity-low { background: linear-gradient(135deg, #3B82F6, #2563EB); }
+    .issue-badge.severity-medium { background: linear-gradient(135deg, #F59E0B, #D97706); }
+    .issue-badge.severity-high { background: linear-gradient(135deg, #EF4444, #DC2626); }
+    .issue-badge.severity-critical { 
+        background: linear-gradient(135deg, #7C2D12, #991B1B);
+        animation: pulse 1s infinite;
+    }
+    
     .view-toggle-btn { 
         transition: all 0.2s ease;
         border: 1px solid transparent;
@@ -205,9 +237,14 @@
                             class="view-toggle-btn px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm">
                         <i class="fas fa-calendar mr-2"></i>Calendar View
                     </button>
+                    <button onclick="showCompletedView()" 
+                            id="completedViewBtn" 
+                            class="view-toggle-btn px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm">
+                        <i class="fas fa-check-circle mr-2"></i>Completed
+                    </button>
                 </div>
                 <div class="text-sm text-gray-500">
-                    Showing {{ $reservations->count() }} final approved reservations
+                    <span id="viewCounter">Showing {{ $reservations->count() }} final approved reservations</span>
                 </div>
             </div>
         </div>
@@ -398,6 +435,170 @@
                 </div>
             </div>
         </div>
+
+        <!-- Completed Reservations View -->
+        <div id="completedView" class="p-6 hidden">
+            @if($completedReservations->count() > 0)
+                <div class="space-y-4">
+                    @foreach($completedReservations as $reservation)
+                        <div class="reservation-card rounded-lg p-5 hover:shadow-lg transition-all duration-300">
+                            <!-- Header -->
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-3">
+                                    <span class="status-badge status-completed">Completed</span>
+                                    @if($reservation->reports->count() > 0)
+                                        @php
+                                            $highestSeverityReport = $reservation->reports->sortByDesc(function($report) {
+                                                $severityOrder = ['low' => 1, 'medium' => 2, 'high' => 3, 'critical' => 4];
+                                                return $severityOrder[$report->severity] ?? 0;
+                                            })->first();
+                                        @endphp
+                                        <div class="issue-indicator">
+                                            <span class="issue-badge severity-{{ $highestSeverityReport->severity }}">
+                                                <i class="fas fa-exclamation-triangle mr-1"></i>
+                                                {{ ucfirst($highestSeverityReport->severity) }} Issue
+                                            </span>
+                                        </div>
+                                    @endif
+                                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                                        Completed: {{ $reservation->completion_date ? \Carbon\Carbon::parse($reservation->completion_date)->format('M d, Y H:i') : 'N/A' }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <a href="{{ route('gsu.reservations.show', $reservation->id) }}" 
+                                       class="bg-maroon text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg flex items-center space-x-2">
+                                        <i class="fas fa-eye mr-1.5"></i>
+                                        <span>View Details</span>
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- Content Grid -->
+                            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                                <!-- Event Details -->
+                                <div class="space-y-3">
+                                    <div class="mb-3">
+                                        <h3 class="font-bold text-gray-800 text-lg">{{ $reservation->event_title }}</h3>
+                                        <div class="text-xs text-gray-500 font-mono mt-1">
+                                            ID: {{ $reservation->reservation_id ?? 'N/A' }}
+                                        </div>
+                                    </div>
+                                    <div class="space-y-2 text-sm text-gray-600">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-user mr-2 text-maroon w-4"></i>
+                                            <span class="font-medium">User:</span>
+                                            <span class="ml-1">{{ $reservation->user->name }}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-calendar mr-2 text-maroon w-4"></i>
+                                            <span class="font-medium">Date:</span>
+                                            <span class="ml-1">{{ $reservation->start_date->format('M d, Y') }}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-clock mr-2 text-maroon w-4"></i>
+                                            <span class="font-medium">Time:</span>
+                                            <span class="ml-1">{{ \Carbon\Carbon::parse($reservation->start_date)->format('g:i A') }} - {{ \Carbon\Carbon::parse($reservation->end_date)->format('g:i A') }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Venue & Capacity -->
+                                <div class="space-y-3">
+                                    <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
+                                        <i class="fas fa-map-marker-alt text-maroon mr-2"></i>
+                                        Venue & Capacity
+                                    </h4>
+                                    <div class="space-y-2 text-sm text-gray-600">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-map-marker-alt mr-2 text-maroon w-4"></i>
+                                            <span class="font-medium">Venue:</span>
+                                            <span class="ml-1">{{ $reservation->venue->name }}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-users mr-2 text-maroon w-4"></i>
+                                            <span class="font-medium">Capacity:</span>
+                                            <span class="ml-1">{{ $reservation->capacity ?? 'N/A' }} participants</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Completion Info -->
+                                <div class="space-y-3">
+                                    <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
+                                        <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                                        Completion Info
+                                    </h4>
+                                    <div class="space-y-2 text-sm">
+                                        <div class="bg-green-50 p-3 rounded-lg border border-green-200">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <span class="text-gray-600 font-medium">Completed By:</span>
+                                                <span class="font-bold text-green-800">{{ $reservation->completed_by ?? 'GSU' }}</span>
+                                            </div>
+                                            @if($reservation->completion_notes)
+                                                <div class="text-xs text-gray-600 mt-2">
+                                                    <strong>Notes:</strong> {{ $reservation->completion_notes }}
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Issues & Reports -->
+                                <div class="space-y-3">
+                                    <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
+                                        <i class="fas fa-exclamation-triangle text-orange-600 mr-2"></i>
+                                        Issues & Reports
+                                    </h4>
+                                    @if($reservation->reports->count() > 0)
+                                        <div class="space-y-2">
+                                            @foreach($reservation->reports as $report)
+                                                <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                                                    <div class="flex items-center justify-between mb-2">
+                                                        <span class="issue-badge severity-{{ $report->severity }}">
+                                                            {{ ucfirst($report->severity) }}
+                                                        </span>
+                                                        <span class="text-xs text-gray-500">
+                                                            {{ $report->created_at->format('M d, Y') }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="text-xs text-gray-700">
+                                                        <strong>Type:</strong> {{ ucfirst($report->type) }}
+                                                    </div>
+                                                    <div class="text-xs text-gray-600 mt-1">
+                                                        {{ Str::limit($report->description, 100) }}
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <div class="text-gray-500 text-xs bg-gray-50 px-3 py-2 rounded-md border border-gray-200">
+                                            <i class="fas fa-check-circle text-green-500 mr-1"></i>
+                                            No issues reported
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                
+                <!-- Pagination for Completed Reservations -->
+                <div class="mt-8 flex justify-center">
+                    <div class="bg-white rounded-lg shadow-md p-3">
+                        {{ $completedReservations->links() }}
+                    </div>
+                </div>
+            @else
+                <!-- Empty State for Completed -->
+                <div class="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+                    <div class="w-20 h-20 bg-green-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-check-circle text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">No Completed Reservations</h3>
+                    <p class="text-gray-600 mb-6 max-w-md mx-auto text-sm">Completed reservations will appear here once they are marked as finished by GSU.</p>
+                </div>
+            @endif
+        </div>
     </div>
 </div>
 
@@ -438,16 +639,38 @@
 function showListView() {
     document.getElementById('listView').classList.remove('hidden');
     document.getElementById('calendarView').classList.add('hidden');
+    document.getElementById('completedView').classList.add('hidden');
     document.getElementById('listViewBtn').classList.add('active');
     document.getElementById('calendarViewBtn').classList.remove('active');
+    document.getElementById('completedViewBtn').classList.remove('active');
+    
+    // Update counter
+    document.getElementById('viewCounter').textContent = 'Showing {{ $reservations->count() }} final approved reservations';
 }
 
 function showCalendarView() {
     document.getElementById('listView').classList.add('hidden');
     document.getElementById('calendarView').classList.remove('hidden');
+    document.getElementById('completedView').classList.add('hidden');
     document.getElementById('calendarViewBtn').classList.add('active');
     document.getElementById('listViewBtn').classList.remove('active');
+    document.getElementById('completedViewBtn').classList.remove('active');
     renderCalendar();
+    
+    // Update counter
+    document.getElementById('viewCounter').textContent = 'Showing {{ $reservations->count() }} final approved reservations';
+}
+
+function showCompletedView() {
+    document.getElementById('listView').classList.add('hidden');
+    document.getElementById('calendarView').classList.add('hidden');
+    document.getElementById('completedView').classList.remove('hidden');
+    document.getElementById('completedViewBtn').classList.add('active');
+    document.getElementById('listViewBtn').classList.remove('active');
+    document.getElementById('calendarViewBtn').classList.remove('active');
+    
+    // Update counter
+    document.getElementById('viewCounter').textContent = 'Showing {{ $completedReservations->count() }} completed reservations';
 }
 
 let currentDate = new Date();

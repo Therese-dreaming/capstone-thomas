@@ -331,17 +331,32 @@
                                     <div class="space-y-2 text-sm">
                                         <div class="flex items-center justify-between">
                                             <span class="text-gray-600">Duration:</span>
-                                            <span class="font-medium text-blue-600">{{ $reservation->duration_hours ?? 0 }} hours</span>
+                                            <span class="font-medium text-blue-600">{{ $reservation->start_date->diffInHours($reservation->end_date) }} hours</span>
                                         </div>
-                                        @if($reservation->equipment_details && count($reservation->equipment_details) > 0)
+                                        @php
+                                            $hasEquipment = ($reservation->equipment_details && count($reservation->equipment_details) > 0);
+                                            $hasCustomEquipment = (!empty($reservation->custom_equipment_requests));
+                                        @endphp
+                                        @if($hasEquipment || $hasCustomEquipment)
                                             <div class="text-gray-600">Equipment:</div>
                                             <div class="space-y-1">
-                                                @foreach($reservation->equipment_details as $equipment)
-                                                    <div class="text-xs bg-gray-100 px-2 py-1 rounded">
-                                                        <span class="font-medium">{{ $equipment['name'] }}</span>
-                                                        <span class="text-gray-500">({{ $equipment['quantity'] }})</span>
-                                                    </div>
-                                                @endforeach
+                                                @if($hasEquipment)
+                                                    @foreach($reservation->equipment_details as $equipment)
+                                                        <div class="text-xs bg-gray-100 px-2 py-1 rounded">
+                                                            <span class="font-medium">{{ $equipment['name'] }}</span>
+                                                            <span class="text-gray-500">({{ $equipment['quantity'] }})</span>
+                                                        </div>
+                                                    @endforeach
+                                                @endif
+                                                @if($hasCustomEquipment)
+                                                    @foreach($reservation->custom_equipment_requests as $customEquipment)
+                                                        <div class="text-xs bg-blue-100 px-2 py-1 rounded border border-blue-200">
+                                                            <span class="font-medium text-blue-800">{{ $customEquipment['name'] ?? 'Custom Equipment' }}</span>
+                                                            <span class="text-blue-600">({{ $customEquipment['quantity'] ?? 1 }})</span>
+                                                            <span class="text-xs text-blue-500 ml-1">Custom</span>
+                                                        </div>
+                                                    @endforeach
+                                                @endif
                                             </div>
                                         @else
                                             <div class="text-gray-500 text-xs">No equipment requested</div>

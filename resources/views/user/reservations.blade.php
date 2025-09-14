@@ -8,10 +8,6 @@
     <i class="fas fa-bookmark text-lg"></i>
     <span>My Reservations</span>
 </a>
-<button onclick="openReservationModal()" class="font-montserrat font-bold px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-all duration-300 flex items-center space-x-2 shadow-md">
-    <i class="fas fa-calendar-plus text-lg"></i>
-    <span>New Reservation</span>
-</button>
 @endsection
 
 @section('content')
@@ -351,6 +347,59 @@
                                         <i class="fas fa-list-ul text-maroon mr-2"></i>
                                         <span class="font-medium">Selected:</span>
                                         <span id="selected_equipment_text" class="ml-2 text-gray-600">None</span>
+                                    </div>
+                                </div>
+
+                                <!-- Custom Equipment Section -->
+                                <div class="mt-6 border-t border-gray-200 pt-6">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <label class="block text-sm font-medium text-gray-700 flex items-center">
+                                            <i class="fas fa-plus-circle text-maroon mr-2"></i>
+                                            Request Additional Equipment
+                                        </label>
+                                        <button type="button" onclick="addCustomEquipment()" 
+                                                class="px-3 py-1 bg-maroon text-white text-sm rounded-lg hover:bg-red-700 transition-colors flex items-center">
+                                            <i class="fas fa-plus mr-1"></i> Add Item
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="text-xs text-gray-500 mb-3">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Can't find the equipment you need? Add custom equipment requests below. These will be reviewed by the admin.
+                                    </div>
+
+                                    <div id="custom_equipment_list" class="space-y-3">
+                                        <!-- Custom equipment items will be added here dynamically -->
+                                    </div>
+
+                                    <!-- Template for custom equipment item (hidden) -->
+                                    <div id="custom_equipment_template" class="hidden">
+                                        <div class="custom-equipment-item bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-wrench text-blue-600 mr-2"></i>
+                                                    <span class="text-sm font-medium text-blue-800">Custom Equipment Request</span>
+                                                </div>
+                                                <button type="button" onclick="removeCustomEquipment(this)" 
+                                                        class="text-red-500 hover:text-red-700 transition-colors">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-700 mb-1">Equipment Name *</label>
+                                                    <input type="text" name="custom_equipment_name[]" 
+                                                           placeholder="e.g., Projector Screen"
+                                                           class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-700 mb-1">Quantity *</label>
+                                                    <input type="number" name="custom_equipment_quantity[]" 
+                                                           min="1" value="1"
+                                                           class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -905,12 +954,79 @@ function updateSelectedEquipmentSummary() {
         }
     });
 
+    // Add custom equipment to summary
+    const customEquipmentItems = document.querySelectorAll('#custom_equipment_list .custom-equipment-item');
+    customEquipmentItems.forEach(item => {
+        const nameInput = item.querySelector('input[name="custom_equipment_name[]"]');
+        const qtyInput = item.querySelector('input[name="custom_equipment_quantity[]"]');
+        if (nameInput && nameInput.value.trim() && qtyInput && qtyInput.value) {
+            selected.push(`${nameInput.value.trim()} (x${qtyInput.value}) [Custom]`);
+        }
+    });
+
     if (noneChecked) {
         summaryEl.textContent = 'No equipment needed';
         return;
     }
 
     summaryEl.textContent = selected.length ? selected.join(', ') : 'None';
+}
+
+// Add custom equipment item
+function addCustomEquipment() {
+    const template = document.getElementById('custom_equipment_template');
+    const container = document.getElementById('custom_equipment_list');
+    
+    // Clone the template
+    const newItem = template.cloneNode(true);
+    newItem.id = ''; // Remove the template id
+    newItem.classList.remove('hidden');
+    
+    // Add required attributes to the inputs in the cloned item
+    const nameInput = newItem.querySelector('input[name="custom_equipment_name[]"]');
+    const quantityInput = newItem.querySelector('input[name="custom_equipment_quantity[]"]');
+    if (nameInput) nameInput.setAttribute('required', 'required');
+    if (quantityInput) quantityInput.setAttribute('required', 'required');
+    
+    // Add animation class
+    newItem.classList.add('animate-fadeIn');
+    
+    // Append to container
+    container.appendChild(newItem);
+    
+    // Focus on the first input
+    if (nameInput) {
+        nameInput.focus();
+    }
+    
+    // Add event listeners for real-time summary update
+    const inputs = newItem.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.addEventListener('input', updateSelectedEquipmentSummary);
+    });
+    
+    // Update summary
+    updateSelectedEquipmentSummary();
+    
+    showToast('Custom equipment item added. Fill in the details.', 'info');
+}
+
+// Remove custom equipment item
+function removeCustomEquipment(button) {
+    const item = button.closest('.custom-equipment-item');
+    if (item) {
+        // Add fade out animation
+        item.style.opacity = '0';
+        item.style.transform = 'translateX(100%)';
+        item.style.transition = 'all 0.3s ease-out';
+        
+        setTimeout(() => {
+            item.remove();
+            updateSelectedEquipmentSummary();
+        }, 300);
+        
+        showToast('Custom equipment item removed.', 'info');
+    }
 }
 
 // Calculate base price based on duration and rate
@@ -1101,6 +1217,27 @@ document.querySelector('form[action*="reservations"]').addEventListener('submit'
                 hasEquipmentError = true;
                 showToast(`Please specify quantity for ${equipment.value}`, 'error');
             }
+        }
+    });
+    
+    // Custom equipment validation
+    const customEquipmentItems = document.querySelectorAll('#custom_equipment_list .custom-equipment-item');
+    customEquipmentItems.forEach((item, index) => {
+        const nameInput = item.querySelector('input[name="custom_equipment_name[]"]');
+        const qtyInput = item.querySelector('input[name="custom_equipment_quantity[]"]');
+        
+        if (nameInput && nameInput.value.trim()) {
+            // If name is provided, quantity must also be provided and valid
+            if (!qtyInput || !qtyInput.value || parseInt(qtyInput.value) < 1) {
+                hasEquipmentError = true;
+                showToast(`Please specify a valid quantity for custom equipment: ${nameInput.value.trim()}`, 'error');
+                qtyInput?.focus();
+            }
+        } else if (qtyInput && qtyInput.value) {
+            // If quantity is provided but name is empty
+            hasEquipmentError = true;
+            showToast(`Please specify the name for custom equipment item ${index + 1}`, 'error');
+            nameInput?.focus();
         }
     });
     

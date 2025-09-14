@@ -204,6 +204,9 @@
                                 @case('cancelled')
                                     <span class="status-badge bg-red-100 text-red-800">Cancelled</span>
                                     @break
+                                @case('pending_venue')
+                                    <span class="status-badge bg-yellow-100 text-yellow-800">Pending Venue</span>
+                                    @break
                             @endswitch
                         </div>
                         
@@ -515,6 +518,13 @@
                                 </div>
                                 <h3 class="text-lg font-semibold text-red-800 mb-2">Event Cancelled</h3>
                                 <p class="text-sm text-red-600">This event has been cancelled.</p>
+                                @break
+                            @case('pending_venue')
+                                <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-hourglass-half text-yellow-600 text-3xl"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-yellow-800 mb-2">Pending Venue</h3>
+                                <p class="text-sm text-yellow-600">This event is waiting for venue approval.</p>
                                 @break
                         @endswitch
                     </div>

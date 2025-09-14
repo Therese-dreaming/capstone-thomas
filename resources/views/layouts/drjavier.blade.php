@@ -64,18 +64,28 @@
 					<!-- Reservations -->
 					<li>
 						<a href="{{ route('drjavier.reservations.index') }}"
-							class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('drjavier.reservations*') ? 'active-maroon' : 'text-gray-700' }}">
-							<i class="fas fa-calendar-check w-5 h-5"></i>
-							<span class="font-medium">Reservations</span>
+							class="flex items-center p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('drjavier.reservations*') ? 'active-maroon' : 'text-gray-700' }}">
+							<div class="flex items-center flex-1">
+								<i class="fas fa-calendar-check w-5 h-5 mr-3"></i>
+								<span class="font-medium">Reservations</span>
+								@if(isset($sidebarCounts['reservations']) && $sidebarCounts['reservations'] > 0)
+									<span class="ml-auto px-2 py-1 text-xs font-medium bg-red-100 text-red-600 rounded-full">{{ $sidebarCounts['reservations'] }}</span>
+								@endif
+							</div>
 						</a>
 					</li>
 
 					<!-- GSU Reports -->
 					<li>
 						<a href="{{ route('drjavier.gsu-reports') }}" 
-							class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('drjavier.gsu-reports*') ? 'active-maroon' : 'text-gray-700' }}">
-							<i class="fas fa-exclamation-triangle w-5 h-5"></i>
-							<span class="font-medium">GSU Reports</span>
+							class="flex items-center p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('drjavier.gsu-reports*') ? 'active-maroon' : 'text-gray-700' }}">
+							<div class="flex items-center flex-1">
+								<i class="fas fa-exclamation-triangle w-5 h-5 mr-3"></i>
+								<span class="font-medium">GSU Reports</span>
+								@if(isset($sidebarCounts['gsu_reports']) && $sidebarCounts['gsu_reports'] > 0)
+									<span class="ml-auto px-2 py-1 text-xs font-medium bg-red-100 text-red-600 rounded-full">{{ $sidebarCounts['gsu_reports'] }}</span>
+								@endif
+							</div>
 						</a>
 					</li>
 

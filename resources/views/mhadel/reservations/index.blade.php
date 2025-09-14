@@ -244,6 +244,7 @@
         
         <!-- List View -->
         <div id="listView" class="p-6">
+            
             @if($reservations->count() > 0)
                 <div class="space-y-4">
                     @foreach($reservations as $reservation)
@@ -531,14 +532,28 @@
                 <!-- Department Filter -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Department</label>
-                    <select id="filterDepartment" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon">
-                        <option value="">All Departments</option>
-                        <option value="Computer Science">Computer Science</option>
-                        <option value="Engineering">Engineering</option>
-                        <option value="Business Administration">Business Administration</option>
-                        <option value="Student Affairs">Student Affairs</option>
-                        <option value="Faculty Development">Faculty Development</option>
-                    </select>
+                    <div class="relative">
+                        <select id="filterDepartment" name="department" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon">
+                            <option value="">All Departments</option>
+                            @foreach($departments as $department)
+                                @php
+                                    $selected = request('department') == $department;
+                                @endphp
+                                <option value="{{ $department }}" {{ $selected ? 'selected' : '' }}>
+                                    {{ $department }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                            <i class="fas fa-chevron-down text-gray-400"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between mt-1">
+                        <p class="text-sm text-gray-500">Filter reservations by department</p>
+                        <span class="text-xs text-gray-400" id="departmentCount">
+                            {{ count($departments) }} departments available
+                        </span>
+                    </div>
                 </div>
             </div>
             
@@ -589,7 +604,7 @@
 <!-- Approve Modal -->
 <div id="approveModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full font-poppins animate-fadeIn">
+        <div class="bg-white rounded-xl shadow-2xl max-w-7xl w-full font-poppins animate-fadeIn">
             <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-white">
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
@@ -603,7 +618,7 @@
             </div>
             
             <div class="p-6">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <!-- Left Column: Reservation Details -->
                     <div>
                         <h4 class="font-medium text-gray-800 mb-3 text-lg">Reservation Details</h4>
@@ -628,9 +643,9 @@
                         </div>
                     </div>
                     
-                    <!-- Right Column: Pricing & Discount -->
+                    <!-- Middle Column: Pricing Information -->
                     <div>
-                        <h4 class="font-medium text-gray-800 mb-3 text-lg">Pricing & Discount</h4>
+                        <h4 class="font-medium text-gray-800 mb-3 text-lg">Pricing Information</h4>
                         
                         <!-- Venue Rate and Base Price Display -->
                         <div class="mb-4">
@@ -665,9 +680,30 @@
                             <input type="number" id="basePrice" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Enter final price or 0 for free events" required>
                         </div>
                         
+                        <!-- Summary -->
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div class="flex items-start">  
+                                <i class="fas fa-save text-blue-500 mr-2"></i>
+                                <div class="text-xs text-blue-700">
+                                    <p class="font-medium">This information will be saved:</p>
+                                    <ul class="mt-1 space-y-1">
+                                        <li>• Final price set by Ms. Mhadel</li>
+                                        <li>• Discount percentage (if applied)</li>
+                                        <li>• Approval notes and timestamp</li>
+                                        <li>• Status updated to "Ms. Mhadel Approved"</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Column: Discount & Final Price -->
+                    <div>
+                        <h4 class="font-medium text-gray-800 mb-3 text-lg">Discount & Final Price</h4>
+                        
                         <!-- Discount Selection -->
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Discount (Optional)</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Discount Selection</label>
                             <p class="text-xs text-gray-600 mb-2">Select a discount percentage to apply to the final price.</p>
                             <div class="grid grid-cols-2 gap-2">
                                 <button type="button" onclick="selectDiscount(0)" id="discount-0" class="discount-btn px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
@@ -686,7 +722,7 @@
                         </div>
                         
                         <!-- Final Price Display -->
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-sm font-medium text-green-800">Price After Discount:</span>
                                 <span id="finalPrice" class="text-xl font-bold text-green-800">₱0.00</span>
@@ -696,17 +732,15 @@
                             </div>
                         </div>
                         
-                        <!-- Summary -->
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                            <div class="flex items-start">  
-                                <i class="fas fa-save text-blue-500 mr-2"></i>
-                                <div class="text-xs text-blue-700">
-                                    <p class="font-medium">This information will be saved:</p>
+                        <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div class="flex items-start">
+                                <i class="fas fa-info-circle text-yellow-500 mr-2"></i>
+                                <div class="text-xs text-yellow-700">
+                                    <p class="font-medium">Discount Information:</p>
                                     <ul class="mt-1 space-y-1">
-                                        <li>• Final price set by Ms. Mhadel</li>
-                                        <li>• Discount percentage (if applied)</li>
-                                        <li>• Approval notes and timestamp</li>
-                                        <li>• Status updated to "Ms. Mhadel Approved"</li>
+                                        <li>• Discounts are applied to the final price</li>
+                                        <li>• Cannot be combined with other discounts</li>
+                                        <li>• Applied immediately upon selection</li>
                                     </ul>
                                 </div>
                             </div>
@@ -803,24 +837,7 @@
     
     const reservationsData = @json($reservations);
     
-    // Debug: Log the entire reservations data structure
-    console.log('Full reservations data:', reservationsData);
-    console.log('First reservation sample:', reservationsData.data?.[0]);
-    if (reservationsData.data && reservationsData.data.length > 0) {
-        console.log('First reservation fields:', Object.keys(reservationsData.data[0]));
-        console.log('First reservation price_per_hour:', reservationsData.data[0].price_per_hour);
-        console.log('First reservation duration_hours:', reservationsData.data[0].duration_hours);
-        console.log('First reservation base_price:', reservationsData.data[0].base_price);
-        console.log('First reservation venue_id:', reservationsData.data[0].venue_id);
-        
-        // Check if venue data is loaded
-        if (reservationsData.data[0].venue) {
-            console.log('First reservation venue data:', reservationsData.data[0].venue);
-            console.log('Venue price_per_hour:', reservationsData.data[0].venue.price_per_hour);
-        } else {
-            console.log('No venue data loaded for first reservation');
-        }
-    }
+
     
     function renderCalendar() {
         const calendar = document.getElementById('calendar');
@@ -1003,21 +1020,7 @@
         // Get the existing price from the reservation data
         const reservation = reservationsData.data.find(r => r.id == reservationId);
         
-        // Debug: Log the reservation data to console
-        console.log('Reservation data:', reservation);
-        console.log('Base price:', reservation?.base_price);
-        console.log('Final price:', reservation?.final_price);
-        console.log('Price per hour:', reservation?.price_per_hour);
-        console.log('Duration hours:', reservation?.duration_hours);
-        console.log('All available fields:', Object.keys(reservation || {}));
-        
-        // Check venue data
-        if (reservation && reservation.venue) {
-            console.log('Venue data:', reservation.venue);
-            console.log('Venue price_per_hour:', reservation.venue.price_per_hour);
-        } else {
-            console.log('No venue data found in reservation');
-        }
+
         
         // Check for base_price first, then fallback to final_price if base_price is not available
         let userPrice = null;
@@ -1285,15 +1288,58 @@
         const venue = document.getElementById('filterVenue').value;
         const department = document.getElementById('filterDepartment').value;
         
-        // Build query parameters
-        const params = new URLSearchParams();
-        if (dateFrom) params.append('date_from', dateFrom);
-        if (dateTo) params.append('date_to', dateTo);
-        if (venue) params.append('venue', venue);
-        if (department) params.append('department', department);
+        // Get current URL parameters
+        const currentParams = new URLSearchParams(window.location.search);
+        const status = currentParams.get('status') || 'pending'; // Preserve status or default to pending
         
-        // Redirect with filters
-        window.location.href = `${window.location.pathname}?${params.toString()}`;
+        // Create form and submit it
+        const form = document.createElement('form');
+        form.method = 'GET';
+        form.action = window.location.pathname;
+
+        // Add status
+        const statusInput = document.createElement('input');
+        statusInput.type = 'hidden';
+        statusInput.name = 'status';
+        statusInput.value = status;
+        form.appendChild(statusInput);
+
+        // Add other filters
+        if (dateFrom) {
+            const dateFromInput = document.createElement('input');
+            dateFromInput.type = 'hidden';
+            dateFromInput.name = 'date_from';
+            dateFromInput.value = dateFrom;
+            form.appendChild(dateFromInput);
+        }
+
+        if (dateTo) {
+            const dateToInput = document.createElement('input');
+            dateToInput.type = 'hidden';
+            dateToInput.name = 'date_to';
+            dateToInput.value = dateTo;
+            form.appendChild(dateToInput);
+        }
+
+        if (venue) {
+            const venueInput = document.createElement('input');
+            venueInput.type = 'hidden';
+            venueInput.name = 'venue';
+            venueInput.value = venue;
+            form.appendChild(venueInput);
+        }
+
+        if (department) {
+            const departmentInput = document.createElement('input');
+            departmentInput.type = 'hidden';
+            departmentInput.name = 'department';
+            departmentInput.value = department;
+            form.appendChild(departmentInput);
+        }
+
+        // Add to document and submit
+        document.body.appendChild(form);
+        form.submit();
     }
     
     // Tab functionality

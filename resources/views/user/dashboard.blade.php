@@ -318,10 +318,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (statusChartElement) {
             const statusCtx = statusChartElement.getContext('2d');
             new Chart(statusCtx, {
-                type: 'doughnut',
+                type: 'bar',
                 data: {
                     labels: ['Approved', 'Pending', 'Completed', 'Rejected'],
                     datasets: [{
+                        label: 'Reservations',
                         data: [
                             {{ $stats['approved'] ?? 0 }},
                             {{ $stats['pending'] ?? 0 }},
@@ -335,7 +336,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             '#EF4444'
                         ],
                         borderWidth: 2,
-                        borderColor: '#ffffff'
+                        borderColor: [
+                            '#059669',
+                            '#D97706',
+                            '#4B5563',
+                            '#DC2626'
+                        ]
                     }]
                 },
                 options: {
@@ -343,10 +349,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 20,
-                                usePointStyle: true
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
                             }
                         }
                     }

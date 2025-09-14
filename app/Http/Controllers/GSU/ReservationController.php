@@ -44,14 +44,48 @@ class ReservationController extends Controller
 		}
 		
 		$reservations = $query->orderByDesc('created_at')->paginate(10)->withQueryString();
+		
+		// Get completed reservations with reports
+		$completedQuery = Reservation::with(['user','venue','reports' => function($query) {
+			$query->where('status', 'pending')->orWhere('status', 'resolved');
+		}])->where('status','completed');
+		
+		// Apply same filters to completed reservations
+		if ($request->filled('start_date')) {
+			$completedQuery->where('start_date', '>=', $request->start_date);
+		}
+		if ($request->filled('end_date')) {
+			$completedQuery->where('start_date', '<=', $request->end_date . ' 23:59:59');
+		}
+		if ($request->filled('venue')) {
+			$completedQuery->where('venue_id', $request->venue);
+		}
+		if ($request->filled('search')) {
+			$searchQuery = $request->search;
+			$completedQuery->where(function ($q) use ($searchQuery) {
+				$q->where('event_title', 'like', "%{$searchQuery}%")
+				  ->orWhere('reservation_id', 'like', "%{$searchQuery}%")
+				  ->orWhere('purpose', 'like', "%{$searchQuery}%")
+				  ->orWhereHas('user', function ($userQuery) use ($searchQuery) {
+					  $userQuery->where('name', 'like', "%{$searchQuery}%")
+								->orWhere('email', 'like', "%{$searchQuery}%");
+				  })
+				  ->orWhereHas('venue', function ($venueQuery) use ($searchQuery) {
+					  $venueQuery->where('name', 'like', "%{$searchQuery}%");
+				  });
+			});
+		}
+		
+		$completedReservations = $completedQuery->orderByDesc('completion_date')->paginate(10, ['*'], 'completed_page')->withQueryString();
+		
 		$venues = \App\Models\Venue::orderBy('name')->get();
 		
-		return view('gsu.reservations.index', compact('reservations','venues'));
+		return view('gsu.reservations.index', compact('reservations','completedReservations','venues'));
 	}
 
 	public function show(string $id)
 	{
-		$reservation = Reservation::with(['user','venue'])->where('status','approved_OTP')->findOrFail($id);
+		$reservation = Reservation::with(['user','venue','reports.reporter'])->whereIn('status',['approved_OTP','completed'])->findOrFail($id);
 		return view('gsu.reservations.show', compact('reservation'));
 	}
 
@@ -168,7 +202,7 @@ class ReservationController extends Controller
         }
 
         // Notify Ms. Mhadel users
-        $mhadelUsers = \App\Models\User::where('role', 'Mhadel')->get();
+        $mhadelUsers = \App\Models\User::where('role', 'Ms. Mhadel')->get();
         foreach ($mhadelUsers as $user) {
             \App\Models\Notification::create([
                 'user_id' => $user->id,
@@ -267,7 +301,7 @@ class ReservationController extends Controller
         }
 
         // Notify Ms. Mhadel users
-        $mhadelUsers = \App\Models\User::where('role', 'Mhadel')->get();
+        $mhadelUsers = \App\Models\User::where('role', 'Ms. Mhadel')->get();
         foreach ($mhadelUsers as $user) {
             \App\Models\Notification::create([
                 'user_id' => $user->id,

@@ -20,6 +20,7 @@ class Reservation extends Model
         'end_date',
         'activity_grid',
         'equipment_details',
+        'custom_equipment_requests',
         'price_per_hour',
         'base_price',
         'discount_percentage',
@@ -38,6 +39,7 @@ class Reservation extends Model
         'end_date' => 'datetime',
         'activity_grid' => 'string',
         'equipment_details' => 'array',
+        'custom_equipment_requests' => 'array',
         'price_per_hour' => 'decimal:2',
         'base_price' => 'decimal:2',
         'discount_percentage' => 'integer',
@@ -59,6 +61,11 @@ class Reservation extends Model
     public function ratings(): HasMany
     {
         return $this->hasMany(ReservationRating::class);
+    }
+
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class);
     }
 
     /**

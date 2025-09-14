@@ -256,6 +256,48 @@
                     @endif
                 </div>
             </div>
+
+            <!-- Custom Equipment Requests Section -->
+            @if(!empty($reservation->custom_equipment_requests))
+            <div class="mt-6 pt-6 border-t border-gray-200">
+                <div class="flex items-center mb-4">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                        <i class="fas fa-plus-circle text-blue-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800">Custom Equipment Requests</h3>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    @foreach($reservation->custom_equipment_requests as $customEquipment)
+                        <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                                        <i class="fas fa-wrench text-blue-600 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-800 font-medium text-sm">{{ $customEquipment['name'] ?? 'Custom Equipment' }}</span>
+                                        <div class="text-xs text-blue-600 mt-1">Custom Request</div>
+                                    </div>
+                                </div>
+                                <span class="text-blue-600 bg-white px-2 py-1 rounded-full border border-blue-200 text-xs font-medium">× {{ $customEquipment['quantity'] ?? 1 }}</span>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                
+                <div class="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mr-3 mt-0.5">
+                            <i class="fas fa-info-circle text-blue-600 text-xs"></i>
+                        </div>
+                        <div class="text-sm text-blue-800">
+                            <strong>Note:</strong> Custom equipment requests are subject to availability and admin approval. Additional charges may apply.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 

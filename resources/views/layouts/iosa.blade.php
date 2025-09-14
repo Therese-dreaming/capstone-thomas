@@ -55,8 +55,13 @@
 					<li>
 						<a href="{{ route('iosa.reservations.index') }}"
 						   class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('iosa.reservations*') && !request()->routeIs('iosa.reservations.calendar') ? 'active-maroon' : 'text-gray-700' }}">
-							<i class="fas fa-calendar-check w-5 h-5"></i>
-							<span class="font-medium">Reservations</span>
+							<div class="flex items-center flex-1">
+								<i class="fas fa-calendar-check w-5 h-5 mr-3"></i>
+								<span class="font-medium">Reservations</span>
+								@if(isset($sidebarCounts['reservations']) && $sidebarCounts['reservations'] > 0)
+									<span class="ml-auto px-2 py-1 text-xs font-medium bg-red-100 text-red-600 rounded-full">{{ $sidebarCounts['reservations'] }}</span>
+								@endif
+							</div>
 						</a>
 					</li>
 
@@ -64,8 +69,13 @@
 					<li>
 						<a href="{{ route('iosa.events.index') }}"
 						   class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('iosa.events*') ? 'active-maroon' : 'text-gray-700' }}">
-							<i class="fas fa-calendar-alt w-5 h-5"></i>
-							<span class="font-medium">Events</span>
+							<div class="flex items-center flex-1">
+								<i class="fas fa-calendar-alt w-5 h-5 mr-3"></i>
+								<span class="font-medium">Events</span>
+								@if(isset($sidebarCounts['events']) && $sidebarCounts['events'] > 0)
+									<span class="ml-auto px-2 py-1 text-xs font-medium bg-red-100 text-red-600 rounded-full">{{ $sidebarCounts['events'] }}</span>
+								@endif
+							</div>
 						</a>
 					</li>
 
@@ -82,8 +92,13 @@
 					<li>
 						<a href="{{ route('iosa.reservation-reports') }}" 
 						   class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('iosa.reservation-reports*') ? 'active-maroon' : 'text-gray-700' }}">
-							<i class="fas fa-chart-bar w-5 h-5"></i>
-							<span class="font-medium">Reports</span>
+							<div class="flex items-center flex-1">
+								<i class="fas fa-chart-bar w-5 h-5 mr-3"></i>
+								<span class="font-medium">Reports</span>
+								@if(isset($sidebarCounts['reports']) && $sidebarCounts['reports'] > 0)
+									<span class="ml-auto px-2 py-1 text-xs font-medium bg-red-100 text-red-600 rounded-full">{{ $sidebarCounts['reports'] }}</span>
+								@endif
+							</div>
 						</a>
 					</li>
 
@@ -91,8 +106,13 @@
 					<li>
 						<a href="{{ route('iosa.reports') }}" 
 						   class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('iosa.reports*') ? 'active-maroon' : 'text-gray-700' }}">
-							<i class="fas fa-exclamation-triangle w-5 h-5"></i>
-							<span class="font-medium">GSU Reports</span>
+							<div class="flex items-center flex-1">
+								<i class="fas fa-exclamation-triangle w-5 h-5 mr-3"></i>
+								<span class="font-medium">GSU Reports</span>
+								@if(isset($sidebarCounts['gsu_reports']) && $sidebarCounts['gsu_reports'] > 0)
+									<span class="ml-auto px-2 py-1 text-xs font-medium bg-red-100 text-red-600 rounded-full">{{ $sidebarCounts['gsu_reports'] }}</span>
+								@endif
+							</div>
 						</a>
 					</li>
 

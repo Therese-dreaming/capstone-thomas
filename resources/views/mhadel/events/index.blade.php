@@ -139,21 +139,23 @@
 		background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 		border: 1px solid #e2e8f0;
 		border-radius: 0.75rem;
-		padding: 1rem;
+		padding: 0.75rem;
 		text-align: center;
 	}
 	
 	.stats-number {
-		font-size: 1.5rem;
+		font-size: 1.25rem;
 		font-weight: 700;
 		color: #1e293b;
 		margin-bottom: 0.25rem;
+		line-height: 1;
 	}
 	
 	.stats-label {
-		font-size: 0.75rem;
+		font-size: 0.7rem;
 		color: #64748b;
 		font-weight: 500;
+		line-height: 1.2;
 	}
 	
 	.modal {
@@ -221,12 +223,12 @@
 	</div>
 	@endif
 	
-	<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+	<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
 		<div class="stats-card">
-			<div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-				<i class="fas fa-calendar text-blue-600 text-lg"></i>
+			<div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+				<i class="fas fa-calendar text-blue-600 text-sm"></i>
 			</div>
-			<div class="stats-number">{{ $events->total() }}</div>
+			<div class="stats-number text-base">{{ $events->total() }}</div>
 			<div class="stats-label">
 				@if(request('status') && request('status') !== 'all')
 					{{ ucfirst(request('status')) }} Events
@@ -237,35 +239,43 @@
 		</div>
 		
 		<div class="stats-card">
-			<div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-				<i class="fas fa-clock text-green-600 text-lg"></i>
+			<div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+				<i class="fas fa-clock text-green-600 text-sm"></i>
 			</div>
 			<div class="stats-number">{{ $events->where('status', 'upcoming')->count() }}</div>
 			<div class="stats-label">Upcoming</div>
 		</div>
 		
 		<div class="stats-card">
-			<div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-				<i class="fas fa-play text-yellow-600 text-lg"></i>
+			<div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+				<i class="fas fa-play text-yellow-600 text-sm"></i>
 			</div>
 			<div class="stats-number">{{ $events->where('status', 'ongoing')->count() }}</div>
 			<div class="stats-label">Ongoing</div>
 		</div>
 		
 		<div class="stats-card">
-			<div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-				<i class="fas fa-check text-gray-600 text-lg"></i>
+			<div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+				<i class="fas fa-check text-gray-600 text-sm"></i>
 			</div>
 			<div class="stats-number">{{ $events->where('status', 'completed')->count() }}</div>
 			<div class="stats-label">Completed</div>
 		</div>
 		
 		<div class="stats-card">
-			<div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-				<i class="fas fa-times text-red-600 text-lg"></i>
+			<div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+				<i class="fas fa-times text-red-600 text-sm"></i>
 			</div>
 			<div class="stats-number">{{ $events->where('status', 'cancelled')->count() }}</div>
 			<div class="stats-label">Cancelled</div>
+		</div>
+
+		<div class="stats-card">
+			<div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+				<i class="fas fa-building text-purple-600 text-sm"></i>
+			</div>
+			<div class="stats-number">{{ $events->where('status', 'pending_venue')->count() }}</div>
+			<div class="stats-label">Pending Venue</div>
 		</div>
 	</div>
 
@@ -302,6 +312,11 @@
 				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'cancelled'])) }}" 
 				   class="tab-button {{ $current == 'cancelled' ? 'active' : '' }}">
 					<i class="fas fa-times mr-2"></i>Cancelled
+				</a>
+
+				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'pending_venue'])) }}" 
+				   class="tab-button {{ $current == 'pending_venue' ? 'active' : '' }}">
+					<i class="fas fa-building mr-2"></i>Pending Venue
 				</a>
 			</div>
 			
@@ -354,6 +369,9 @@
 										@break
 									@case('cancelled')
 										<span class="status-badge bg-red-100 text-red-800 border border-red-200">Cancelled</span>
+										@break
+									@case('pending_venue')
+										<span class="status-badge bg-purple-100 text-purple-800 border border-purple-200">Pending Venue</span>
 										@break
 								@endswitch
 							</div>
@@ -447,13 +465,13 @@
 										</button>
 										@endif
 										
-										@if($event->status !== 'cancelled' && $event->status !== 'completed')
-										<button type="button" 
-												onclick="openCompleteModal({{ $event->id }}, '{{ $event->title }}')"
-												class="action-button bg-green-50 text-green-600 hover:bg-green-100" title="Mark as Complete">
-											<i class="fas fa-check-circle"></i>
-										</button>
+										@if(!$event->venue_id && $event->status === 'pending_venue')
+										<a href="{{ route('mhadel.events.edit', $event) }}" 
+											class="action-button bg-blue-50 text-blue-600 hover:bg-blue-100" title="Assign Venue">
+											<i class="fas fa-building"></i>
+										</a>
 										@endif
+										
 										@if($event->status !== 'completed')
 										<button type="button" 
 												onclick="openDeleteModal({{ $event->id }}, '{{ $event->title }}')"
@@ -558,66 +576,7 @@
 	</div>
 </div>
 
-<!-- Complete Event Modal -->
-<div id="completeModal" class="modal">
-	<div class="modal-content">
-		<div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-			<i class="fas fa-check-circle text-green-600 text-2xl"></i>
-		</div>
-		<h3 class="text-xl font-bold text-gray-800 mb-2">Complete Event</h3>
-		<p class="text-gray-600 mb-4">Are you sure you want to mark "<span id="completeEventTitle" class="font-semibold"></span>" as completed?</p>
-		
-		<form id="completeForm" method="POST" class="space-y-4">
-			@csrf
-			<div>
-				<label for="completion_notes" class="block text-sm font-medium text-gray-700 mb-2">Completion Notes (Optional)</label>
-				<textarea id="completion_notes" name="completion_notes" rows="3" 
-						  placeholder="Add any notes about the event completion..."
-						  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"></textarea>
-			</div>
-			
-			<div class="flex justify-center space-x-3">
-				<button type="button" onclick="closeCompleteModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-					Cancel
-				</button>
-				<button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-					Mark as Complete
-				</button>
-			</div>
-		</form>
-	</div>
-</div>
 
-<!-- Complete Event Modal -->
-<div id="completeModal" class="modal">
-	<div class="modal-content">
-		<div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-			<i class="fas fa-check-circle text-green-600 text-2xl"></i>
-		</div>
-		<h3 class="text-xl font-bold text-gray-800 mb-2">Complete Event</h3>
-		<p class="text-gray-600 mb-4">Are you sure you want to mark "<span id="completeEventTitle" class="font-semibold"></span>" as completed?</p>
-		
-		<div class="mb-4">
-			<label for="completionNotes" class="block text-sm font-medium text-gray-700 mb-2">Completion Notes (Optional)</label>
-			<textarea id="completionNotes" name="completion_notes" rows="3" 
-					  placeholder="Add any notes about the event completion..."
-					  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"></textarea>
-		</div>
-		
-		<div class="flex justify-center space-x-3">
-			<button onclick="closeCompleteModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-				Keep Ongoing
-			</button>
-			<form id="completeForm" method="POST" class="inline">
-				@csrf
-				<input type="hidden" id="completionNotesInput" name="completion_notes" value="">
-				<button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-					Mark as Complete
-				</button>
-			</form>
-		</div>
-	</div>
-</div>
 
 <script>
 function openDeleteModal(eventId, eventTitle) {
@@ -644,19 +603,7 @@ function closeCancelModal() {
 	document.body.style.overflow = 'auto';
 }
 
-function openCompleteModal(eventId, eventTitle) {
-	document.getElementById('completeEventTitle').textContent = eventTitle;
-	document.getElementById('completeForm').action = `/mhadel/events/${eventId}/complete`;
-	document.getElementById('completeModal').classList.add('show');
-	document.body.style.overflow = 'hidden';
-}
 
-function closeCompleteModal() {
-	document.getElementById('completeModal').classList.remove('show');
-	document.body.style.overflow = 'auto';
-	// Clear the completion notes when closing
-	document.getElementById('completion_notes').value = '';
-}
 
 // Close modal when clicking outside
 document.getElementById('deleteModal').addEventListener('click', function(e) {
@@ -671,18 +618,13 @@ document.getElementById('cancelModal').addEventListener('click', function(e) {
 	}
 });
 
-document.getElementById('completeModal').addEventListener('click', function(e) {
-	if (e.target === this) {
-		closeCompleteModal();
-	}
-});
+
 
 // Close modal with Escape key
 document.addEventListener('keydown', function(e) {
 	if (e.key === 'Escape') {
 		closeDeleteModal();
 		closeCancelModal();
-		closeCompleteModal();
 	}
 });
 </script>

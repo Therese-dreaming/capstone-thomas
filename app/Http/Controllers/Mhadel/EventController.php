@@ -168,19 +168,27 @@ class EventController extends Controller
             'organizer' => 'required|string|max:255',
             'department' => 'nullable|string|max:255',
             'max_participants' => 'nullable|integer|min:1',
-            'status' => 'required|in:upcoming,ongoing,completed,cancelled',
+            'status' => 'required|in:upcoming,ongoing,completed,cancelled,pending_venue',
             'event_type' => 'nullable|in:academic,administrative,student_activity,community_service,other',
         ]);
 
         // Use the status from the request instead of auto-determining
         $status = $request->status;
         
-        // Only auto-determine status if it's not explicitly set
-        if ($status === 'upcoming') {
-            $now = now();
-            $startDate = \Carbon\Carbon::parse($request->start_date);
-            $endDate = \Carbon\Carbon::parse($request->end_date);
-            
+        $now = now();
+        $startDate = \Carbon\Carbon::parse($request->start_date);
+        $endDate = \Carbon\Carbon::parse($request->end_date);
+
+        // If event was in pending_venue status and now has a venue, update status accordingly
+        if ($event->status === 'pending_venue' && $request->venue_id) {
+            if ($startDate <= $now && $endDate >= $now) {
+                $status = 'ongoing';
+            } else {
+                $status = 'upcoming';
+            }
+        }
+        // Otherwise only auto-determine status if it's explicitly set as upcoming
+        elseif ($status === 'upcoming') {
             if ($startDate <= $now && $endDate >= $now) {
                 $status = 'ongoing';
             } elseif ($startDate < $now && $endDate < $now) {

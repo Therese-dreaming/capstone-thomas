@@ -360,6 +360,49 @@ use Illuminate\Support\Facades\Storage;
                 </div>
             @endif
 
+            <!-- Custom Equipment Requests Section -->
+            @if(!empty($reservation->custom_equipment_requests))
+            <div class="info-card">
+                <div class="p-4 border-b border-gray-200">
+                    <h2 class="text-base font-semibold text-gray-800 font-poppins flex items-center">
+                        <i class="fas fa-plus-circle text-maroon mr-2"></i>
+                        Custom Equipment Requests
+                    </h2>
+                </div>
+                <div class="p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        @foreach($reservation->custom_equipment_requests as $customEquipment)
+                            <div class="bg-blue-50 p-3 rounded border border-blue-200">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                                            <i class="fas fa-wrench text-blue-600 text-sm"></i>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-800 font-medium text-sm">{{ $customEquipment['name'] ?? 'Custom Equipment' }}</span>
+                                            <div class="text-xs text-blue-600 mt-1">Custom Request</div>
+                                        </div>
+                                    </div>
+                                    <span class="text-blue-600 bg-white px-2 py-1 rounded-full border border-blue-200 text-xs font-medium">× {{ $customEquipment['quantity'] ?? 1 }}</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    
+                    <div class="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mr-3 mt-0.5">
+                                <i class="fas fa-info-circle text-blue-600 text-xs"></i>
+                            </div>
+                            <div class="text-sm text-blue-800">
+                                <strong>Note:</strong> Custom equipment requests are subject to availability and admin approval. Additional charges may apply.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <!-- Activity Grid -->
             @if($reservation->activity_grid)
                 <div class="info-card">
@@ -462,72 +505,107 @@ use Illuminate\Support\Facades\Storage;
                         </div>
 
                         <!-- IOSA Review -->
-                        <div class="timeline-item {{ $reservation->status !== 'pending' ? 'completed' : 'pending' }}">
-                            <div class="bg-blue-50 p-3 rounded border border-blue-200">
+                        <div class="timeline-item {{ $reservation->status === 'rejected_IOSA' ? 'rejected' : ($reservation->status !== 'pending' ? 'completed' : 'pending') }}">
+                            <div class="{{ $reservation->status === 'rejected_IOSA' ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200' }} p-3 rounded border">
                                 <div class="flex items-center justify-between mb-1">
-                                    <h4 class="font-semibold text-blue-800 text-sm">IOSA Review</h4>
+                                    <h4 class="font-semibold {{ $reservation->status === 'rejected_IOSA' ? 'text-red-800' : 'text-blue-800' }} text-sm">IOSA Review</h4>
                                     @if($reservation->status === 'pending')
                                         <span class="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded-full">In Progress</span>
+                                    @elseif($reservation->status === 'rejected_IOSA')
+                                        <span class="text-xs text-red-600 bg-red-100 px-2 py-1 rounded-full">Rejected</span>
                                     @else
                                         <span class="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">Completed</span>
                                     @endif
                                 </div>
-                                <p class="text-xs text-blue-700">
+                                <p class="text-xs {{ $reservation->status === 'rejected_IOSA' ? 'text-red-700' : 'text-blue-700' }}">
                                     @if($reservation->status === 'pending')
                                         Currently under review by IOSA
+                                    @elseif($reservation->status === 'rejected_IOSA')
+                                        Rejected by IOSA
                                     @elseif($reservation->status === 'approved')
                                         Approved by IOSA - Forwarded to Ms. Mhadel
-                                    @elseif($reservation->status === 'rejected')
-                                        Rejected by IOSA
                                     @endif
                                 </p>
                                 @if($reservation->status !== 'pending')
-                                    <p class="text-xs text-blue-600 mt-1">{{ $reservation->updated_at->format('M d, Y g:i A') }}</p>
+                                    <p class="text-xs {{ $reservation->status === 'rejected_IOSA' ? 'text-red-600' : 'text-blue-600' }} mt-1">{{ $reservation->updated_at->format('M d, Y g:i A') }}</p>
                                 @endif
                             </div>
                         </div>
 
                         <!-- Ms. Mhadel Review -->
-                        <div class="timeline-item {{ in_array($reservation->status, ['approved', 'approved_mhadel', 'approved_OTP']) ? 'completed' : 'pending' }}">
-                            <div class="bg-purple-50 p-3 rounded border border-purple-200">
+                        <div class="timeline-item {{ $reservation->status === 'rejected_mhadel' ? 'rejected' : (in_array($reservation->status, ['approved', 'approved_mhadel', 'approved_OTP', 'completed']) ? 'completed' : 'pending') }}">
+                            <div class="{{ $reservation->status === 'rejected_mhadel' ? 'bg-red-50 border-red-200' : (in_array($reservation->status, ['approved', 'approved_mhadel', 'approved_OTP', 'completed']) ? 'bg-purple-50 border-purple-200' : 'bg-gray-50 border-gray-200') }} p-3 rounded border">
                                 <div class="flex items-center justify-between mb-1">
-                                    <h4 class="font-semibold text-purple-800 text-sm">Ms. Mhadel Review</h4>
-                                    @if(in_array($reservation->status, ['approved', 'approved_mhadel', 'approved_OTP']))
+                                    <h4 class="font-semibold {{ $reservation->status === 'rejected_mhadel' ? 'text-red-800' : (in_array($reservation->status, ['approved', 'approved_mhadel', 'approved_OTP', 'completed']) ? 'text-purple-800' : 'text-gray-800') }} text-sm">Ms. Mhadel Review</h4>
+                                    @if($reservation->status === 'rejected_mhadel')
+                                        <span class="text-xs text-red-600 bg-red-100 px-2 py-1 rounded-full">Rejected</span>
+                                    @elseif(in_array($reservation->status, ['approved', 'approved_mhadel', 'approved_OTP', 'completed']))
                                         <span class="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full">Completed</span>
                                     @else
                                         <span class="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full">Pending</span>
                                     @endif
                                 </div>
-                                <p class="text-xs text-purple-700">
-                                    @if(in_array($reservation->status, ['approved', 'approved_mhadel', 'approved_OTP']))
+                                <p class="text-xs {{ $reservation->status === 'rejected_mhadel' ? 'text-red-700' : (in_array($reservation->status, ['approved', 'approved_mhadel', 'approved_OTP', 'completed']) ? 'text-purple-700' : 'text-gray-700') }}">
+                                    @if($reservation->status === 'rejected_mhadel')
+                                        Rejected by Ms. Mhadel
+                                    @elseif(in_array($reservation->status, ['approved', 'approved_mhadel', 'approved_OTP', 'completed']))
                                         Approved by Ms. Mhadel
                                     @else
                                         Waiting for IOSA approval
                                     @endif
                                 </p>
+                                @if(in_array($reservation->status, ['approved', 'approved_mhadel', 'approved_OTP', 'rejected_mhadel', 'completed']))
+                                    <p class="text-xs {{ $reservation->status === 'rejected_mhadel' ? 'text-red-600' : 'text-purple-600' }} mt-1">{{ $reservation->updated_at->format('M d, Y g:i A') }}</p>
+                                @endif
                             </div>
                         </div>
 
                         <!-- OTP Final Approval -->
-                        <div class="timeline-item {{ $reservation->status === 'approved_OTP' ? 'completed' : 'pending' }}">
-                            <div class="bg-indigo-50 p-3 rounded border border-indigo-200">
+                        <div class="timeline-item {{ $reservation->status === 'rejected_OTP' ? 'rejected' : (in_array($reservation->status, ['approved_OTP', 'completed']) ? 'completed' : 'pending') }}">
+                            <div class="{{ $reservation->status === 'rejected_OTP' ? 'bg-red-50 border-red-200' : (in_array($reservation->status, ['approved_OTP', 'completed']) ? 'bg-indigo-50 border-indigo-200' : 'bg-gray-50 border-gray-200') }} p-3 rounded border">
                                 <div class="flex items-center justify-between mb-1">
-                                    <h4 class="font-semibold text-indigo-800 text-sm">OTP Final Approval</h4>
-                                    @if($reservation->status === 'approved_OTP')
+                                    <h4 class="font-semibold {{ $reservation->status === 'rejected_OTP' ? 'text-red-800' : (in_array($reservation->status, ['approved_OTP', 'completed']) ? 'text-indigo-800' : 'text-gray-800') }} text-sm">OTP Final Approval</h4>
+                                    @if($reservation->status === 'rejected_OTP')
+                                        <span class="text-xs text-red-600 bg-red-100 px-2 py-1 rounded-full">Rejected</span>
+                                    @elseif(in_array($reservation->status, ['approved_OTP', 'completed']))
                                         <span class="text-xs text-indigo-600 bg-indigo-100 px-2 py-1 rounded-full">Completed</span>
                                     @else
                                         <span class="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full">Pending</span>
                                     @endif
                                 </div>
-                                <p class="text-xs text-indigo-700">
-                                    @if($reservation->status === 'approved_OTP')
+                                <p class="text-xs {{ $reservation->status === 'rejected_OTP' ? 'text-red-700' : (in_array($reservation->status, ['approved_OTP', 'completed']) ? 'text-indigo-700' : 'text-gray-700') }}">
+                                    @if($reservation->status === 'rejected_OTP')
+                                        Rejected by OTP
+                                    @elseif(in_array($reservation->status, ['approved_OTP', 'completed']))
                                         Final approval granted by OTP
                                     @else
                                         Waiting for previous approvals
                                     @endif
                                 </p>
+                                @if(in_array($reservation->status, ['approved_OTP', 'rejected_OTP', 'completed']))
+                                    <p class="text-xs {{ $reservation->status === 'rejected_OTP' ? 'text-red-600' : 'text-indigo-600' }} mt-1">{{ $reservation->updated_at->format('M d, Y g:i A') }}</p>
+                                @endif
                             </div>
                         </div>
+
+                        <!-- Event Completed -->
+                        @if($reservation->status === 'completed')
+                            <div class="timeline-item completed">
+                                <div class="bg-green-50 p-3 rounded border border-green-200">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <h4 class="font-semibold text-green-800 text-sm">Event Completed</h4>
+                                        <span class="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">Completed</span>
+                                    </div>
+                                    <p class="text-xs text-green-700">Event has been successfully completed</p>
+                                    <p class="text-xs text-green-600 mt-1">{{ $reservation->completed_at ? $reservation->completed_at->format('M d, Y g:i A') : $reservation->updated_at->format('M d, Y g:i A') }}</p>
+                                    @if($reservation->completion_notes)
+                                        <div class="mt-2 p-2 bg-white rounded border">
+                                            <p class="text-xs text-gray-600"><strong>Completion Notes:</strong> {{ $reservation->completion_notes }}</p>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>

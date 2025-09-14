@@ -40,15 +40,25 @@
 						</a>
 					</li>
 					<li>
-						<a href="{{ route('gsu.reservations.index') }}" class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('gsu.reservations*') ? 'active-maroon' : 'text-gray-700' }}">
-							<i class="fas fa-calendar-check w-5 h-5"></i>
-							<span class="font-medium">Reservations</span>
+						<a href="{{ route('gsu.reservations.index') }}" class="flex items-center p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('gsu.reservations*') ? 'active-maroon' : 'text-gray-700' }}">
+							<div class="flex items-center flex-1">
+								<i class="fas fa-calendar-check w-5 h-5 mr-3"></i>
+								<span class="font-medium">Reservations</span>
+								@if(isset($sidebarCounts['reservations']) && $sidebarCounts['reservations'] > 0)
+									<span class="ml-auto px-2 py-1 text-xs font-medium bg-red-100 text-red-600 rounded-full">{{ $sidebarCounts['reservations'] }}</span>
+								@endif
+							</div>
 						</a>
 					</li>
 					<li>
-						<a href="{{ route('gsu.events.index') }}" class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('gsu.events*') ? 'active-maroon' : 'text-gray-700' }}">
-							<i class="fas fa-calendar-alt w-5 h-5"></i>
-							<span class="font-medium">Events</span>
+						<a href="{{ route('gsu.events.index') }}" class="flex items-center p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('gsu.events*') ? 'active-maroon' : 'text-gray-700' }}">
+							<div class="flex items-center flex-1">
+								<i class="fas fa-calendar-alt w-5 h-5 mr-3"></i>
+								<span class="font-medium">Events</span>
+								@if(isset($sidebarCounts['events']) && $sidebarCounts['events'] > 0)
+									<span class="ml-auto px-2 py-1 text-xs font-medium bg-red-100 text-red-600 rounded-full">{{ $sidebarCounts['events'] }}</span>
+								@endif
+							</div>
 						</a>
 					</li>
 					<li>
@@ -59,6 +69,12 @@
 					</li>
 				</ul>
 			</nav>
+			<div class="border-t border-gray-200 p-4">
+				<a href="{{ route('gsu.profile') }}" class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('gsu.profile*') ? 'active-maroon' : 'text-gray-700' }} mb-2">
+					<i class="fas fa-user-cog w-5 h-5"></i>
+					<span class="font-medium">Profile</span>
+				</a>
+			</div>
 			<div class="border-t border-gray-200 p-4">
 				<form action="{{ route('logout') }}" method="POST" class="w-full">
 					@csrf
