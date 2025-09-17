@@ -180,6 +180,56 @@
         font-size: 0.875rem;
         margin: 0;
     }
+    
+    .venue-suggestion {
+        font-size: 0.875rem;
+        color: #800000;
+        margin-top: 0.5rem;
+    }
+    
+    .warning {
+        color: #ef4444;
+    }
+    
+    .checking-badge {
+        background-color: #f7f7f7;
+        color: #333;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        display: inline-block;
+        margin-left: 0.5rem;
+    }
+    
+    .conflict-badge {
+        background-color: #ef4444;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        display: inline-block;
+        margin-left: 0.5rem;
+    }
+    
+    .success-badge {
+        background-color: #34c759;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        display: inline-block;
+        margin-left: 0.5rem;
+    }
+    
+    .conflict-indicator {
+        border-color: #ef4444;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+    
+    .success-indicator {
+        border-color: #34c759;
+        box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.1);
+    }
 </style>
 
 @section('content')
@@ -190,7 +240,7 @@
             <i class="fas fa-info-circle mr-2"></i>
             Event Creation Process
         </h4>
-        <p>When you create an event, it will be sent to Ms. Mhadel for venue assignment. The event will appear in your calendar once a venue has been assigned.</p>
+        <p>Create your event by filling in all the details including venue selection. Your event will be created immediately and appear in the calendar once submitted.</p>
     </div>
 
     <div class="form-card animate-fadeIn">
@@ -254,6 +304,7 @@
                         </label>
                         <input type="datetime-local" id="start_date" name="start_date" class="form-input" 
                                value="{{ old('start_date') }}" required>
+                        <span id="startDateBadge" class="checking-badge" style="display: none;"></span>
                         @error('start_date')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
@@ -266,6 +317,7 @@
                         </label>
                         <input type="datetime-local" id="end_date" name="end_date" class="form-input" 
                                value="{{ old('end_date') }}" required>
+                        <span id="endDateBadge" class="checking-badge" style="display: none;"></span>
                         @error('end_date')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
@@ -297,6 +349,38 @@
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
+                </div>
+                
+                <!-- Venue Selection -->
+                <div class="form-group">
+                    <label for="venue_id" class="form-label">
+                        <i class="fas fa-map-marker-alt mr-2 text-maroon"></i>
+                        Venue
+                    </label>
+                    <select id="venue_id" name="venue_id" class="form-input">
+                        <option value="">Select a venue (optional)</option>
+                        @foreach($venues as $venue)
+                            <option value="{{ $venue->id }}" data-capacity="{{ $venue->capacity }}" class="venue-option" {{ old('venue_id') == $venue->id ? 'selected' : '' }}>
+                                {{ $venue->name }} (Capacity: {{ $venue->capacity }})
+                            </option>
+                        @endforeach
+                    </select>
+                    <span id="venueBadge" class="checking-badge" style="display: none;"></span>
+                    <div id="venueSuggestion" class="venue-suggestion" style="display: none;">
+                        <i class="fas fa-lightbulb mr-2"></i>
+                        <span id="suggestionText"></span>
+                    </div>
+                    <div id="conflictWarning" class="venue-suggestion warning" style="display: none;">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        <span id="conflictText"></span>
+                    </div>
+                    @error('venue_id')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                    <p class="text-gray-600 text-sm mt-1">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        If no venue is selected, Ms. Mhadel will assign one for you.
+                    </p>
                 </div>
                 
                 <!-- Equipment Section -->
@@ -446,5 +530,205 @@ document.getElementById('end_date').min = today;
 document.getElementById('start_date').addEventListener('change', function() {
     document.getElementById('end_date').min = this.value;
 });
+
+// Venue suggestion and conflict checking
+document.getElementById('max_participants').addEventListener('input', function() {
+    const maxParticipants = parseInt(this.value);
+    const venueSelect = document.getElementById('venue_id');
+    const venueOptions = venueSelect.querySelectorAll('.venue-option');
+    const suggestionText = document.getElementById('suggestionText');
+    const venueSuggestion = document.getElementById('venueSuggestion');
+    
+    if (maxParticipants > 0) {
+        // Filter venues that can accommodate the participants (capacity >= maxParticipants)
+        const suitableVenues = Array.from(venueOptions).filter(option => 
+            parseInt(option.getAttribute('data-capacity')) >= maxParticipants
+        );
+        
+        if (suitableVenues.length > 0) {
+            // Sort by capacity ascending to get the venue with the closest (smallest) capacity
+            suitableVenues.sort((a, b) => 
+                parseInt(a.getAttribute('data-capacity')) - parseInt(b.getAttribute('data-capacity'))
+            );
+            
+            // Get the venue with the smallest capacity that can accommodate all participants
+            const bestVenue = suitableVenues[0];
+            const venueName = bestVenue.textContent;
+            const venueCapacity = parseInt(bestVenue.getAttribute('data-capacity'));
+            
+            suggestionText.textContent = `Consider selecting ${venueName} as it can accommodate ${maxParticipants} participants (closest capacity match).`;
+            venueSuggestion.style.display = 'block';
+        } else {
+            suggestionText.textContent = 'No venues can accommodate the selected number of participants.';
+            venueSuggestion.style.display = 'block';
+        }
+    } else {
+        venueSuggestion.style.display = 'none';
+    }
+});
+
+// Conflict checking function with enhanced visual indicators
+let conflictCheckTimeout;
+
+function showCheckingState() {
+    const startDateBadge = document.getElementById('startDateBadge');
+    const endDateBadge = document.getElementById('endDateBadge');
+    const venueBadge = document.getElementById('venueBadge');
+    
+    [startDateBadge, endDateBadge, venueBadge].forEach(badge => {
+        badge.className = 'checking-badge';
+        badge.innerHTML = '<span class="spinner"></span>Checking...';
+        badge.style.display = 'inline-block';
+    });
+}
+
+function clearAllIndicators() {
+    const venueSelect = document.getElementById('venue_id');
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    const conflictWarning = document.getElementById('conflictWarning');
+    const startDateBadge = document.getElementById('startDateBadge');
+    const endDateBadge = document.getElementById('endDateBadge');
+    const venueBadge = document.getElementById('venueBadge');
+    
+    // Remove visual indicators from inputs
+    [venueSelect, startDateInput, endDateInput].forEach(input => {
+        input.classList.remove('conflict-indicator', 'success-indicator');
+    });
+    
+    // Hide badges and warning
+    conflictWarning.style.display = 'none';
+    [startDateBadge, endDateBadge, venueBadge].forEach(badge => {
+        badge.style.display = 'none';
+    });
+}
+
+function checkVenueConflicts() {
+    // Clear any existing timeout
+    clearTimeout(conflictCheckTimeout);
+    
+    const venueId = document.getElementById('venue_id').value;
+    const startDate = document.getElementById('start_date').value;
+    const endDate = document.getElementById('end_date').value;
+    const conflictWarning = document.getElementById('conflictWarning');
+    const conflictText = document.getElementById('conflictText');
+    
+    if (!venueId || !startDate || !endDate) {
+        clearAllIndicators();
+        return;
+    }
+    
+    // Show checking state immediately
+    showCheckingState();
+    
+    // Debounce the API call
+    conflictCheckTimeout = setTimeout(() => {
+        console.log('Starting conflict check...', {
+            venue_id: venueId,
+            start_date: startDate,
+            end_date: endDate
+        });
+        
+        // Get CSRF token with fallback
+        const csrfTokenElement = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfTokenElement ? csrfTokenElement.getAttribute('content') : '{{ csrf_token() }}';
+        
+        if (!csrfToken) {
+            console.error('CSRF token not found');
+            clearAllIndicators();
+            
+            // Show error state
+            conflictText.innerHTML = '<strong>Error:</strong> Security token not found. Please refresh the page.';
+            conflictWarning.className = 'venue-suggestion warning';
+            conflictWarning.style.display = 'block';
+            return;
+        }
+        
+        // Make AJAX request to check conflicts
+        fetch('{{ route("iosa.events.check-conflicts") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: JSON.stringify({
+                venue_id: venueId,
+                start_date: startDate,
+                end_date: endDate
+            })
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Conflict check response:', data);
+            
+            const venueSelect = document.getElementById('venue_id');
+            const startDateInput = document.getElementById('start_date');
+            const endDateInput = document.getElementById('end_date');
+            const startDateBadge = document.getElementById('startDateBadge');
+            const endDateBadge = document.getElementById('endDateBadge');
+            const venueBadge = document.getElementById('venueBadge');
+            
+            if (data.hasConflicts) {
+                console.log('Conflicts found:', data.conflicts);
+                const conflictList = data.conflicts.map(conflict => 
+                    `"${conflict.title}" (${conflict.start_date} - ${conflict.end_date})`
+                ).join(', ');
+                
+                conflictText.innerHTML = `<strong>Scheduling Conflict Detected!</strong><br>The selected venue has conflicts with: ${conflictList}`;
+                conflictWarning.style.display = 'block';
+                
+                // Add conflict indicators to inputs
+                [venueSelect, startDateInput, endDateInput].forEach(input => {
+                    input.classList.add('conflict-indicator');
+                    input.classList.remove('success-indicator');
+                });
+                
+                // Show conflict badges
+                [startDateBadge, endDateBadge, venueBadge].forEach(badge => {
+                    badge.className = 'conflict-badge';
+                    badge.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i>Conflict';
+                    badge.style.display = 'inline-block';
+                });
+                
+            } else {
+                console.log('No conflicts found');
+                conflictWarning.style.display = 'none';
+                
+                // Add success indicators to inputs
+                [venueSelect, startDateInput, endDateInput].forEach(input => {
+                    input.classList.add('success-indicator');
+                    input.classList.remove('conflict-indicator');
+                });
+                
+                // Show success badges
+                [startDateBadge, endDateBadge, venueBadge].forEach(badge => {
+                    badge.className = 'success-badge';
+                    badge.innerHTML = '<i class="fas fa-check mr-1"></i>Available';
+                    badge.style.display = 'inline-block';
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error checking conflicts:', error);
+            clearAllIndicators();
+            
+            // Show error state
+            conflictText.innerHTML = '<strong>Error:</strong> Unable to check for conflicts. Please try again.';
+            conflictWarning.className = 'venue-suggestion warning';
+            conflictWarning.style.display = 'block';
+        });
+    }, 500); // 500ms debounce delay
+}
+
+// Event listeners for conflict checking
+document.getElementById('venue_id').addEventListener('change', checkVenueConflicts);
+document.getElementById('start_date').addEventListener('change', checkVenueConflicts);
+document.getElementById('end_date').addEventListener('change', checkVenueConflicts);
 </script>
 @endsection

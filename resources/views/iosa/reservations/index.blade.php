@@ -71,11 +71,11 @@
     }
     .status-approved {
         background-color: #10B981;
-        color: #1F2937;
+        color: white;
     }
     .status-rejected {
         background-color: #EF4444;
-        color: #1F2937;
+        color: white;
     }
     .status-completed {
         background-color: #6366F1;
@@ -233,9 +233,9 @@
                                     <div class="flex items-center mb-2">
                                         @if($reservation->status === 'pending')
                                             <span class="status-badge status-pending mr-3">Pending</span>
-                                        @elseif($reservation->status === 'approved')
+                                        @elseif($reservation->status === 'approved' || $reservation->status === 'approved_IOSA')
                                             <span class="status-badge status-approved mr-3">Approved</span>
-                                        @elseif($reservation->status === 'rejected')
+                                        @elseif($reservation->status === 'rejected' || $reservation->status === 'rejected_IOSA')
                                             <span class="status-badge status-rejected mr-3">Rejected</span>
                                         @else
                                             <span class="status-badge status-completed mr-3">{{ ucfirst($reservation->status) }}</span>
@@ -308,9 +308,9 @@
                                         <button onclick="openRejectModal({{ $reservation->id }}, '{{ $reservation->event_title }}')" class="p-2 btn-dark-red rounded-lg transition-colors" title="Reject Reservation">
                                             <i class="fas fa-times"></i>
                                         </button>
-                                    @elseif($reservation->status === 'approved')
+                                    @elseif($reservation->status === 'approved' || $reservation->status === 'approved_IOSA')
                                         <span class="text-sm text-green-600 font-medium">✓ Approved by IOSA</span>
-                                    @elseif($reservation->status === 'rejected')
+                                    @elseif($reservation->status === 'rejected' || $reservation->status === 'rejected_IOSA')
                                         <span class="text-sm text-red-600 font-medium">✗ Rejected by IOSA</span>
                                     @endif
                                 </div>

@@ -321,6 +321,23 @@
                             </div>
                         </div>
                     @endif
+
+                    @if($report->status == 'dismissed')
+                        <div class="timeline-item">
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h4 class="font-semibold text-gray-800">Dismissed</h4>
+                                    <span class="text-xs text-gray-600">{{ $report->updated_at->format('M d, Y g:i A') }}</span>
+                                </div>
+                                <p class="text-sm text-gray-700">Report has been dismissed</p>
+                                @if($report->admin_notes)
+                                    <div class="mt-2 p-2 bg-white rounded border">
+                                        <p class="text-xs text-gray-600"><strong>Admin Notes:</strong> {{ $report->admin_notes }}</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
 

@@ -755,21 +755,34 @@ class MhadelController extends Controller
 	 */
 	public function updateGsuReportStatus(Request $request, Report $report)
 	{
-		$request->validate([
-			'status' => 'required|in:pending,investigating,resolved',
-			'admin_notes' => 'nullable|string|max:1000'
-		]);
+		try {
+			$request->validate([
+				'status' => 'required|in:pending,investigating,resolved,dismissed',
+				'admin_notes' => 'nullable|string|max:1000'
+			]);
 
-		$report->update([
-			'status' => $request->status,
-			'admin_notes' => $request->admin_notes,
-			'resolved_at' => $request->status === 'resolved' ? now() : null
-		]);
+			$report->update([
+				'status' => $request->status,
+				'admin_notes' => $request->admin_notes,
+				'resolved_at' => $request->status === 'resolved' ? now() : null
+			]);
 
-		return response()->json([
-			'success' => true,
-			'message' => 'Report status updated successfully'
-		]);
+			return response()->json([
+				'success' => true,
+				'message' => 'Report status updated successfully'
+			]);
+		} catch (\Illuminate\Validation\ValidationException $e) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Validation failed',
+				'errors' => $e->errors()
+			], 422);
+		} catch (\Exception $e) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Error updating status: ' . $e->getMessage()
+			], 500);
+		}
 	}
 
 	/**

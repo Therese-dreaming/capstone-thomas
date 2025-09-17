@@ -118,6 +118,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('events/{event}/edit', [IOSAEventController::class, 'edit'])->name('events.edit');
         Route::put('events/{event}', [IOSAEventController::class, 'update'])->name('events.update');
         Route::get('events-calendar', [IOSAEventController::class, 'calendar'])->name('events.calendar');
+        Route::post('events/check-conflicts', [IOSAEventController::class, 'checkConflicts'])->name('events.check-conflicts');
         
         // IOSA Profile Routes
         Route::get('profile', [IOSAController::class, 'profile'])->name('profile');

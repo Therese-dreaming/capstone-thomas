@@ -2,7 +2,7 @@
 
 @section('title', 'Create New Event')
 @section('page-title', 'Create New Event')
-@section('page-subtitle', 'Add a new event to your calendar')
+@section('page-subtitle', 'Add a new event for venue assignment')
 
 <!-- Google Fonts Import -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -59,762 +59,369 @@
         margin-bottom: 0.5rem;
     }
     
-    .required {
-        color: #DC2626;
-    }
-    
     .form-input {
         width: 100%;
         padding: 0.75rem 1rem;
-        border: 2px solid #e5e7eb;
-        border-radius: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
         font-size: 0.875rem;
-        transition: all 0.3s ease;
-        background: white;
+        transition: all 0.2s ease;
+        background-color: #ffffff;
     }
     
     .form-input:focus {
         outline: none;
-        border-color: #8B0000;
-        box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.1);
-    }
-    
-    .form-input.error {
-        border-color: #DC2626;
-        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
-    }
-    
-    .form-select {
-        width: 100%;
-        padding: 0.75rem 1rem;
-        border: 2px solid #e5e7eb;
-        border-radius: 0.75rem;
-        font-size: 0.875rem;
-        transition: all 0.3s ease;
-        background: white;
-        cursor: pointer;
-    }
-    
-    .form-select:focus {
-        outline: none;
-        border-color: #8B0000;
-        box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.1);
+        border-color: #800000;
+        box-shadow: 0 0 0 3px rgba(128, 0, 0, 0.1);
     }
     
     .form-textarea {
         width: 100%;
         padding: 0.75rem 1rem;
-        border: 2px solid #e5e7eb;
-        border-radius: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
         font-size: 0.875rem;
-        transition: all 0.3s ease;
-        background: white;
+        transition: all 0.2s ease;
+        background-color: #ffffff;
         resize: vertical;
-        min-height: 120px;
+        min-height: 100px;
     }
     
     .form-textarea:focus {
         outline: none;
-        border-color: #8B0000;
-        box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.1);
-    }
-    
-    .help-text {
-        font-size: 0.75rem;
-        color: #6B7280;
-        margin-top: 0.25rem;
-    }
-    
-    .error-text {
-        font-size: 0.75rem;
-        color: #DC2626;
-        margin-top: 0.25rem;
-    }
-    
-    .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.75rem;
-        font-weight: 600;
-        font-size: 0.875rem;
-        transition: all 0.3s ease;
-        text-decoration: none;
-        border: none;
-        cursor: pointer;
-        gap: 0.5rem;
+        border-color: #800000;
+        box-shadow: 0 0 0 3px rgba(128, 0, 0, 0.1);
     }
     
     .btn-primary {
-        background: #8B0000;
+        background-color: #800000;
         color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
     }
     
     .btn-primary:hover {
-        background: #7F0000;
+        background-color: #660000;
         transform: translateY(-1px);
-        box-shadow: 0 4px 6px -1px rgba(139, 0, 0, 0.2);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
     
     .btn-secondary {
-        background: #6B7280;
+        background-color: #6b7280;
         color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
     }
     
     .btn-secondary:hover {
-        background: #4B5563;
+        background-color: #4b5563;
         transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
     
-    .btn-outline {
-        background: transparent;
-        color: #6B7280;
-        border: 2px solid #e5e7eb;
+    .equipment-item {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        position: relative;
     }
     
-    .btn-outline:hover {
-        background: #f9fafb;
-        border-color: #d1d5db;
+    .remove-equipment {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.875rem;
     }
     
-    .section-divider {
-        height: 1px;
-        background: linear-gradient(to right, transparent, #e5e7eb, transparent);
-        margin: 2rem 0;
+    .remove-equipment:hover {
+        background: #dc2626;
+        transform: scale(1.1);
     }
     
     .info-box {
-        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-        border: 1px solid #bfdbfe;
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border: 1px solid #f59e0b;
         border-radius: 0.75rem;
         padding: 1rem;
         margin-bottom: 1.5rem;
     }
     
-    .info-box-title {
+    .info-box h4 {
+        color: #92400e;
         font-weight: 600;
-        color: #1e40af;
         margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
     }
     
-    .info-box-text {
+    .info-box p {
+        color: #92400e;
         font-size: 0.875rem;
-        color: #1e40af;
-        line-height: 1.5;
+        margin: 0;
     }
 </style>
 
-@section('header-actions')
-    <a href="{{ route('mhadel.events.index') }}" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition shadow-sm flex items-center">
-        <i class="fas fa-arrow-left mr-2"></i>Back to Events
-    </a>
-@endsection
-
 @section('content')
-<div class="space-y-8 font-inter">
-    <!-- Header Section -->
-    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden animate-fadeIn">
-        <div class="p-8 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
-            <div class="flex items-center gap-4">
-                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-maroon to-red-800 flex items-center justify-center text-white shadow-lg">
-                    <i class="fas fa-plus text-2xl"></i>
-                </div>
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-800 font-poppins mb-2">Create New Event</h1>
-                    <p class="text-gray-600 text-lg">Add a new event to your calendar with all the necessary details</p>
-                </div>
-            </div>
-        </div>
+<div class="space-y-6 font-inter">
+    <!-- Info Box -->
+    <div class="info-box">
+        <h4 class="flex items-center">
+            <i class="fas fa-info-circle mr-2"></i>
+            Event Creation Process
+        </h4>
+        <p>Create your event by filling in all the details including venue selection. Your event will be created immediately and appear in the calendar once submitted.</p>
     </div>
 
-    <!-- Main Form -->
     <div class="form-card animate-fadeIn">
         <div class="form-header">
             <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
-                <i class="fas fa-calendar-plus text-maroon mr-3 text-2xl"></i>
-                Event Details
+                <i class="fas fa-calendar-plus mr-3 text-maroon"></i>
+                Create New Event
             </h2>
-            <p class="text-gray-600 mt-2">Fill in the information below to create your event</p>
+            <p class="text-gray-600 mt-1">Fill in the details below to create a new event</p>
         </div>
-
-        <form action="{{ route('mhadel.events.store') }}" method="POST" class="form-content">
-            @csrf
-
-            @if ($errors->any())
-            <div class="info-box bg-red-50 border-red-200 mb-6">
-                <div class="info-box-title text-red-800">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    Please fix the following issues:
-                </div>
-                <ul class="list-disc pl-5 space-y-1 text-red-700">
-                    @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-            @endif
-
-            <!-- Basic Information Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="form-group">
-                    <label for="title" class="form-label">
-                        Event Title <span class="required">*</span>
-                    </label>
-                    <input 
-                        type="text" 
-                        id="title" 
-                        name="title" 
-                        value="{{ old('title') }}"
-                        class="form-input @error('title') error @enderror"
-                        placeholder="Enter event title"
-                        required
-                    >
-                    @error('title')
-                    <p class="error-text">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="organizer" class="form-label">
-                        Organizer <span class="required">*</span>
-                    </label>
-                    <input 
-                        type="text" 
-                        id="organizer" 
-                        name="organizer" 
-                        value="{{ old('organizer') }}"
-                        class="form-input @error('organizer') error @enderror"
-                        placeholder="Enter organizer name"
-                        required
-                    >
-                    @error('organizer')
-                    <p class="error-text">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="department" class="form-label">
-                        Department
-                    </label>
-                    <input 
-                        type="text" 
-                        id="department" 
-                        name="department" 
-                        value="{{ old('department') }}"
-                        class="form-input @error('department') error @enderror"
-                        placeholder="Enter department name"
-                    >
-                    <p class="help-text">Optional. Specify which department this event belongs to.</p>
-                    @error('department')
-                    <p class="error-text">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div>
-
-            <!-- Venue Selection -->
-            <div class="form-group">
-                <label for="venue_id" class="form-label">
-                    Venue <span class="required">*</span>
-                </label>
-                <select 
-                    id="venue_id" 
-                    name="venue_id" 
-                    class="form-select @error('venue_id') error @enderror"
-                    required
-                >
-                    <option value="">Select a venue</option>
-                    @foreach(\App\Models\Venue::where('is_available', true)->get() as $venue)
-                    <option value="{{ $venue->id }}" {{ old('venue_id') == $venue->id ? 'selected' : '' }}>
-                        {{ $venue->name }} - Capacity: {{ $venue->capacity }} people
-                        @if($venue->price_per_hour)
-                            (₱{{ number_format($venue->price_per_hour, 2) }}/hour)
-                        @endif
-                    </option>
-                    @endforeach
-                </select>
-                <p class="help-text">Only currently available venues are listed. Venue pricing is shown when available.</p>
-                @error('venue_id')
-                <p class="error-text">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <div class="section-divider"></div>
-
-            <!-- Date and Time Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="form-group">
-                    <label for="start_date" class="form-label">
-                        Start Date & Time <span class="required">*</span>
-                    </label>
-                    <input 
-                        type="datetime-local" 
-                        id="start_date" 
-                        name="start_date" 
-                        value="{{ old('start_date') }}"
-                        class="form-input @error('start_date') error @enderror"
-                        required
-                    >
-                    @error('start_date')
-                    <p class="error-text">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="end_date" class="form-label">
-                        End Date & Time <span class="required">*</span>
-                    </label>
-                    <input 
-                        type="datetime-local" 
-                        id="end_date" 
-                        name="end_date" 
-                        value="{{ old('end_date') }}"
-                        class="form-input @error('end_date') error @enderror"
-                        required
-                    >
-                    @error('end_date')
-                    <p class="error-text">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div>
-
-            <!-- Event Configuration Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="form-group">
-                    <label for="max_participants" class="form-label">
-                        Maximum Participants
-                    </label>
-                    <input 
-                        type="number" 
-                        id="max_participants" 
-                        name="max_participants" 
-                        value="{{ old('max_participants') }}"
-                        min="1"
-                        class="form-input @error('max_participants') error @enderror"
-                        placeholder="Leave empty for no limit"
-                    >
-                    <p class="help-text">Optional. Leave blank to allow unlimited attendees.</p>
-                    @error('max_participants')
-                    <p class="error-text">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div>
-
-            <!-- Equipment Selection Section -->
-            <div class="form-group">
-                <label class="form-label">
-                    Equipment Selection
-                </label>
-                <div id="equipment-container">
-                    <div class="equipment-item bg-gray-50 p-4 rounded-lg border border-gray-200 mb-3">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="form-label text-sm">Equipment Name</label>
-                                <select name="equipment[0][name]" class="form-select equipment-select" data-index="0">
-                                    <option value="">Select equipment</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="form-label text-sm">Quantity</label>
-                                <input 
-                                    type="number" 
-                                    name="equipment[0][quantity]" 
-                                    min="1" 
-                                    class="form-input equipment-quantity" 
-                                    placeholder="Quantity"
-                                    disabled
-                                >
-                            </div>
-                        </div>
-                        <button type="button" class="remove-equipment mt-2 text-red-600 hover:text-red-800 text-sm" style="display: none;">
-                            <i class="fas fa-trash mr-1"></i>Remove
-                        </button>
+        
+        <div class="form-content">
+            <form id="eventForm" action="{{ route('mhadel.events.store') }}" method="POST">
+                @csrf
+                
+                <!-- Basic Information -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-group">
+                        <label for="title" class="form-label">
+                            <i class="fas fa-heading mr-2 text-maroon"></i>
+                            Event Title *
+                        </label>
+                        <input type="text" id="title" name="title" class="form-input" 
+                               value="{{ old('title') }}" required>
+                        @error('title')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="organizer" class="form-label">
+                            <i class="fas fa-user mr-2 text-maroon"></i>
+                            Organizer *
+                        </label>
+                        <input type="text" id="organizer" name="organizer" class="form-input" 
+                               value="{{ old('organizer') }}" required>
+                        @error('organizer')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
                 </div>
-                <button type="button" id="add-equipment" class="btn btn-outline text-sm">
-                    <i class="fas fa-plus mr-2"></i>Add Equipment
-                </button>
-                <p class="help-text">Select equipment available at the chosen venue. Equipment options will update when you select a venue.</p>
-            </div>
-
-            <!-- Description Section -->
-            <div class="form-group">
-                <label for="description" class="form-label">
-                    Event Description
-                </label>
-                <textarea 
-                    id="description" 
-                    name="description" 
-                    class="form-textarea @error('description') error @enderror"
-                    placeholder="Provide a detailed description of your event (optional)"
-                >{{ old('description') }}</textarea>
-                <p class="help-text">Describe what attendees can expect, the agenda, or any special requirements.</p>
-                @error('description')
-                <p class="error-text">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <!-- Help Information -->
-            <div class="info-box">
-                <div class="info-box-title">
-                    <i class="fas fa-lightbulb"></i>
-                    Tips for creating a great event
+                
+                <div class="form-group">
+                    <label for="description" class="form-label">
+                        <i class="fas fa-align-left mr-2 text-maroon"></i>
+                        Description
+                    </label>
+                    <textarea id="description" name="description" class="form-textarea" 
+                              placeholder="Describe the event...">{{ old('description') }}</textarea>
+                    @error('description')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
-                <div class="info-box-text">
-                    <ul class="list-disc pl-5 space-y-1">
-                        <li>Choose a descriptive title that clearly explains what the event is about</li>
-                        <li>Set realistic start and end times to avoid scheduling conflicts</li>
-                        <li>Select a venue that can accommodate your expected number of participants</li>
-                        <li>Provide a clear description to help attendees understand what to expect</li>
-                    </ul>
+                
+                <!-- Date and Time -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-group">
+                        <label for="start_date" class="form-label">
+                            <i class="fas fa-calendar mr-2 text-maroon"></i>
+                            Start Date & Time *
+                        </label>
+                        <input type="datetime-local" id="start_date" name="start_date" class="form-input" 
+                               value="{{ old('start_date') }}" required>
+                        @error('start_date')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="end_date" class="form-label">
+                            <i class="fas fa-calendar mr-2 text-maroon"></i>
+                            End Date & Time *
+                        </label>
+                        <input type="datetime-local" id="end_date" name="end_date" class="form-input" 
+                               value="{{ old('end_date') }}" required>
+                        @error('end_date')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
-            </div>
-
-            <!-- Event Status Information -->
-            <div class="info-box bg-blue-50 border-blue-200">
-                <div class="info-box-title text-blue-800">
-                    <i class="fas fa-info-circle"></i>
-                    Event Status Information
+                
+                <!-- Additional Information -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-group">
+                        <label for="department" class="form-label">
+                            <i class="fas fa-building mr-2 text-maroon"></i>
+                            Department
+                        </label>
+                        <input type="text" id="department" name="department" class="form-input" 
+                               value="{{ old('department') }}" placeholder="e.g., BSIT, BSCS">
+                        @error('department')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="max_participants" class="form-label">
+                            <i class="fas fa-users mr-2 text-maroon"></i>
+                            Maximum Participants
+                        </label>
+                        <input type="number" id="max_participants" name="max_participants" class="form-input" 
+                               value="{{ old('max_participants') }}" min="1" placeholder="e.g., 100">
+                        @error('max_participants')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
-                <div class="info-box-text text-blue-700">
-                    <p class="mb-2"><strong>Event status is automatically determined based on your scheduled date and time:</strong></p>
-                    <ul class="list-disc pl-5 space-y-1">
-                        <li><strong>Upcoming:</strong> Events scheduled for the future</li>
-                        <li><strong>Ongoing:</strong> Events currently happening (between start and end time)</li>
-                        <li><strong>Completed:</strong> Events that have finished</li>
-                        <li><strong>Cancelled:</strong> Events that have been cancelled (can be set manually)</li>
-                    </ul>
+                
+                <!-- Venue Selection -->
+                <div class="form-group">
+                    <label for="venue_id" class="form-label">
+                        <i class="fas fa-map-marker-alt mr-2 text-maroon"></i>
+                        Venue *
+                    </label>
+                    <select id="venue_id" name="venue_id" class="form-input" required>
+                        <option value="">Select a venue</option>
+                        @foreach(\App\Models\Venue::where('is_available', true)->get() as $venue)
+                            <option value="{{ $venue->id }}" {{ old('venue_id') == $venue->id ? 'selected' : '' }}>
+                                {{ $venue->name }} (Capacity: {{ $venue->capacity }})
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('venue_id')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
-            </div>
-
-            <!-- Form Actions -->
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-6 border-t border-gray-200">
-                <div class="flex items-center gap-2 text-sm text-gray-600">
-                    <i class="fas fa-info-circle text-maroon"></i>
-                    <span>Fields marked with <span class="required">*</span> are required</span>
+                
+                <!-- Equipment Section -->
+                <div class="form-group">
+                    <div class="flex items-center justify-between mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-tools mr-2 text-maroon"></i>
+                            Equipment Needed
+                        </label>
+                        <button type="button" id="addEquipment" class="btn-secondary text-sm">
+                            <i class="fas fa-plus mr-1"></i>
+                            Add Equipment
+                        </button>
+                    </div>
+                    
+                    <div id="equipmentContainer">
+                        <!-- Equipment items will be added here dynamically -->
+                    </div>
                 </div>
-                <div class="flex items-center gap-3">
-                    <a href="{{ route('mhadel.events.index') }}" class="btn btn-outline">
-                        <i class="fas fa-times"></i>Cancel
+                
+                <!-- Form Actions -->
+                <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                    <a href="{{ route('mhadel.events.index') }}" class="btn-secondary">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Cancel
                     </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i>Create Event
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save mr-2"></i>
+                        Create Event
                     </button>
                 </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Auto-calculate end date when start date changes
-    const startDateInput = document.getElementById('start_date');
-    const endDateInput = document.getElementById('end_date');
+let equipmentCount = 0;
+
+document.getElementById('addEquipment').addEventListener('click', function() {
+    addEquipment();
+});
+
+function addEquipment() {
+    const container = document.getElementById('equipmentContainer');
+    const equipmentItem = document.createElement('div');
+    equipmentItem.className = 'equipment-item';
     
-    startDateInput.addEventListener('change', function() {
-        if (this.value && !endDateInput.value) {
-            // Set end date to 2 hours after start date by default
-            const startDate = new Date(this.value);
-            const endDate = new Date(startDate.getTime() + (2 * 60 * 60 * 1000)); // Add 2 hours
-            
-            // Format for datetime-local input
-            const endDateString = endDate.toISOString().slice(0, 16);
-            endDateInput.value = endDateString;
-        }
-    });
-    
-    // Validate that end date is after start date
-    endDateInput.addEventListener('change', function() {
-        const startDate = new Date(startDateInput.value);
-        const endDate = new Date(this.value);
-        
-        if (endDate <= startDate) {
-            alert('End date must be after start date');
-            this.value = '';
-        }
-    });
-
-    // Equipment selection functionality
-    const venueSelect = document.getElementById('venue_id');
-    const equipmentContainer = document.getElementById('equipment-container');
-    const addEquipmentBtn = document.getElementById('add-equipment');
-    let equipmentIndex = 0;
-
-    // Venue data with equipment
-    const venues = @json($venues);
-
-    // Update equipment options when venue changes
-    venueSelect.addEventListener('change', function() {
-        const selectedVenueId = this.value;
-        const selectedVenue = venues.find(venue => venue.id == selectedVenueId);
-        
-        // Clear existing equipment selections
-        clearEquipmentSelections();
-        
-        if (selectedVenue && selectedVenue.available_equipment) {
-            updateEquipmentOptions(selectedVenue.available_equipment);
-        } else {
-            updateEquipmentOptions([]);
-        }
-    });
-
-    function clearEquipmentSelections() {
-        const equipmentSelects = document.querySelectorAll('.equipment-select');
-        const equipmentQuantities = document.querySelectorAll('.equipment-quantity');
-        
-        equipmentSelects.forEach(select => {
-            select.innerHTML = '<option value="">Select equipment</option>';
-            select.disabled = true;
-        });
-        
-        equipmentQuantities.forEach(input => {
-            input.value = '';
-            input.disabled = true;
-        });
-    }
-
-    function updateEquipmentOptions(equipment) {
-        const equipmentSelects = document.querySelectorAll('.equipment-select');
-        
-        equipmentSelects.forEach(select => {
-            select.innerHTML = '<option value="">Select equipment</option>';
-            
-            if (equipment && equipment.length > 0) {
-                select.disabled = false;
-                equipment.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item.name;
-                    option.textContent = `${item.name} (Available: ${item.quantity})`;
-                    option.dataset.maxQuantity = item.quantity;
-                    select.appendChild(option);
-                });
-            } else {
-                select.disabled = true;
-            }
-        });
-    }
-
-    function updateEquipmentOptionsForNewSelect(selectElement) {
-        const selectedVenueId = venueSelect.value;
-        const selectedVenue = venues.find(venue => venue.id == selectedVenueId);
-        
-        selectElement.innerHTML = '<option value="">Select equipment</option>';
-        
-        if (selectedVenue && selectedVenue.available_equipment) {
-            selectElement.disabled = false;
-            
-            // Get already selected equipment names
-            const selectedEquipment = getSelectedEquipmentNames();
-            
-            selectedVenue.available_equipment.forEach(item => {
-                // Only add equipment that hasn't been selected yet
-                if (!selectedEquipment.includes(item.name)) {
-                    const option = document.createElement('option');
-                    option.value = item.name;
-                    option.textContent = `${item.name} (Available: ${item.quantity})`;
-                    option.dataset.maxQuantity = item.quantity;
-                    selectElement.appendChild(option);
-                }
-            });
-        } else {
-            selectElement.disabled = true;
-        }
-    }
-
-    function getSelectedEquipmentNames() {
-        const selectedEquipment = [];
-        const equipmentSelects = document.querySelectorAll('.equipment-select');
-        
-        equipmentSelects.forEach(select => {
-            if (select.value && select.value !== '') {
-                selectedEquipment.push(select.value);
-            }
-        });
-        
-        return selectedEquipment;
-    }
-
-    function updateAllEquipmentDropdowns() {
-        const selectedVenueId = venueSelect.value;
-        const selectedVenue = venues.find(venue => venue.id == selectedVenueId);
-        const selectedEquipment = getSelectedEquipmentNames();
-        
-        if (!selectedVenue || !selectedVenue.available_equipment) {
-            return;
-        }
-        
-        const equipmentSelects = document.querySelectorAll('.equipment-select');
-        
-        equipmentSelects.forEach(select => {
-            const currentValue = select.value;
-            const currentIndex = select.dataset.index;
-            
-            // Clear and rebuild options
-            select.innerHTML = '<option value="">Select equipment</option>';
-            
-            selectedVenue.available_equipment.forEach(item => {
-                // Check if this equipment is selected in other dropdowns
-                const isSelectedElsewhere = selectedEquipment.includes(item.name) && item.name !== currentValue;
-                
-                if (!isSelectedElsewhere) {
-                    const option = document.createElement('option');
-                    option.value = item.name;
-                    option.textContent = `${item.name} (Available: ${item.quantity})`;
-                    option.dataset.maxQuantity = item.quantity;
-                    
-                    // Restore the current selection
-                    if (item.name === currentValue) {
-                        option.selected = true;
-                    }
-                    
-                    select.appendChild(option);
-                }
-            });
-        });
-    }
-
-    // Handle equipment selection change
-    equipmentContainer.addEventListener('change', function(e) {
-        if (e.target.classList.contains('equipment-select')) {
-            const quantityInput = e.target.closest('.equipment-item').querySelector('.equipment-quantity');
-            const maxQuantity = e.target.selectedOptions[0]?.dataset.maxQuantity;
-            
-            if (e.target.value && maxQuantity) {
-                quantityInput.disabled = false;
-                quantityInput.max = maxQuantity;
-                quantityInput.placeholder = `Max: ${maxQuantity}`;
-                
-                // Clear any invalid quantity
-                if (parseInt(quantityInput.value) > parseInt(maxQuantity)) {
-                    quantityInput.value = '';
-                }
-            } else {
-                quantityInput.disabled = true;
-                quantityInput.value = '';
-                quantityInput.placeholder = 'Quantity';
-            }
-            
-            // Update other equipment dropdowns to remove/restore the selected equipment
-            updateAllEquipmentDropdowns();
-        }
-    });
-
-    // Handle quantity input validation
-    equipmentContainer.addEventListener('input', function(e) {
-        if (e.target.classList.contains('equipment-quantity')) {
-            const equipmentSelect = e.target.closest('.equipment-item').querySelector('.equipment-select');
-            const maxQuantity = equipmentSelect.selectedOptions[0]?.dataset.maxQuantity;
-            const currentValue = parseInt(e.target.value);
-            
-            if (maxQuantity && currentValue > parseInt(maxQuantity)) {
-                e.target.value = maxQuantity;
-                showQuantityWarning(`Maximum quantity for ${equipmentSelect.value} is ${maxQuantity}`);
-            }
-        }
-    });
-
-    // Handle quantity input on blur (when user finishes typing)
-    equipmentContainer.addEventListener('blur', function(e) {
-        if (e.target.classList.contains('equipment-quantity')) {
-            const equipmentSelect = e.target.closest('.equipment-item').querySelector('.equipment-select');
-            const maxQuantity = equipmentSelect.selectedOptions[0]?.dataset.maxQuantity;
-            const currentValue = parseInt(e.target.value);
-            
-            if (maxQuantity && currentValue > parseInt(maxQuantity)) {
-                e.target.value = maxQuantity;
-                showQuantityWarning(`Maximum quantity for ${equipmentSelect.value} is ${maxQuantity}`);
-            }
-        }
-    });
-
-    function showQuantityWarning(message) {
-        // Remove any existing warning
-        const existingWarning = document.querySelector('.quantity-warning');
-        if (existingWarning) {
-            existingWarning.remove();
-        }
-        
-        // Create warning message
-        const warning = document.createElement('div');
-        warning.className = 'quantity-warning bg-yellow-100 border border-yellow-400 text-yellow-700 px-3 py-2 rounded text-sm mt-2';
-        warning.innerHTML = `<i class="fas fa-exclamation-triangle mr-1"></i>${message}`;
-        
-        // Add warning to the equipment container
-        equipmentContainer.appendChild(warning);
-        
-        // Remove warning after 3 seconds
-        setTimeout(() => {
-            if (warning.parentNode) {
-                warning.remove();
-            }
-        }, 3000);
-    }
-
-    // Add new equipment row
-    addEquipmentBtn.addEventListener('click', function() {
-        equipmentIndex++;
-        const equipmentItem = document.createElement('div');
-        equipmentItem.className = 'equipment-item bg-gray-50 p-4 rounded-lg border border-gray-200 mb-3';
-        equipmentItem.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="form-label text-sm">Equipment Name</label>
-                    <select name="equipment[${equipmentIndex}][name]" class="form-select equipment-select" data-index="${equipmentIndex}">
-                        <option value="">Select equipment</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="form-label text-sm">Quantity</label>
-                    <input 
-                        type="number" 
-                        name="equipment[${equipmentIndex}][quantity]" 
-                        min="1" 
-                        class="form-input equipment-quantity" 
-                        placeholder="Quantity"
-                        disabled
-                    >
-                </div>
+    equipmentItem.innerHTML = `
+        <button type="button" class="remove-equipment" onclick="removeEquipment(this)">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="form-label">Equipment Name</label>
+                <input type="text" name="equipment[${equipmentCount}][name]" class="form-input" 
+                       placeholder="e.g., Microphone">
             </div>
-            <button type="button" class="remove-equipment mt-2 text-red-600 hover:text-red-800 text-sm">
-                <i class="fas fa-trash mr-1"></i>Remove
-            </button>
-        `;
-        
-        equipmentContainer.appendChild(equipmentItem);
-        
-        // Update equipment options for the new select only (preserve existing selections)
-        updateEquipmentOptionsForNewSelect(equipmentItem.querySelector('.equipment-select'));
-        
-        // Show remove buttons if there are multiple equipment items
-        updateRemoveButtons();
-    });
+            <div>
+                <label class="form-label">Quantity</label>
+                <input type="number" name="equipment[${equipmentCount}][quantity]" class="form-input" 
+                       min="1" placeholder="e.g., 2">
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(equipmentItem);
+    equipmentCount++;
+}
 
-    // Remove equipment row
-    equipmentContainer.addEventListener('click', function(e) {
-        if (e.target.closest('.remove-equipment')) {
-            e.target.closest('.equipment-item').remove();
-            updateRemoveButtons();
-            
-            // Update all equipment dropdowns to restore removed equipment options
-            updateAllEquipmentDropdowns();
+function removeEquipment(button) {
+    const equipmentItem = button.closest('.equipment-item');
+    equipmentItem.remove();
+}
+
+// Set minimum date to today
+const today = new Date().toISOString().slice(0, 16);
+document.getElementById('start_date').min = today;
+document.getElementById('end_date').min = today;
+
+// Update end date minimum when start date changes
+document.getElementById('start_date').addEventListener('change', function() {
+    document.getElementById('end_date').min = this.value;
+});
+
+// Form validation
+document.getElementById('eventForm').addEventListener('submit', function(e) {
+    const equipmentItems = document.querySelectorAll('.equipment-item');
+    let isValid = true;
+    
+    equipmentItems.forEach((item, index) => {
+        const nameInput = item.querySelector('input[name*="[name]"]');
+        const quantityInput = item.querySelector('input[name*="[quantity]"]');
+        
+        if ((nameInput.value.trim() && !quantityInput.value.trim()) || 
+            (!nameInput.value.trim() && quantityInput.value.trim())) {
+            e.preventDefault();
+            alert(`Equipment ${index + 1}: Both name and quantity are required if either is provided.`);
+            isValid = false;
+            return false;
         }
     });
-
-    function updateRemoveButtons() {
-        const equipmentItems = document.querySelectorAll('.equipment-item');
-        const removeButtons = document.querySelectorAll('.remove-equipment');
-        
-        removeButtons.forEach(button => {
-            button.style.display = equipmentItems.length > 1 ? 'block' : 'none';
-        });
+    
+    if (!isValid) {
+        return false;
     }
-
-    // Initialize remove buttons visibility
-    updateRemoveButtons();
 });
 </script>
 @endsection

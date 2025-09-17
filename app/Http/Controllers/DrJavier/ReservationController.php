@@ -319,7 +319,7 @@ class ReservationController extends Controller
 	public function updateGsuReportStatus(Request $request, Report $report)
 	{
 		$request->validate([
-			'status' => 'required|in:pending,investigating,resolved',
+			'status' => 'required|in:pending,investigating,resolved,dismissed',
 			'admin_notes' => 'nullable|string|max:1000'
 		]);
 

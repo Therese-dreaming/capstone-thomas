@@ -59,6 +59,11 @@
         color: #ffffff; 
     }
     
+    .status-dismissed { 
+        background-color: #6B7280; 
+        color: #ffffff; 
+    }
+    
     .severity-critical { 
         background-color: #EF4444; 
         color: #ffffff; 
@@ -179,12 +184,12 @@
         </div>
 
         <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
-            <div class="rounded-full bg-red-50 p-3 mr-4">
-                <i class="fas fa-exclamation text-red-500 text-xl"></i>
+            <div class="rounded-full bg-gray-50 p-3 mr-4">
+                <i class="fas fa-times-circle text-gray-500 text-xl"></i>
             </div>
             <div>
-                <p class="text-sm text-gray-500 font-medium">Critical</p>
-                <h3 class="text-2xl font-bold text-gray-800">{{ $stats['critical'] }}</h3>
+                <p class="text-sm text-gray-500 font-medium">Dismissed</p>
+                <h3 class="text-2xl font-bold text-gray-800">{{ $stats['dismissed'] ?? 0 }}</h3>
             </div>
         </div>
 

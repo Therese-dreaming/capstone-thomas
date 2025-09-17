@@ -116,21 +116,23 @@
 		background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 		border: 1px solid #e2e8f0;
 		border-radius: 0.75rem;
-		padding: 1rem;
+		padding: 0.75rem;
 		text-align: center;
 	}
 	
 	.stats-number {
-		font-size: 1.5rem;
+		font-size: 1.25rem;
 		font-weight: 700;
 		color: #1e293b;
 		margin-bottom: 0.25rem;
+		line-height: 1;
 	}
 	
 	.stats-label {
-		font-size: 0.75rem;
+		font-size: 0.7rem;
 		color: #64748b;
 		font-weight: 500;
+		line-height: 1.2;
 	}
 </style>
 
@@ -178,9 +180,9 @@
 	</div>
 	@endif
 	
-	<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+	<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
 		<div class="stats-card">
-			<div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+			<div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
 				<i class="fas fa-calendar text-blue-600 text-lg"></i>
 			</div>
 			<div class="stats-number">{{ $events->total() }}</div>
@@ -194,7 +196,7 @@
 		</div>
 		
 		<div class="stats-card">
-			<div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+			<div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
 				<i class="fas fa-clock text-green-600 text-lg"></i>
 			</div>
 			<div class="stats-number">{{ $events->where('status', 'upcoming')->count() }}</div>
@@ -202,7 +204,7 @@
 		</div>
 		
 		<div class="stats-card">
-			<div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+			<div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mx-auto mb-2">
 				<i class="fas fa-play text-yellow-600 text-lg"></i>
 			</div>
 			<div class="stats-number">{{ $events->where('status', 'ongoing')->count() }}</div>
@@ -210,7 +212,7 @@
 		</div>
 		
 		<div class="stats-card">
-			<div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+			<div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-2">
 				<i class="fas fa-check text-gray-600 text-lg"></i>
 			</div>
 			<div class="stats-number">{{ $events->where('status', 'completed')->count() }}</div>
@@ -218,7 +220,7 @@
 		</div>
 		
 		<div class="stats-card">
-			<div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+			<div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mx-auto mb-2">
 				<i class="fas fa-clock text-yellow-600 text-lg"></i>
 			</div>
 			<div class="stats-number">{{ $events->where('status', 'pending_venue')->count() }}</div>
@@ -226,7 +228,7 @@
 		</div>
 		
 		<div class="stats-card">
-			<div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+			<div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-2">
 				<i class="fas fa-times text-red-600 text-lg"></i>
 			</div>
 			<div class="stats-number">{{ $events->where('status', 'cancelled')->count() }}</div>
@@ -455,4 +457,3 @@
 	</div>
 </div>
 @endsection
-

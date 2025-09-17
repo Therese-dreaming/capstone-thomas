@@ -10,10 +10,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 @section('header-actions')
-    <div class="flex items-center space-x-3">
+    <form method="GET" action="{{ route('mhadel.venues.index') }}" class="flex items-center space-x-3">
         <!-- Search Bar -->
         <div class="relative">
-            <input type="text" id="venueSearch" placeholder="Search venues..." 
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search venues..." 
                    class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors w-64 font-inter">
             <div class="absolute left-3 top-1/2 transform -translate-y-1/2 text-maroon">
                 <i class="fas fa-search"></i>
@@ -22,7 +22,7 @@
         
         <!-- Filter Dropdown -->
         <div class="relative">
-            <button id="filterBtn" class="bg-maroon text-white px-4 py-2 rounded-lg hover:bg-red-800 transition-all duration-300 flex items-center shadow-lg">
+            <button type="button" id="filterBtn" class="bg-maroon text-white px-4 py-2 rounded-lg hover:bg-red-800 transition-all duration-300 flex items-center shadow-lg">
                 <i class="fas fa-filter mr-2"></i>Filter
                 <i class="fas fa-chevron-down ml-2 text-xs"></i>
             </button>
@@ -32,11 +32,11 @@
                 </div>
                 <div class="p-2">
                     <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer transition-colors">
-                        <input type="checkbox" class="venue-filter" value="active" checked>
+                        <input type="checkbox" name="status[]" value="active" {{ in_array('active', request('status', [])) ? 'checked' : '' }}>
                         <span class="ml-2 text-sm text-gray-700 font-medium">Active</span>
                     </label>
                     <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer transition-colors">
-                        <input type="checkbox" class="venue-filter" value="inactive">
+                        <input type="checkbox" name="status[]" value="inactive" {{ in_array('inactive', request('status', [])) ? 'checked' : '' }}>
                         <span class="ml-2 text-sm text-gray-700 font-medium">Inactive</span>
                     </label>
                 </div>
@@ -45,21 +45,33 @@
                 </div>
                 <div class="p-2">
                     <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer transition-colors">
-                        <input type="checkbox" class="availability-filter" value="available" checked>
+                        <input type="checkbox" name="availability[]" value="available" {{ in_array('available', request('availability', [])) ? 'checked' : '' }}>
                         <span class="ml-2 text-sm text-gray-700 font-medium">Available</span>
                     </label>
                     <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer transition-colors">
-                        <input type="checkbox" class="availability-filter" value="unavailable">
+                        <input type="checkbox" name="availability[]" value="unavailable" {{ in_array('unavailable', request('availability', [])) ? 'checked' : '' }}>
                         <span class="ml-2 text-sm text-gray-700 font-medium">Not Available</span>
                     </label>
+                </div>
+                <div class="p-3 border-t border-gray-100">
+                    <button type="submit" class="w-full bg-maroon text-white py-2 rounded-lg hover:bg-red-800 transition-colors font-medium">
+                        Apply Filters
+                    </button>
+                    <a href="{{ route('mhadel.venues.index') }}" class="block w-full text-center text-gray-600 py-2 mt-2 hover:text-gray-800 transition-colors font-medium">
+                        Clear All
+                    </a>
                 </div>
             </div>
         </div>
         
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all duration-300 flex items-center shadow-lg">
+            <i class="fas fa-search mr-2"></i>Search
+        </button>
+        
         <a href="{{ route('mhadel.venues.create') }}" class="bg-maroon text-white px-6 py-2 rounded-lg hover:bg-red-800 transition-all duration-300 flex items-center shadow-lg font-bold">
             <i class="fas fa-plus mr-2"></i>Add New Venue
         </a>
-    </div>
+    </form>
 @endsection
 
 @section('content')
@@ -177,9 +189,29 @@
 
 <!-- Pagination -->
 @if($venues->hasPages())
-<div class="mt-8 flex justify-center">
+<div class="mt-8">
     <div class="bg-white rounded-xl shadow-lg border border-gray-200 px-6 py-4">
-        {{ $venues->links() }}
+        <div class="flex items-center justify-between">
+            <!-- Results Info (Left) -->
+            <div class="text-sm text-gray-700 font-inter">
+                <span class="font-medium">Showing</span>
+                <span class="font-bold text-maroon">{{ $venues->firstItem() ?? 0 }}</span>
+                <span class="font-medium">to</span>
+                <span class="font-bold text-maroon">{{ $venues->lastItem() ?? 0 }}</span>
+                <span class="font-medium">of</span>
+                <span class="font-bold text-maroon">{{ $venues->total() }}</span>
+                <span class="font-medium">results</span>
+                @if(request('search'))
+                    <span class="font-medium">for</span>
+                    <span class="font-bold text-maroon">"{{ request('search') }}"</span>
+                @endif
+            </div>
+            
+            <!-- Pagination Navigation (Right) -->
+            <div class="flex items-center space-x-2">
+                {{ $venues->links('pagination.custom') }}
+            </div>
+        </div>
     </div>
 </div>
 @endif
@@ -323,28 +355,9 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Search functionality
-    const searchInput = document.getElementById('venueSearch');
-    const venueCards = document.querySelectorAll('.venue-card');
-    
-    searchInput.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        
-        venueCards.forEach(card => {
-            const venueName = card.dataset.name;
-            if (venueName.includes(searchTerm)) {
-                card.style.display = 'block';
-            } else {
-                card.style.display = 'none';
-            }
-        });
-    });
-    
-    // Filter functionality
+    // Filter dropdown functionality
     const filterBtn = document.getElementById('filterBtn');
     const filterDropdown = document.getElementById('filterDropdown');
-    const statusFilters = document.querySelectorAll('.venue-filter');
-    const availabilityFilters = document.querySelectorAll('.availability-filter');
     
     // Toggle filter dropdown
     filterBtn.addEventListener('click', function() {
@@ -356,40 +369,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!filterBtn.contains(e.target) && !filterDropdown.contains(e.target)) {
             filterDropdown.classList.add('hidden');
         }
-    });
-    
-    // Apply filters
-    function applyFilters() {
-        const selectedStatuses = Array.from(statusFilters)
-            .filter(filter => filter.checked)
-            .map(filter => filter.value);
-            
-        const selectedAvailabilities = Array.from(availabilityFilters)
-            .filter(filter => filter.checked)
-            .map(filter => filter.value);
-        
-        venueCards.forEach(card => {
-            const status = card.dataset.status;
-            const availability = card.dataset.availability;
-            
-            const statusMatch = selectedStatuses.length === 0 || selectedStatuses.includes(status);
-            const availabilityMatch = selectedAvailabilities.length === 0 || selectedAvailabilities.includes(availability);
-            
-            if (statusMatch && availabilityMatch) {
-                card.style.display = 'block';
-            } else {
-                card.style.display = 'none';
-            }
-        });
-    }
-    
-    // Add event listeners to filters
-    statusFilters.forEach(filter => {
-        filter.addEventListener('change', applyFilters);
-    });
-    
-    availabilityFilters.forEach(filter => {
-        filter.addEventListener('change', applyFilters);
     });
 });
 
