@@ -1,6 +1,6 @@
 @extends('layouts.mhadel')
 
-@section('title', 'Profile')
+@section('title', 'Profile - OTP')
 @section('page-title', 'Profile')
 @section('page-subtitle', 'Manage your account information')
 
@@ -51,7 +51,7 @@
                     
                     <!-- Profile Info -->
                     <div class="flex-1 text-center lg:text-left">
-                        <h1 class="text-2xl font-bold mb-1">{{ $user->name ?? 'Ms. Mhadel' }}</h1>
+                        <h1 class="text-2xl font-bold mb-1">{{ $user->name ?? 'OTP Representative' }}</h1>
                         <p class="text-lg text-white/90 mb-3">{{ $user->email }}</p>
                         
                         <div class="flex flex-wrap justify-center lg:justify-start gap-2 mb-3">

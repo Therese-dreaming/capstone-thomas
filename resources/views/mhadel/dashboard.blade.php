@@ -1,8 +1,8 @@
 @extends('layouts.mhadel')
 
-@section('title', 'Ms. Mhadel Dashboard')
-@section('page-title', 'Ms. Mhadel Dashboard')
-@section('page-subtitle', 'Second Level Approval - Reservation Management')
+@section('title', 'OTP Dashboard')
+@section('page-title', 'OTP Dashboard')
+@section('page-subtitle', 'Office of the President - Reservation Management')
 
 <!-- Google Fonts Import -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -164,16 +164,16 @@
                                                         $statusText = 'IOSA Approved';
                                                     } elseif ($status === 'approved_mhadel') {
                                                         $statusClass = 'bg-green-100 text-green-800';
-                                                        $statusText = 'Mhadel Approved';
+                                                        $statusText = 'Approved by OTP';
                                                     } elseif ($status === 'approved_OTP') {
                                                         $statusClass = 'bg-purple-100 text-purple-800';
-                                                        $statusText = 'OTP Approved';
+                                                        $statusText = 'Approved by PPGS';
                                                     } elseif ($status === 'rejected_mhadel') {
                                                         $statusClass = 'bg-red-100 text-red-800';
-                                                        $statusText = 'Mhadel Rejected';
+                                                        $statusText = 'Rejected by OTP';
                                                     } elseif ($status === 'rejected_OTP') {
                                                         $statusClass = 'bg-red-100 text-red-800';
-                                                        $statusText = 'OTP Rejected';
+                                                        $statusText = 'Rejected by PPGS';
                                                     } elseif ($status === 'completed') {
                                                         $statusClass = 'bg-indigo-100 text-indigo-800';
                                                         $statusText = 'Completed';

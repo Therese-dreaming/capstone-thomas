@@ -1,8 +1,8 @@
 @extends('layouts.mhadel')
 
 @section('title', 'Calendar')
-@section('page-title', 'Final Approved Calendar & Official Events')
-@section('page-subtitle', 'OTP-approved reservations and scheduled events')
+@section('page-title', 'PPGS Approved Calendar & Official Events')
+@section('page-subtitle', 'PPGS-approved reservations and scheduled events')
 
 @section('content')
 <!-- Google Fonts Import -->
@@ -52,7 +52,7 @@
 			<div class="flex items-center justify-between">
 				<h2 class="text-2xl font-bold text-gray-800 font-montserrat flex items-center">
 					<i class="fas fa-calendar-alt mr-3 text-maroon"></i>
-					Calendar of Final Approved Reservations & Official Events
+					Calendar of PPGS Approved Reservations & Official Events
 				</h2>
 				<div class="flex items-center space-x-2 bg-white rounded-lg shadow p-1.5">
 					<button onclick="previousMonth()" class="p-2 hover:bg-gray-100 rounded-lg text-maroon transition-colors">
@@ -107,8 +107,8 @@
 			<div class="flex flex-wrap items-center justify-end mb-4 gap-4 text-sm">
 				<div class="flex items-center"><div class="w-4 h-4 bg-yellow-400 rounded-md mr-2"></div><span class="text-gray-600">Pending</span></div>
 				<div class="flex items-center"><div class="w-4 h-4 bg-blue-400 rounded-md mr-2"></div><span class="text-gray-600">IOSA Approved</span></div>
-				<div class="flex items-center"><div class="w-4 h-4 bg-green-400 rounded-md mr-2"></div><span class="text-gray-600">Mhadel Approved</span></div>
-				<div class="flex items-center"><div class="w-4 h-4 bg-green-600 text-white rounded-md mr-2"></div><span class="text-gray-600">Final Approval</span></div>
+				<div class="flex items-center"><div class="w-4 h-4 bg-green-400 rounded-md mr-2"></div><span class="text-gray-600">Approved by OTP</span></div>
+				<div class="flex items-center"><div class="w-4 h-4 bg-green-600 text-white rounded-md mr-2"></div><span class="text-gray-600">Approved by PPGS</span></div>
 				<div class="flex items-center"><div class="w-4 h-4 bg-gray-400 rounded-md mr-2"></div><span class="text-gray-600">Completed</span></div>
 				<div class="flex items-center"><div class="w-4 h-4 bg-red-400 rounded-md mr-2"></div><span class="text-gray-600">Rejected</span></div>
 				<div class="flex items-center"><div class="w-4 h-4 bg-purple-400 rounded-md mr-2"></div><span class="text-gray-600">Official Event</span></div>
@@ -245,14 +245,14 @@
 				};
 			case 'approved_mhadel':
 				return {
-					label: 'Mhadel Approved',
+					label: 'Approved by OTP',
 					bgColor: 'bg-green-100',
 					textColor: 'text-green-800',
 					borderColor: 'border-green-300'
 				};
 			case 'approved_OTP':
 				return {
-					label: 'Final Approved',
+					label: 'Approved by PPGS',
 					bgColor: 'bg-green-100',
 					textColor: 'text-green-800',
 					borderColor: 'border-green-300'
@@ -656,8 +656,8 @@
 		html += '<div class="flex flex-wrap gap-3 text-xs">';
 		html += '<div class="flex items-center"><div class="w-3 h-3 rounded mr-2" style="background-color: #fef3c7; border: 1px solid #f59e0b;"></div><span class="text-gray-600">Pending</span></div>';
 		html += '<div class="flex items-center"><div class="w-3 h-3 rounded mr-2" style="background-color: #dbeafe; border: 1px solid #3b82f6;"></div><span class="text-gray-600">IOSA Approved</span></div>';
-		html += '<div class="flex items-center"><div class="w-3 h-3 rounded mr-2" style="background-color: #dcfce7; border: 1px solid #22c55e;"></div><span class="text-gray-600">Mhadel Approved</span></div>';
-		html += '<div class="flex items-center"><div class="w-3 h-3 rounded mr-2" style="background-color: #bbf7d0; border: 1px solid #16a34a;"></div><span class="text-gray-600">Final Approved</span></div>';
+		html += '<div class="flex items-center"><div class="w-3 h-3 rounded mr-2" style="background-color: #dcfce7; border: 1px solid #22c55e;"></div><span class="text-gray-600">Approved by OTP</span></div>';
+		html += '<div class="flex items-center"><div class="w-3 h-3 rounded mr-2" style="background-color: #bbf7d0; border: 1px solid #16a34a;"></div><span class="text-gray-600">Approved by PPGS</span></div>';
 		html += '<div class="flex items-center"><div class="w-3 h-3 rounded mr-2" style="background-color: #f3f4f6; border: 1px solid #9ca3af;"></div><span class="text-gray-600">Completed</span></div>';
 		html += '<div class="flex items-center"><div class="w-3 h-3 rounded mr-2" style="background-color: #fee2e2; border: 1px solid #ef4444;"></div><span class="text-gray-600">Rejected</span></div>';
 		html += '<div class="flex items-center"><div class="w-3 h-3 rounded mr-2" style="background-color: #f3e8ff; border: 1px solid #c084fc;"></div><span class="text-gray-600">Official Event</span></div>';

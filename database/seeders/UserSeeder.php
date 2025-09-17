@@ -50,11 +50,11 @@ class UserSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
 
-        // OTP (Office of the President) User
+        // OTP (Office of the President) User - now PPGS
         User::create([
-            'name' => 'OTP Representative',
-            'email' => 'otp@pcc.edu.ph',
-            'password' => Hash::make('password123'),
+            'name' => 'Dr. Javier',
+            'email' => 'drjavier@pcc.edu.ph',
+            'password' => Hash::make('password'),
             'role' => 'OTP',
             'email_verified_at' => now(),
         ]);

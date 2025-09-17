@@ -280,10 +280,10 @@
                 Pending Review
             </button>
             <button onclick="filterByStatus('approved_OTP')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'approved_OTP' ? 'tab-active' : '' }}">
-                OTP Approved
+                Approved by PPGS
             </button>
             <button onclick="filterByStatus('rejected_OTP')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'rejected_OTP' ? 'tab-active' : '' }}">
-                OTP Rejected
+                Rejected by PPGS
             </button>
             <button onclick="filterByStatus('completed')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'completed' ? 'tab-active' : '' }}">
                 Completed
@@ -391,7 +391,18 @@
                                             }
                                         @endphp
                                         <span class="status-badge {{ $badge }}">
-                                            {{ str_replace('_',' ', $r->status) }}
+                                            @php
+                                                $statusDisplay = match($r->status) {
+                                                    'approved_mhadel' => 'Approved by OTP',
+                                                    'approved_OTP' => 'Approved by PPGS',
+                                                    'rejected_mhadel' => 'Rejected by OTP',
+                                                    'rejected_OTP' => 'Rejected by PPGS',
+                                                    'approved_IOSA' => 'IOSA Approved',
+                                                    'rejected_IOSA' => 'IOSA Rejected',
+                                                    default => ucfirst(str_replace('_',' ', $r->status))
+                                                };
+                                            @endphp
+                                            {{ $statusDisplay }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4">
@@ -850,7 +861,16 @@
                     <select id="filterStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon">
                         <option value="">All Statuses</option>
                         @foreach(['pending','approved_IOSA','approved_mhadel','approved_OTP','rejected_mhadel','rejected_OTP'] as $s)
-                            <option value="{{ $s }}">{{ ucfirst(str_replace('_',' ', $s)) }}</option>
+                            @php
+                                $displayName = match($s) {
+                                    'approved_mhadel' => 'Approved by OTP',
+                                    'approved_OTP' => 'Approved by PPGS',
+                                    'rejected_mhadel' => 'Rejected by OTP',
+                                    'rejected_OTP' => 'Rejected by PPGS',
+                                    default => ucfirst(str_replace('_',' ', $s))
+                                };
+                            @endphp
+                            <option value="{{ $s }}">{{ $displayName }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -1037,19 +1057,19 @@
                                 </label>
                                 <label class="flex items-center">
                                     <input type="checkbox" id="exportStatusApprovedMhadel" class="mr-2 text-maroon focus:ring-maroon" checked>
-                                    <span class="text-sm text-gray-700">Mhadel Approved</span>
+                                    <span class="text-sm text-gray-700">Approved by OTP</span>
                                 </label>
                                 <label class="flex items-center">
                                     <input type="checkbox" id="exportStatusApprovedOTP" class="mr-2 text-maroon focus:ring-maroon" checked>
-                                    <span class="text-sm text-gray-700">OTP Approved</span>
+                                    <span class="text-sm text-gray-700">Approved by PPGS</span>
                                 </label>
                                 <label class="flex items-center">
                                     <input type="checkbox" id="exportStatusRejectedMhadel" class="mr-2 text-maroon focus:ring-maroon" checked>
-                                    <span class="text-sm text-gray-700">Mhadel Rejected</span>
+                                    <span class="text-sm text-gray-700">Rejected by OTP</span>
                                 </label>
                                 <label class="flex items-center">
                                     <input type="checkbox" id="exportStatusRejectedOTP" class="mr-2 text-maroon focus:ring-maroon" checked>
-                                    <span class="text-sm text-gray-700">OTP Rejected</span>
+                                    <span class="text-sm text-gray-700">Rejected by PPGS</span>
                                 </label>
                                 <label class="flex items-center">
                                     <input type="checkbox" id="exportStatusCompleted" class="mr-2 text-maroon focus:ring-maroon" checked>
@@ -1510,11 +1530,11 @@
             const statusLabels = [
                 'Pending',
                 'IOSA Approved', 
-                'Mhadel Approved',
-                'OTP Approved',
+                'Approved by OTP',
+                'Approved by PPGS',
                 'IOSA Rejected',
-                'Mhadel Rejected',
-                'OTP Rejected',
+                'Rejected by OTP',
+                'Rejected by PPGS',
                 'Completed'
             ];
             
@@ -1532,11 +1552,11 @@
             const statusColors = [
                 '#F59E0B', // Pending - Yellow
                 '#3B82F6', // IOSA Approved - Blue
-                '#10B981', // Mhadel Approved - Green
-                '#8B5CF6', // OTP Approved - Purple
+                '#10B981', // Approved by OTP - Green
+                '#8B5CF6', // Approved by PPGS - Purple
                 '#EF4444', // IOSA Rejected - Red
-                '#DC2626', // Mhadel Rejected - Dark Red
-                '#991B1B', // OTP Rejected - Darker Red
+                '#DC2626', // Rejected by OTP - Dark Red
+                '#991B1B', // Rejected by PPGS - Darker Red
                 '#6366F1'  // Completed - Indigo
             ];
             

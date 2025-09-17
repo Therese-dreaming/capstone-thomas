@@ -1,8 +1,8 @@
 @extends('layouts.drjavier')
 
-@section('title', 'OTP Dashboard')
-@section('page-title', 'OTP Dashboard')
-@section('page-subtitle', 'Final Approval - Reservation Management')
+@section('title', 'PPGS Dashboard')
+@section('page-title', 'PPGS Dashboard')
+@section('page-subtitle', 'Physical Plan and General Service - Reservation Management')
 
 <!-- Google Fonts Import -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -136,7 +136,7 @@
                     <div class="p-6 border-b border-gray-200 flex items-center justify-between">
                         <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
                             <i class="fas fa-history text-maroon mr-3"></i>
-                            Recent Mhadel Approved
+                            Recent OTP Approved
                         </h2>
                         <a href="{{ route('drjavier.reservations.index') }}" class="text-maroon hover:text-red-800 text-sm font-bold font-inter transition-colors">
                             View All <i class="fas fa-arrow-right ml-1"></i>
@@ -149,7 +149,7 @@
                                     <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-300 border border-gray-100">
                                         <div class="flex-1">
                                             <div class="flex items-center mb-3">
-                                                <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold mr-3">Mhadel Approved</span>
+                                                <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold mr-3">Approved by OTP</span>
                                                 <span class="text-sm text-gray-500 font-inter">{{ $reservation->created_at->diffForHumans() }}</span>
                                             </div>
                                             <div class="text-base font-bold text-gray-800 font-poppins mb-2">{{ $reservation->event_title }}</div>
@@ -202,7 +202,7 @@
                             <div>
                                 <p class="text-sm text-blue-600 font-inter font-medium">Expected Revenue</p>
                                 <h3 class="text-2xl font-bold text-blue-800 font-poppins">₱{{ number_format($expectedRevenue ?? 0) }}</h3>
-                                <p class="text-xs text-blue-600 font-inter">Mhadel Approved</p>
+                                <p class="text-xs text-blue-600 font-inter">Approved by OTP</p>
                             </div>
                             <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
                                 <i class="fas fa-clock text-blue-600 text-xl"></i>

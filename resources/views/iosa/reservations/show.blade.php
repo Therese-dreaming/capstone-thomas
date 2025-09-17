@@ -536,7 +536,7 @@ use Illuminate\Support\Facades\Storage;
                         <div class="timeline-item {{ $reservation->status === 'rejected_mhadel' ? 'rejected' : (in_array($reservation->status, ['approved', 'approved_mhadel', 'approved_OTP', 'completed']) ? 'completed' : 'pending') }}">
                             <div class="{{ $reservation->status === 'rejected_mhadel' ? 'bg-red-50 border-red-200' : (in_array($reservation->status, ['approved', 'approved_mhadel', 'approved_OTP', 'completed']) ? 'bg-purple-50 border-purple-200' : 'bg-gray-50 border-gray-200') }} p-3 rounded border">
                                 <div class="flex items-center justify-between mb-1">
-                                    <h4 class="font-semibold {{ $reservation->status === 'rejected_mhadel' ? 'text-red-800' : (in_array($reservation->status, ['approved', 'approved_mhadel', 'approved_OTP', 'completed']) ? 'text-purple-800' : 'text-gray-800') }} text-sm">Ms. Mhadel Review</h4>
+                                    <h4 class="font-semibold {{ $reservation->status === 'rejected_mhadel' ? 'text-red-800' : (in_array($reservation->status, ['approved', 'approved_mhadel', 'approved_OTP', 'completed']) ? 'text-purple-800' : 'text-gray-800') }} text-sm">OTP Review</h4>
                                     @if($reservation->status === 'rejected_mhadel')
                                         <span class="text-xs text-red-600 bg-red-100 px-2 py-1 rounded-full">Rejected</span>
                                     @elseif(in_array($reservation->status, ['approved', 'approved_mhadel', 'approved_OTP', 'completed']))
@@ -547,9 +547,9 @@ use Illuminate\Support\Facades\Storage;
                                 </div>
                                 <p class="text-xs {{ $reservation->status === 'rejected_mhadel' ? 'text-red-700' : (in_array($reservation->status, ['approved', 'approved_mhadel', 'approved_OTP', 'completed']) ? 'text-purple-700' : 'text-gray-700') }}">
                                     @if($reservation->status === 'rejected_mhadel')
-                                        Rejected by Ms. Mhadel
+                                        Rejected by OTP
                                     @elseif(in_array($reservation->status, ['approved', 'approved_mhadel', 'approved_OTP', 'completed']))
-                                        Approved by Ms. Mhadel
+                                        Approved by OTP
                                     @else
                                         Waiting for IOSA approval
                                     @endif
@@ -564,7 +564,7 @@ use Illuminate\Support\Facades\Storage;
                         <div class="timeline-item {{ $reservation->status === 'rejected_OTP' ? 'rejected' : (in_array($reservation->status, ['approved_OTP', 'completed']) ? 'completed' : 'pending') }}">
                             <div class="{{ $reservation->status === 'rejected_OTP' ? 'bg-red-50 border-red-200' : (in_array($reservation->status, ['approved_OTP', 'completed']) ? 'bg-indigo-50 border-indigo-200' : 'bg-gray-50 border-gray-200') }} p-3 rounded border">
                                 <div class="flex items-center justify-between mb-1">
-                                    <h4 class="font-semibold {{ $reservation->status === 'rejected_OTP' ? 'text-red-800' : (in_array($reservation->status, ['approved_OTP', 'completed']) ? 'text-indigo-800' : 'text-gray-800') }} text-sm">OTP Final Approval</h4>
+                                    <h4 class="font-semibold {{ $reservation->status === 'rejected_OTP' ? 'text-red-800' : (in_array($reservation->status, ['approved_OTP', 'completed']) ? 'text-indigo-800' : 'text-gray-800') }} text-sm">PPGS Final Approval</h4>
                                     @if($reservation->status === 'rejected_OTP')
                                         <span class="text-xs text-red-600 bg-red-100 px-2 py-1 rounded-full">Rejected</span>
                                     @elseif(in_array($reservation->status, ['approved_OTP', 'completed']))
@@ -575,9 +575,9 @@ use Illuminate\Support\Facades\Storage;
                                 </div>
                                 <p class="text-xs {{ $reservation->status === 'rejected_OTP' ? 'text-red-700' : (in_array($reservation->status, ['approved_OTP', 'completed']) ? 'text-indigo-700' : 'text-gray-700') }}">
                                     @if($reservation->status === 'rejected_OTP')
-                                        Rejected by OTP
+                                        Rejected by PPGS
                                     @elseif(in_array($reservation->status, ['approved_OTP', 'completed']))
-                                        Final approval granted by OTP
+                                        Final approval granted by PPGS
                                     @else
                                         Waiting for previous approvals
                                     @endif

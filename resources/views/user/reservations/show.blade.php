@@ -314,8 +314,8 @@
                 $steps = [
                     ['key' => 'submitted', 'label' => 'Submitted', 'icon' => 'fa-paper-plane'],
                     ['key' => 'iosa', 'label' => 'IOSA Review', 'icon' => 'fa-eye'],
-                    ['key' => 'mhadel', 'label' => 'Ms. Mhadel Review', 'icon' => 'fa-user-check'],
-                    ['key' => 'otp', 'label' => 'Final Approval (OTP)', 'icon' => 'fa-shield-alt'],
+                    ['key' => 'mhadel', 'label' => 'OTP Review', 'icon' => 'fa-user-check'],
+                    ['key' => 'otp', 'label' => 'Final Approval (PPGS)', 'icon' => 'fa-shield-alt'],
                     ['key' => 'gsu', 'label' => 'GSU Completion', 'icon' => 'fa-tools'],
                 ];
                 $currentIndex = 0; $failed = false; $doneSteps = 1;

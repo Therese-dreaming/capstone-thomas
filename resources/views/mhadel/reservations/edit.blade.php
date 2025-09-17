@@ -250,12 +250,12 @@
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200">
                         <option value="pending" {{ $reservation->status === 'pending' ? 'selected' : '' }}>Pending</option>
                         <option value="approved_IOSA" {{ $reservation->status === 'approved_IOSA' ? 'selected' : '' }}>IOSA Approved</option>
-                        <option value="approved_mhadel" {{ $reservation->status === 'approved_mhadel' ? 'selected' : '' }}>Mhadel Approved</option>
-                        <option value="approved_OTP" {{ $reservation->status === 'approved_OTP' ? 'selected' : '' }}>Final Approved</option>
+                        <option value="approved_mhadel" {{ $reservation->status === 'approved_mhadel' ? 'selected' : '' }}>Approved by OTP</option>
+                        <option value="approved_OTP" {{ $reservation->status === 'approved_OTP' ? 'selected' : '' }}>Approved by PPGS</option>
                         <option value="completed" {{ $reservation->status === 'completed' ? 'selected' : '' }}>Completed</option>
                         <option value="rejected_IOSA" {{ $reservation->status === 'rejected_IOSA' ? 'selected' : '' }}>Rejected by IOSA</option>
-                        <option value="rejected_mhadel" {{ $reservation->status === 'rejected_mhadel' ? 'selected' : '' }}>Rejected by Mhadel</option>
-                        <option value="rejected_OTP" {{ $reservation->status === 'rejected_OTP' ? 'selected' : '' }}>Rejected by OTP</option>
+                        <option value="rejected_mhadel" {{ $reservation->status === 'rejected_mhadel' ? 'selected' : '' }}>Rejected by OTP</option>
+                        <option value="rejected_OTP" {{ $reservation->status === 'rejected_OTP' ? 'selected' : '' }}>Rejected by PPGS</option>
                         <option value="cancelled" {{ $reservation->status === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                     </select>
                     @error('status')

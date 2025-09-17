@@ -179,13 +179,13 @@ use Illuminate\Support\Facades\Storage;
                 </div>
                 <div class="text-right">
                     @if($reservation->status === 'approved_mhadel')
-                        <span class="status-badge-inline bg-yellow-100 text-yellow-800">Pending OTP Final Review</span>
-                        <p class="text-sm text-gray-500 mt-2">Waiting for OTP</p>
+                        <span class="status-badge-inline bg-yellow-100 text-yellow-800">Pending PPGS Final Review</span>
+                        <p class="text-sm text-gray-500 mt-2">Waiting for PPGS</p>
                     @elseif($reservation->status === 'approved_OTP')
-                        <span class="status-badge-inline bg-blue-100 text-blue-800">Final Approved</span>
-                        <p class="text-sm text-gray-500 mt-2">OTP Confirmed</p>
+                        <span class="status-badge-inline bg-blue-100 text-blue-800">Approved by PPGS</span>
+                        <p class="text-sm text-gray-500 mt-2">PPGS Confirmed</p>
                     @elseif($reservation->status === 'rejected_OTP')
-                        <span class="status-badge-inline bg-red-100 text-red-800">Final Rejected</span>
+                        <span class="status-badge-inline bg-red-100 text-red-800">Rejected by PPGS</span>
                         <p class="text-sm text-gray-500 mt-2">Decision Complete</p>
                     @else
                         <span class="status-badge-inline bg-gray-100 text-gray-800">{{ ucfirst(str_replace('_', ' ', $reservation->status)) }}</span>
@@ -350,7 +350,7 @@ use Illuminate\Support\Facades\Storage;
                             <div class="flex items-center">
                                 <i class="fas fa-check-circle text-blue-500 mr-3 text-xl"></i>
                                 <div>
-                                    <h3 class="font-semibold text-blue-800">Reservation Final Approved by OTP</h3>
+                                    <h3 class="font-semibold text-blue-800">Reservation Approved by PPGS</h3>
                                     <p class="text-sm text-blue-600 mt-1">This reservation has been fully approved and confirmed.</p>
                                 </div>
                             </div>
@@ -418,7 +418,7 @@ use Illuminate\Support\Facades\Storage;
                         <!-- Ms. Mhadel Review -->
                         <div class="timeline-item {{ in_array($reservation->status, ['approved_mhadel', 'approved_OTP', 'rejected_mhadel', 'rejected_OTP']) ? 'completed' : 'pending' }}">
                             <div class="ml-4">
-                                <h4 class="font-semibold text-gray-800">Ms. Mhadel Review</h4>
+                                <h4 class="font-semibold text-gray-800">OTP Review</h4>
                                 @if($reservation->status === 'approved_mhadel')
                                     <p class="text-sm text-green-600 font-medium">✓ Approved</p>
                                     <p class="text-sm text-gray-600">{{ $reservation->updated_at->format('M d, Y g:i A') }}</p>
@@ -438,12 +438,12 @@ use Illuminate\Support\Facades\Storage;
                         <!-- OTP Final Review -->
                         <div class="timeline-item {{ in_array($reservation->status, ['approved_OTP', 'rejected_OTP']) ? 'completed' : 'pending' }}">
                             <div class="ml-4">
-                                <h4 class="font-semibold text-gray-800">OTP Final Review</h4>
+                                <h4 class="font-semibold text-gray-800">PPGS Final Review</h4>
                                 @if($reservation->status === 'approved_OTP')
-                                    <p class="text-sm text-green-600 font-medium">✓ Final Approved</p>
+                                    <p class="text-sm text-green-600 font-medium">✓ Approved by PPGS</p>
                                     <p class="text-sm text-gray-600">{{ $reservation->updated_at->format('M d, Y g:i A') }}</p>
                                 @elseif($reservation->status === 'rejected_OTP')
-                                    <p class="text-sm text-red-600 font-medium">✗ Final Rejected</p>
+                                    <p class="text-sm text-red-600 font-medium">✗ Rejected by PPGS</p>
                                     <p class="text-sm text-gray-600">{{ $reservation->updated_at->format('M d, Y g:i A') }}</p>
                                 @else
                                     <p class="text-sm text-yellow-600 font-medium">⏳ Pending</p>

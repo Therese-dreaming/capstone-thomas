@@ -1,6 +1,6 @@
 @extends('layouts.mhadel')
 
-@section('title', 'Reservation Details - Ms. Mhadel')
+@section('title', 'Reservation Details - OTP')
 @section('page-title', 'Reservation Details')
 @section('page-subtitle', 'Review reservation information and make approval decision')
 
@@ -182,16 +182,16 @@ use Illuminate\Support\Facades\Storage;
                         <span class="status-badge bg-yellow-100 text-yellow-800">Pending Review</span>
                         <p class="text-sm text-gray-500 mt-2">Waiting for Ms. Mhadel</p>
                     @elseif($reservation->status === 'approved_mhadel')
-                        <span class="status-badge bg-green-100 text-green-800">Approved by Ms. Mhadel</span>
-                        <p class="text-sm text-gray-500 mt-2">Forwarded to OTP</p>
+                        <span class="status-badge bg-green-100 text-green-800">Approved by OTP</span>
+                        <p class="text-sm text-gray-500 mt-2">Forwarded to PPGS</p>
                     @elseif($reservation->status === 'rejected_mhadel')
-                        <span class="status-badge bg-red-100 text-red-800">Rejected by Ms. Mhadel</span>
+                        <span class="status-badge bg-red-100 text-red-800">Rejected by OTP</span>
                         <p class="text-sm text-gray-500 mt-2">Final Decision</p>
                     @elseif($reservation->status === 'approved_OTP')
-                        <span class="status-badge bg-blue-100 text-blue-800">Final Approved</span>
-                        <p class="text-sm text-gray-500 mt-2">OTP Confirmed</p>
+                        <span class="status-badge bg-blue-100 text-blue-800">Approved by PPGS</span>
+                        <p class="text-sm text-gray-500 mt-2">PPGS Confirmed</p>
                     @elseif($reservation->status === 'rejected_OTP')
-                        <span class="status-badge bg-red-100 text-red-800">Rejected by OTP</span>
+                        <span class="status-badge bg-red-100 text-red-800">Rejected by PPGS</span>
                         <p class="text-sm text-gray-500 mt-2">Final Decision</p>
                     @else
                         <span class="status-badge bg-gray-100 text-gray-800">{{ ucfirst(str_replace('_', ' ', $reservation->status)) }}</span>
@@ -447,13 +447,13 @@ use Illuminate\Support\Facades\Storage;
                             <div class="ml-4">
                                 <h4 class="font-semibold text-gray-800">OTP Final Review</h4>
                                 @if($reservation->status === 'approved_OTP')
-                                    <p class="text-sm text-green-600 font-medium">✓ Final Approved</p>
+                                    <p class="text-sm text-green-600 font-medium">✓ Approved by PPGS</p>
                                     <p class="text-sm text-gray-600">{{ $reservation->updated_at->format('M d, Y g:i A') }}</p>
                                 @elseif($reservation->status === 'rejected_OTP')
-                                    <p class="text-sm text-red-600 font-medium">✗ Final Rejected</p>
+                                    <p class="text-sm text-red-600 font-medium">✗ Rejected by PPGS</p>
                                     <p class="text-sm text-gray-600">{{ $reservation->updated_at->format('M d, Y g:i A') }}</p>
                                 @elseif($reservation->status === 'completed')
-                                    <p class="text-sm text-green-600 font-medium">✓ Final Approved</p>
+                                    <p class="text-sm text-green-600 font-medium">✓ Approved by PPGS</p>
                                     <p class="text-xs text-gray-500">Previously approved</p>
                                 @else
                                     <p class="text-sm text-yellow-600 font-medium">⏳ Pending</p>

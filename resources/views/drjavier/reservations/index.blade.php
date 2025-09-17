@@ -137,7 +137,7 @@
                 <i class="fas fa-check-circle text-green-500 text-xl"></i>
             </div>
             <div>
-                <p class="text-sm text-gray-500 font-medium">Final Approved</p>
+                <p class="text-sm text-gray-500 font-medium">Approved by PPGS</p>
                 <h3 class="text-2xl font-bold text-gray-800">{{ $stats['approved'] }}</h3>
             </div>
         </div>
@@ -147,7 +147,7 @@
                 <i class="fas fa-times-circle text-red-500 text-xl"></i>
             </div>
             <div>
-                <p class="text-sm text-gray-500 font-medium">Final Rejected</p>
+                <p class="text-sm text-gray-500 font-medium">Rejected by PPGS</p>
                 <h3 class="text-2xl font-bold text-gray-800">{{ $stats['rejected'] }}</h3>
             </div>
         </div>
@@ -159,7 +159,7 @@
             <div class="flex items-center justify-between">
                 <h2 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
                     <i class="fas fa-calendar-check text-maroon mr-3"></i>
-                    Final Approval Management - OTP (Office of the President)
+                    Final Approval Management - PPGS (Physical Plan & General Service)
                 </h2>
                 <div class="flex items-center space-x-2">
                     <form method="GET" action="{{ route('drjavier.reservations.index') }}" class="flex items-center space-x-2">
@@ -192,10 +192,10 @@
                 Awaiting Approval
             </button>
             <button onclick="filterByStatus('approved')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'approved' ? 'tab-active' : '' }}">
-                Final Approved
+                Approved by PPGS
             </button>
             <button onclick="filterByStatus('rejected')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'rejected' ? 'tab-active' : '' }}">
-                Final Rejected
+                Rejected by PPGS
             </button>
         </div>
         
@@ -225,11 +225,11 @@
                             <div class="flex items-center justify-between mb-4">
                                 <div class="flex items-center space-x-3">
                                     @if($reservation->status === 'approved_mhadel')
-                                        <span class="status-badge status-pending">Awaiting Final Approval</span>
+                                        <span class="status-badge status-pending">Awaiting PPGS Approval</span>
                                     @elseif($reservation->status === 'approved_OTP')
-                                        <span class="status-badge status-approved">Final Approved</span>
+                                        <span class="status-badge status-approved">Approved by PPGS</span>
                                     @elseif($reservation->status === 'rejected_OTP')
-                                        <span class="status-badge status-rejected">Final Rejected</span>
+                                        <span class="status-badge status-rejected">Rejected by PPGS</span>
                                     @else
                                         <span class="status-badge status-pending">{{ ucfirst(str_replace('_', ' ', $reservation->status)) }}</span>
                                     @endif
@@ -375,14 +375,14 @@
             @else
                 <div class="text-center py-12">
                     <i class="fas fa-calendar-check text-6xl text-gray-300 mb-6"></i>
-                    <h3 class="text-2xl font-bold text-gray-700 mb-4">No Pending Final Approvals</h3>
-                    <p class="text-gray-500 mb-6">All reservations approved by Ms. Mhadel have been processed.</p>
+                    <h3 class="text-2xl font-bold text-gray-700 mb-4">No Pending PPGS Approvals</h3>
+                    <p class="text-gray-500 mb-6">All reservations approved by OTP have been processed.</p>
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
                         <div class="flex items-center">
                             <i class="fas fa-info-circle text-blue-500 mr-3"></i>
                             <div>
                                 <h4 class="font-medium text-blue-800">Workflow Information</h4>
-                                <p class="text-blue-700 text-sm mt-1">Reservations approved by Ms. Mhadel will appear here for your final approval.</p>
+                                <p class="text-blue-700 text-sm mt-1">Reservations approved by OTP will appear here for your final approval.</p>
                             </div>
                         </div>
                     </div>
@@ -415,15 +415,15 @@
                     <div class="flex flex-wrap items-center justify-end mb-4 gap-4 text-sm">
                         <div class="flex items-center">
                             <div class="w-4 h-4 bg-yellow-400 rounded-md mr-2"></div>
-                            <span class="text-gray-600">Pending Final Approval</span>
+                            <span class="text-gray-600">Pending PPGS Approval</span>
                         </div>
                         <div class="flex items-center">
                             <div class="w-4 h-4 bg-green-600 text-white rounded-md mr-2"></div>
-                            <span class="text-gray-600">Final Approved</span>
+                            <span class="text-gray-600">Approved by PPGS</span>
                         </div>
                         <div class="flex items-center">
                             <div class="w-4 h-4 bg-red-400 rounded-md mr-2"></div>
-                            <span class="text-gray-600">Final Rejected</span>
+                            <span class="text-gray-600">Rejected by PPGS</span>
                         </div>
                         <div class="flex items-center">
                             <div class="w-4 h-4 bg-maroon text-white rounded-md mr-2 animate-pulse"></div>

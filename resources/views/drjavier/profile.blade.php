@@ -1,6 +1,6 @@
 @extends('layouts.drjavier')
 
-@section('title', 'Profile - OTP')
+@section('title', 'Profile - PPGS')
 @section('page-title', 'Profile')
 @section('page-subtitle', 'Manage your account information')
 
@@ -44,7 +44,7 @@
                     
                     <!-- Profile Info -->
                     <div class="flex-1 text-center lg:text-left">
-                        <h1 class="text-2xl font-bold mb-1">{{ $user->name ?? 'Dr. Javier' }}</h1>
+                        <h1 class="text-2xl font-bold mb-1">{{ $user->name ?? 'PPGS Representative' }}</h1>
                         <p class="text-lg text-white/90 mb-3">{{ $user->email }}</p>
                         
                         <div class="flex flex-wrap justify-center lg:justify-start gap-2 mb-3">
@@ -54,7 +54,7 @@
                             </span>
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white border border-white/30">
                                 <i class="fas fa-building mr-1"></i>
-                                Office of the President
+                                Physical Plan & General Service
                             </span>
                         </div>
                         

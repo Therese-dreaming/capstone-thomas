@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>@yield('title', 'OTP Dashboard') - PCC Venue Reservation</title>
+	<title>@yield('title', 'PPGS Dashboard') - PCC Venue Reservation</title>
 	@vite(['resources/css/app.css', 'resources/js/app.js'])
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 	<style>
@@ -43,8 +43,8 @@
 						<i class="fas fa-user-tie text-white text-sm"></i>
 					</div>
 					<div>
-						<h1 class="text-lg font-bold text-gray-800">OTP</h1>
-						<p class="text-xs text-gray-500">Office of the President</p>
+						<h1 class="text-lg font-bold text-gray-800">PPGS</h1>
+						<p class="text-xs text-gray-500">Physical Plan & General Service</p>
 					</div>
 				</div>
 			</div>
@@ -118,10 +118,10 @@
 					</div>
 					<div class="flex-1 min-w-0">
 						<p class="text-sm font-medium text-gray-700 truncate">
-							{{ Auth::user()->name ?? 'OTP' }}
+							{{ Auth::user()->name ?? 'PPGS Representative' }}
 						</p>
 						<p class="text-xs text-gray-500 truncate">
-							{{ Auth::user()->email ?? 'otp@pcc.edu.ph' }}
+							{{ Auth::user()->email ?? 'ppgs@pcc.edu.ph' }}
 						</p>
 					</div>
 				</div>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Ms. Mhadel Dashboard') - PCC Venue Reservation</title>
+    <title>@yield('title', 'OTP Dashboard') - PCC Venue Reservation</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -82,8 +82,8 @@
                 <div class="flex items-center space-x-3">
                     <img src="{{ asset('images/pcclogo.png') }}" alt="PCC Logo" class="w-10 h-10 object-contain rounded bg-white p-1">
                     <div>
-                        <h1 class="text-lg font-semibold text-gray-800">Ms. Mhadel</h1>
-                        <p class="text-xs text-gray-500">PCC Venue System</p>
+                        <h1 class="text-lg font-semibold text-gray-800">OTP</h1>
+                        <p class="text-xs text-gray-500">Office of the President</p>
                     </div>
                 </div>
             </div>
@@ -198,10 +198,10 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-medium text-gray-800 truncate">
-                            {{ Auth::user()->name ?? 'Ms. Mhadel' }}
+                            {{ Auth::user()->name ?? 'OTP Representative' }}
                         </p>
                         <p class="text-xs text-gray-500 truncate">
-                            {{ Auth::user()->email ?? 'mhadel@pcc.edu.ph' }}
+                            {{ Auth::user()->email ?? 'otp@pcc.edu.ph' }}
                         </p>
                     </div>
                 </div>

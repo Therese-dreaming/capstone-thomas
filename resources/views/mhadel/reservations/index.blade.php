@@ -185,7 +185,7 @@
             <div class="flex items-center justify-between">
                 <h2 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
                     <i class="fas fa-calendar-check text-maroon mr-3"></i>
-                    Reservation Management - Ms. Mhadel
+                    Reservation Management - OTP
                 </h2>
                 <div class="flex items-center space-x-2">
                     <form method="GET" action="{{ route('mhadel.reservations.index') }}" class="flex items-center space-x-2">
@@ -257,19 +257,19 @@
                                         </span>
                                     @elseif($reservation->status == 'approved_mhadel')
                                         <span class="status-badge status-approved">
-                                            Approved by Mhadel
+                                            Approved by OTP
                                         </span>
                                     @elseif($reservation->status == 'rejected_mhadel')
                                         <span class="status-badge status-rejected">
-                                            Rejected by Mhadel
+                                            Rejected by OTP
                                         </span>
                                     @elseif($reservation->status == 'approved_OTP')
                                         <span class="status-badge status-completed">
-                                            Final Approval
+                                            Approved by PPGS
                                         </span>
                                     @elseif($reservation->status == 'rejected_OTP')
                                         <span class="status-badge status-rejected">
-                                            Rejected by OTP
+                                            Rejected by PPGS
                                         </span>
                                     @elseif($reservation->status == 'rejected_IOSA')
                                         <span class="status-badge status-rejected">
@@ -462,11 +462,11 @@
                         </div>
                         <div class="flex items-center">
                             <div class="w-4 h-4 bg-green-100 border border-green-300 rounded-md mr-2"></div>
-                            <span class="text-gray-600">Mhadel Approved</span>
+                            <span class="text-gray-600">Approved by OTP</span>
                         </div>
                         <div class="flex items-center">
                             <div class="w-4 h-4 bg-green-600 text-white rounded-md mr-2"></div>
-                            <span class="text-gray-600">Final Approval</span>
+                            <span class="text-gray-600">Approved by PPGS</span>
                         </div>
                         <div class="flex items-center">
                             <div class="w-4 h-4 bg-red-100 border border-red-300 rounded-md mr-2"></div>
