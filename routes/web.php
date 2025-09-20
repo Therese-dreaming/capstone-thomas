@@ -145,6 +145,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         
         // Events Routes
         Route::resource('events', MhadelEventController::class);
+        Route::get('events-export', [MhadelEventController::class, 'export'])->name('events.export');
         Route::post('events/{event}/cancel', [MhadelEventController::class, 'cancel'])->name('events.cancel');
         Route::post('events/{event}/complete', [MhadelEventController::class, 'markAsComplete'])->name('events.complete');
         Route::post('events/update-statuses', [MhadelEventController::class, 'updateStatuses'])->name('events.update-statuses');

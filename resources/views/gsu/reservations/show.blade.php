@@ -222,16 +222,56 @@
                     <h3 class="text-lg font-semibold text-gray-800">Equipment Requested</h3>
                 </div>
                 
-                @if($reservation->equipment_details && count($reservation->equipment_details) > 0)
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        @foreach($reservation->equipment_details as $eq)
-                            <div class="bg-blue-50 text-blue-800 px-3 py-2 rounded-lg border border-blue-200 flex items-center justify-between">
-                                <span class="font-medium text-sm">{{ $eq['name'] }}</span>
-                                <span class="bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded-full font-semibold">
-                                    {{ $eq['quantity'] }}
-                                </span>
+                @if(($reservation->equipment_details && count($reservation->equipment_details) > 0) || (!empty($reservation->custom_equipment_requests)))
+                    <div class="space-y-4">
+                        @if($reservation->equipment_details && count($reservation->equipment_details) > 0)
+                            <div>
+                                <h4 class="text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                                    <i class="fas fa-toolbox text-blue-600 mr-2"></i>
+                                    Standard Equipment
+                                </h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    @foreach($reservation->equipment_details as $eq)
+                                        <div class="bg-blue-50 text-blue-800 px-3 py-2 rounded-lg border border-blue-200 flex items-center justify-between">
+                                            <span class="font-medium text-sm">{{ $eq['name'] }}</span>
+                                            <span class="bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded-full font-semibold">
+                                                {{ $eq['quantity'] }}
+                                            </span>
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
-                        @endforeach
+                        @endif
+                        
+                        @if(!empty($reservation->custom_equipment_requests))
+                            <div class="{{ ($reservation->equipment_details && count($reservation->equipment_details) > 0) ? 'pt-4 border-t border-gray-200' : '' }}">
+                                <h4 class="text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                                    <i class="fas fa-plus-circle text-orange-600 mr-2"></i>
+                                    Custom Equipment Requests
+                                </h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                    @foreach($reservation->custom_equipment_requests as $customEquipment)
+                                        <div class="bg-orange-50 text-orange-800 px-3 py-2 rounded-lg border border-orange-200 flex items-center justify-between">
+                                            <div class="flex flex-col">
+                                                <span class="font-medium text-sm">{{ $customEquipment['name'] ?? 'Custom Equipment' }}</span>
+                                                <span class="text-xs text-orange-600">Custom Request</span>
+                                            </div>
+                                            <span class="bg-orange-200 text-orange-800 text-xs px-2 py-1 rounded-full font-semibold">
+                                                {{ $customEquipment['quantity'] ?? 1 }}
+                                            </span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <div class="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                    <div class="flex items-start">
+                                        <i class="fas fa-info-circle text-orange-600 mr-2 mt-0.5"></i>
+                                        <p class="text-xs text-orange-800">
+                                            <strong>Note:</strong> Custom equipment requests are subject to availability and admin approval. Additional charges may apply.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 @else
                     <div class="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
@@ -343,10 +383,19 @@
                             </div>
                         @endif
                         
-                        @if($reservation->equipment_details && count($reservation->equipment_details) > 0)
+                        @php
+                            $totalEquipmentCount = 0;
+                            if($reservation->equipment_details && count($reservation->equipment_details) > 0) {
+                                $totalEquipmentCount += count($reservation->equipment_details);
+                            }
+                            if(!empty($reservation->custom_equipment_requests)) {
+                                $totalEquipmentCount += count($reservation->custom_equipment_requests);
+                            }
+                        @endphp
+                        @if($totalEquipmentCount > 0)
                             <div class="flex justify-between items-center py-2 border-b border-gray-100">
                                 <span class="text-sm text-gray-600">Equipment</span>
-                                <span class="font-semibold text-gray-800">{{ count($reservation->equipment_details) }} items</span>
+                                <span class="font-semibold text-gray-800">{{ $totalEquipmentCount }} items</span>
                             </div>
                         @endif
                     </div>

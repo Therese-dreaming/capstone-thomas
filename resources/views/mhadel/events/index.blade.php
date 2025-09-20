@@ -210,6 +210,141 @@
 		</div>
 	</div>
 
+	<!-- Advanced Filters Section -->
+	<div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+		<div class="p-6 border-b border-gray-200 bg-gray-50">
+			<div class="flex items-center justify-between mb-4">
+				<h3 class="text-lg font-semibold text-gray-800 flex items-center">
+					<i class="fas fa-filter text-maroon mr-2"></i>
+					Advanced Filters
+				</h3>
+				<button type="button" id="toggleFilters" class="text-sm text-maroon hover:text-red-700 font-medium">
+					<i class="fas fa-chevron-down mr-1" id="filterToggleIcon"></i>
+					<span id="filterToggleText">Show Filters</span>
+				</button>
+			</div>
+			
+			<div id="filtersContainer" class="hidden">
+				<form method="GET" action="{{ route('mhadel.events.index') }}" class="space-y-4">
+					<!-- Preserve existing search and status -->
+					@if(request('search'))
+						<input type="hidden" name="search" value="{{ request('search') }}">
+					@endif
+					@if(request('status') && request('status') !== 'all')
+						<input type="hidden" name="status" value="{{ request('status') }}">
+					@endif
+					
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+						<!-- Date Range Filter -->
+						<div class="space-y-2">
+							<label class="block text-sm font-medium text-gray-700">Start Date From</label>
+							<input type="date" name="start_date_from" value="{{ request('start_date_from') }}" 
+								   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon text-sm">
+						</div>
+						
+						<div class="space-y-2">
+							<label class="block text-sm font-medium text-gray-700">Start Date To</label>
+							<input type="date" name="start_date_to" value="{{ request('start_date_to') }}" 
+								   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon text-sm">
+						</div>
+						
+						<!-- Venue Filter -->
+						<div class="space-y-2">
+							<label class="block text-sm font-medium text-gray-700">Venue</label>
+							<select name="venue_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon text-sm">
+								<option value="">All Venues</option>
+								@php
+									$venues = \App\Models\Venue::orderBy('name')->get();
+								@endphp
+								@foreach($venues as $venue)
+									<option value="{{ $venue->id }}" {{ request('venue_id') == $venue->id ? 'selected' : '' }}>
+										{{ $venue->name }}
+									</option>
+								@endforeach
+							</select>
+						</div>
+						
+						<!-- Department Filter -->
+						<div class="space-y-2">
+							<label class="block text-sm font-medium text-gray-700">Department</label>
+							<select name="department" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon text-sm">
+								<option value="">All Departments</option>
+								@php
+									$departments = \App\Models\Event::whereNotNull('department')->distinct()->pluck('department')->filter()->sort();
+								@endphp
+								@foreach($departments as $dept)
+									<option value="{{ $dept }}" {{ request('department') == $dept ? 'selected' : '' }}>
+										{{ $dept }}
+									</option>
+								@endforeach
+							</select>
+						</div>
+						
+						<!-- Organizer Filter -->
+						<div class="space-y-2">
+							<label class="block text-sm font-medium text-gray-700">Organizer</label>
+							<input type="text" name="organizer" value="{{ request('organizer') }}" 
+								   placeholder="Search by organizer name..."
+								   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon text-sm">
+						</div>
+						
+						<!-- Equipment Filter -->
+						<div class="space-y-2">
+							<label class="block text-sm font-medium text-gray-700">Equipment</label>
+							<select name="has_equipment" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon text-sm">
+								<option value="">All Events</option>
+								<option value="1" {{ request('has_equipment') == '1' ? 'selected' : '' }}>With Equipment</option>
+								<option value="0" {{ request('has_equipment') == '0' ? 'selected' : '' }}>Without Equipment</option>
+							</select>
+						</div>
+						
+						<!-- Duration Filter -->
+						<div class="space-y-2">
+							<label class="block text-sm font-medium text-gray-700">Duration (Hours)</label>
+							<select name="duration" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon text-sm">
+								<option value="">Any Duration</option>
+								<option value="1" {{ request('duration') == '1' ? 'selected' : '' }}>1 Hour or Less</option>
+								<option value="2" {{ request('duration') == '2' ? 'selected' : '' }}>2-4 Hours</option>
+								<option value="5" {{ request('duration') == '5' ? 'selected' : '' }}>5-8 Hours</option>
+								<option value="9" {{ request('duration') == '9' ? 'selected' : '' }}>More than 8 Hours</option>
+							</select>
+						</div>
+						
+						<!-- Created Date Filter -->
+						<div class="space-y-2">
+							<label class="block text-sm font-medium text-gray-700">Created Date</label>
+							<select name="created_period" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon text-sm">
+								<option value="">All Time</option>
+								<option value="today" {{ request('created_period') == 'today' ? 'selected' : '' }}>Today</option>
+								<option value="week" {{ request('created_period') == 'week' ? 'selected' : '' }}>This Week</option>
+								<option value="month" {{ request('created_period') == 'month' ? 'selected' : '' }}>This Month</option>
+								<option value="year" {{ request('created_period') == 'year' ? 'selected' : '' }}>This Year</option>
+							</select>
+						</div>
+					</div>
+					
+					<!-- Filter Actions -->
+					<div class="flex items-center justify-between pt-4 border-t border-gray-200">
+						<div class="flex items-center space-x-3">
+							<button type="submit" class="bg-maroon text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg flex items-center space-x-2 text-sm">
+								<i class="fas fa-search mr-2"></i>
+								<span>Apply Filters</span>
+							</button>
+							<a href="{{ route('mhadel.events.index') }}" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-all duration-200 font-medium shadow-md hover:shadow-lg flex items-center space-x-2 text-sm">
+								<i class="fas fa-times mr-2"></i>
+								<span>Clear All</span>
+							</a>
+						</div>
+						<div class="text-sm text-gray-600">
+							<i class="fas fa-info-circle mr-1"></i>
+							Filters will also apply to Excel export
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
 	<!-- Statistics Overview -->
 	@if(request('status') && request('status') !== 'all')
 	<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
@@ -282,7 +417,8 @@
 	<!-- Status Tabs -->
 	<div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
 		<div class="p-6 border-b border-gray-200 bg-gray-50">
-			<div class="flex flex-wrap gap-2">
+			<div class="flex flex-wrap items-center justify-between gap-4">
+				<div class="flex flex-wrap gap-2">
 				@php
 					$current = request('status', 'all');
 					$searchQuery = request('search');
@@ -318,13 +454,24 @@
 				   class="tab-button {{ $current == 'pending_venue' ? 'active' : '' }}">
 					<i class="fas fa-building mr-2"></i>Pending Venue
 				</a>
+				</div>
+				
+				<!-- Export Button -->
+				<div class="flex-shrink-0">
+					<a href="{{ route('mhadel.events.export', request()->query()) }}" 
+					   class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg flex items-center space-x-2 text-sm font-medium">
+						<i class="fas fa-file-excel mr-2"></i>
+						<span>Export to Excel</span>
+					</a>
+				</div>
 			</div>
 			
 			<!-- Active Filters Display -->
-			@if(request('status') || request('q'))
+			@if(request('status') || request('search') || request('start_date_from') || request('start_date_to') || request('venue_id') || request('department') || request('organizer') || request('has_equipment') || request('duration') || request('created_period'))
 			<div class="mt-4 pt-4 border-t border-gray-200">
 				<div class="flex flex-wrap items-center gap-2">
 					<span class="text-sm text-gray-600">Active filters:</span>
+					
 					@if(request('status') && request('status') !== 'all')
 					<span class="inline-flex items-center px-2 py-1 bg-maroon text-white text-xs rounded-full">
 						Status: {{ ucfirst(request('status')) }}
@@ -333,6 +480,7 @@
 						</a>
 					</span>
 					@endif
+					
 					@if(request('search'))
 					<span class="inline-flex items-center px-2 py-1 bg-blue-600 text-white text-xs rounded-full">
 						Search: "{{ request('search') }}"
@@ -341,6 +489,87 @@
 						</a>
 					</span>
 					@endif
+					
+					@if(request('start_date_from') || request('start_date_to'))
+					<span class="inline-flex items-center px-2 py-1 bg-green-600 text-white text-xs rounded-full">
+						Date Range: {{ request('start_date_from') ? \Carbon\Carbon::parse(request('start_date_from'))->format('M j') : 'Any' }} - {{ request('start_date_to') ? \Carbon\Carbon::parse(request('start_date_to'))->format('M j') : 'Any' }}
+						<a href="{{ $baseUrl }}?{{ http_build_query(request()->except(['page', 'start_date_from', 'start_date_to'])) }}" class="ml-2 hover:text-green-200">
+							<i class="fas fa-times"></i>
+						</a>
+					</span>
+					@endif
+					
+					@if(request('venue_id'))
+					@php $venue = \App\Models\Venue::find(request('venue_id')); @endphp
+					<span class="inline-flex items-center px-2 py-1 bg-purple-600 text-white text-xs rounded-full">
+						Venue: {{ $venue->name ?? 'Unknown' }}
+						<a href="{{ $baseUrl }}?{{ http_build_query(request()->except(['page', 'venue_id'])) }}" class="ml-2 hover:text-purple-200">
+							<i class="fas fa-times"></i>
+						</a>
+					</span>
+					@endif
+					
+					@if(request('department'))
+					<span class="inline-flex items-center px-2 py-1 bg-indigo-600 text-white text-xs rounded-full">
+						Department: {{ request('department') }}
+						<a href="{{ $baseUrl }}?{{ http_build_query(request()->except(['page', 'department'])) }}" class="ml-2 hover:text-indigo-200">
+							<i class="fas fa-times"></i>
+						</a>
+					</span>
+					@endif
+					
+					@if(request('organizer'))
+					<span class="inline-flex items-center px-2 py-1 bg-teal-600 text-white text-xs rounded-full">
+						Organizer: {{ request('organizer') }}
+						<a href="{{ $baseUrl }}?{{ http_build_query(request()->except(['page', 'organizer'])) }}" class="ml-2 hover:text-teal-200">
+							<i class="fas fa-times"></i>
+						</a>
+					</span>
+					@endif
+					
+					@if(request('has_equipment'))
+					<span class="inline-flex items-center px-2 py-1 bg-orange-600 text-white text-xs rounded-full">
+						Equipment: {{ request('has_equipment') == '1' ? 'With Equipment' : 'Without Equipment' }}
+						<a href="{{ $baseUrl }}?{{ http_build_query(request()->except(['page', 'has_equipment'])) }}" class="ml-2 hover:text-orange-200">
+							<i class="fas fa-times"></i>
+						</a>
+					</span>
+					@endif
+					
+					@if(request('duration'))
+					@php
+						$durationText = [
+							'1' => '1 Hour or Less',
+							'2' => '2-4 Hours', 
+							'5' => '5-8 Hours',
+							'9' => 'More than 8 Hours'
+						][request('duration')] ?? 'Unknown';
+					@endphp
+					<span class="inline-flex items-center px-2 py-1 bg-pink-600 text-white text-xs rounded-full">
+						Duration: {{ $durationText }}
+						<a href="{{ $baseUrl }}?{{ http_build_query(request()->except(['page', 'duration'])) }}" class="ml-2 hover:text-pink-200">
+							<i class="fas fa-times"></i>
+						</a>
+					</span>
+					@endif
+					
+					@if(request('created_period'))
+					@php
+						$periodText = [
+							'today' => 'Today',
+							'week' => 'This Week',
+							'month' => 'This Month',
+							'year' => 'This Year'
+						][request('created_period')] ?? 'Unknown';
+					@endphp
+					<span class="inline-flex items-center px-2 py-1 bg-gray-600 text-white text-xs rounded-full">
+						Created: {{ $periodText }}
+						<a href="{{ $baseUrl }}?{{ http_build_query(request()->except(['page', 'created_period'])) }}" class="ml-2 hover:text-gray-200">
+							<i class="fas fa-times"></i>
+						</a>
+					</span>
+					@endif
+					
 					<a href="{{ $baseUrl }}" class="text-sm text-maroon hover:text-red-800 font-medium">
 						Clear all filters
 					</a>
@@ -490,7 +719,7 @@
 				@if($events->hasPages())
 					<div class="mt-8 flex justify-center">
 						<div class="bg-white px-6 py-3 rounded-xl shadow-sm border border-gray-200">
-							{{ $events->appends(request()->except('page'))->links() }}
+							{{ $events->appends(request()->query())->links() }}
 						</div>
 					</div>
 				@endif
@@ -625,6 +854,43 @@ document.addEventListener('keydown', function(e) {
 	if (e.key === 'Escape') {
 		closeDeleteModal();
 		closeCancelModal();
+	}
+});
+
+// Filter toggle functionality
+document.getElementById('toggleFilters').addEventListener('click', function() {
+	const container = document.getElementById('filtersContainer');
+	const icon = document.getElementById('filterToggleIcon');
+	const text = document.getElementById('filterToggleText');
+	
+	if (container.classList.contains('hidden')) {
+		container.classList.remove('hidden');
+		icon.classList.remove('fa-chevron-down');
+		icon.classList.add('fa-chevron-up');
+		text.textContent = 'Hide Filters';
+	} else {
+		container.classList.add('hidden');
+		icon.classList.remove('fa-chevron-up');
+		icon.classList.add('fa-chevron-down');
+		text.textContent = 'Show Filters';
+	}
+});
+
+// Auto-show filters if any filter is active
+document.addEventListener('DOMContentLoaded', function() {
+	const hasActiveFilters = {{ 
+		request('start_date_from') || 
+		request('start_date_to') || 
+		request('venue_id') || 
+		request('department') || 
+		request('organizer') || 
+		request('has_equipment') || 
+		request('duration') || 
+		request('created_period') ? 'true' : 'false' 
+	}};
+	
+	if (hasActiveFilters) {
+		document.getElementById('toggleFilters').click();
 	}
 });
 </script>

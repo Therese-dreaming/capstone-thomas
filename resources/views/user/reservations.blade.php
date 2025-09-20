@@ -53,6 +53,48 @@
         70% { box-shadow: 0 0 0 10px rgba(128, 0, 0, 0); }
         100% { box-shadow: 0 0 0 0 rgba(128, 0, 0, 0); }
     }
+    
+    /* Loading Animation Styles */
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .button-loading {
+        opacity: 0.8;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+    
+    /* Modal Animation Styles */
+    .modal-enter {
+        animation: modalEnter 0.3s ease-out;
+    }
+    
+    @keyframes modalEnter {
+        from {
+            opacity: 0;
+            transform: scale(0.9) translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+    
+    .modal-backdrop {
+        backdrop-filter: blur(4px);
+        transition: all 0.3s ease;
+    }
 </style>
 
 <div class="font-poppins">
@@ -432,12 +474,67 @@
                                 class="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
                             <i class="fas fa-arrow-left mr-2"></i> Back to Step 1
                         </button>
-                        <button type="submit"
+                        <button type="submit" id="submitReservationBtn"
                                 class="px-6 py-3 bg-maroon text-white rounded-lg hover:from-red-700 hover:to-maroon transition-all duration-300 shadow-md flex items-center">
-                            <i class="fas fa-check mr-2"></i> Submit Reservation
+                            <span id="submitBtnContent">
+                                <i class="fas fa-check mr-2"></i> Submit Reservation
+                            </span>
+                            <span id="submitBtnLoading" class="hidden">
+                                <div class="loading-spinner mr-2"></div> Submitting Reservation...
+                            </span>
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Success Modal -->
+    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 modal-backdrop">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full font-poppins modal-enter">
+                <div class="p-6 text-center">
+                    <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+                        <i class="fas fa-check-circle text-3xl text-green-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 font-montserrat">Reservation Submitted Successfully!</h3>
+                    <p class="text-gray-600 mb-6">Your reservation request has been submitted and is now pending approval. You will receive a notification once it's reviewed.</p>
+                    <div class="flex justify-center space-x-3">
+                        <button onclick="closeSuccessModal()" 
+                                class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                            <i class="fas fa-check mr-2"></i> OK
+                        </button>
+                        <button onclick="viewMyReservations()" 
+                                class="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
+                            <i class="fas fa-list mr-2"></i> View My Reservations
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Error Modal -->
+    <div id="errorModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 modal-backdrop">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full font-poppins modal-enter">
+                <div class="p-6 text-center">
+                    <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                        <i class="fas fa-exclamation-circle text-3xl text-red-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 font-montserrat">Submission Failed</h3>
+                    <p id="errorMessage" class="text-gray-600 mb-6">An error occurred while submitting your reservation. Please try again.</p>
+                    <div class="flex justify-center space-x-3">
+                        <button onclick="closeErrorModal()" 
+                                class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center">
+                            <i class="fas fa-times mr-2"></i> Close
+                        </button>
+                        <button onclick="retrySubmission()" 
+                                class="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
+                            <i class="fas fa-redo mr-2"></i> Try Again
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1256,8 +1353,81 @@ document.querySelector('form[action*="reservations"]').addEventListener('submit'
     submitReservationWithFile(formData);
 });
 
+// Function to show loading state
+function showLoadingState() {
+    const submitBtn = document.getElementById('submitReservationBtn');
+    const btnContent = document.getElementById('submitBtnContent');
+    const btnLoading = document.getElementById('submitBtnLoading');
+    
+    submitBtn.classList.add('button-loading');
+    btnContent.classList.add('hidden');
+    btnLoading.classList.remove('hidden');
+}
+
+// Function to hide loading state
+function hideLoadingState() {
+    const submitBtn = document.getElementById('submitReservationBtn');
+    const btnContent = document.getElementById('submitBtnContent');
+    const btnLoading = document.getElementById('submitBtnLoading');
+    
+    submitBtn.classList.remove('button-loading');
+    btnContent.classList.remove('hidden');
+    btnLoading.classList.add('hidden');
+}
+
+// Function to show success modal
+function showSuccessModal() {
+    document.getElementById('successModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+// Function to close success modal
+function closeSuccessModal() {
+    document.getElementById('successModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    
+    // Clear stored data and refresh page
+    window.storedActivityGrid = null;
+    setTimeout(() => {
+        location.reload();
+    }, 500);
+}
+
+// Function to show error modal
+function showErrorModal(message) {
+    document.getElementById('errorMessage').textContent = message;
+    document.getElementById('errorModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+// Function to close error modal
+function closeErrorModal() {
+    document.getElementById('errorModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Function to view my reservations
+function viewMyReservations() {
+    window.location.href = '{{ route("user.reservations.index") }}';
+}
+
+// Function to retry submission
+function retrySubmission() {
+    closeErrorModal();
+    // The form is still populated, user can try submitting again
+}
+
+// Store the last form data for retry functionality
+let lastFormData = null;
+
 // Function to submit the reservation with the stored file
 async function submitReservationWithFile(formData) {
+    // Store form data for potential retry
+    lastFormData = formData;
+    
+    // Show loading state
+    showLoadingState();
+    
     try {
         console.log('Submitting reservation...');
         
@@ -1274,36 +1444,43 @@ async function submitReservationWithFile(formData) {
         console.log('Response status:', response.status);
         console.log('Response ok:', response.ok);
         
+        // Hide loading state
+        hideLoadingState();
+        
         if (response.ok) {
             const result = await response.json();
             console.log('Success response:', result);
             
-            showToast('Reservation submitted successfully!', 'success');
+            // Close reservation modal first
             closeReservationModal();
             
-            // Clear stored data
-            window.storedActivityGrid = null;
+            // Show success modal
+            showSuccessModal();
             
-            // Optionally refresh the page or calendar after a short delay
-            setTimeout(() => {
-                location.reload();
-            }, 2000);
         } else {
             // Handle validation errors or other server errors
+            let errorMessage = 'Failed to submit reservation. Please try again.';
+            
             if (response.status === 422) {
                 const errors = await response.json();
                 console.log('Validation errors:', errors);
-                const errorMessage = Object.values(errors.errors || {}).flat().join(', ');
-                showToast(errorMessage || 'Validation failed. Please check your inputs.', 'error');
+                errorMessage = Object.values(errors.errors || {}).flat().join(', ') || 'Validation failed. Please check your inputs.';
             } else {
-                const error = await response.json();
-                console.log('Error response:', error);
-                showToast(error.message || 'Failed to submit reservation. Please try again.', 'error');
+                try {
+                    const error = await response.json();
+                    console.log('Error response:', error);
+                    errorMessage = error.message || errorMessage;
+                } catch (e) {
+                    console.log('Could not parse error response');
+                }
             }
+            
+            showErrorModal(errorMessage);
         }
     } catch (error) {
         console.error('Exception occurred:', error);
-        showToast('An error occurred while submitting the reservation. Please try again.', 'error');
+        hideLoadingState();
+        showErrorModal('An error occurred while submitting the reservation. Please check your internet connection and try again.');
     }
 }
 </script>

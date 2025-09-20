@@ -14,7 +14,7 @@ class EventController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Event::query();
+        $query = Event::with(['venue']);
 
         // Apply status filter
         if ($request->filled('status') && $request->status !== 'all') {
@@ -34,6 +34,89 @@ class EventController extends Controller
                       $venueQuery->where('name', 'like', "%{$searchTerm}%");
                   });
             });
+        }
+
+        // Apply date range filters
+        if ($request->filled('start_date_from')) {
+            $query->where('start_date', '>=', $request->start_date_from);
+        }
+        if ($request->filled('start_date_to')) {
+            $query->where('start_date', '<=', $request->start_date_to . ' 23:59:59');
+        }
+
+        // Apply venue filter
+        if ($request->filled('venue_id')) {
+            $query->where('venue_id', $request->venue_id);
+        }
+
+        // Apply department filter
+        if ($request->filled('department')) {
+            $query->where('department', $request->department);
+        }
+
+        // Apply organizer filter
+        if ($request->filled('organizer')) {
+            $query->where('organizer', 'like', "%{$request->organizer}%");
+        }
+
+        // Apply equipment filter
+        if ($request->filled('has_equipment')) {
+            if ($request->has_equipment == '1') {
+                $query->whereNotNull('equipment_details')
+                      ->where(function($q) {
+                          $q->whereJsonLength('equipment_details', '>', 0)
+                            ->orWhere('equipment_details', '!=', '[]');
+                      });
+            } else {
+                $query->where(function($q) {
+                    $q->whereNull('equipment_details')
+                      ->orWhereJsonLength('equipment_details', 0)
+                      ->orWhere('equipment_details', '[]');
+                });
+            }
+        }
+
+        // Apply duration filter
+        if ($request->filled('duration')) {
+            $duration = $request->duration;
+            $query->whereNotNull('start_date')
+                  ->whereNotNull('end_date')
+                  ->where(function($q) use ($duration) {
+                      switch ($duration) {
+                          case '1':
+                              $q->whereRaw('TIMESTAMPDIFF(HOUR, start_date, end_date) <= 1');
+                              break;
+                          case '2':
+                              $q->whereRaw('TIMESTAMPDIFF(HOUR, start_date, end_date) BETWEEN 2 AND 4');
+                              break;
+                          case '5':
+                              $q->whereRaw('TIMESTAMPDIFF(HOUR, start_date, end_date) BETWEEN 5 AND 8');
+                              break;
+                          case '9':
+                              $q->whereRaw('TIMESTAMPDIFF(HOUR, start_date, end_date) > 8');
+                              break;
+                      }
+                  });
+        }
+
+        // Apply created date filter
+        if ($request->filled('created_period')) {
+            $period = $request->created_period;
+            switch ($period) {
+                case 'today':
+                    $query->whereDate('created_at', today());
+                    break;
+                case 'week':
+                    $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+                    break;
+                case 'month':
+                    $query->whereMonth('created_at', now()->month)
+                          ->whereYear('created_at', now()->year);
+                    break;
+                case 'year':
+                    $query->whereYear('created_at', now()->year);
+                    break;
+            }
         }
 
         // Get paginated results
@@ -462,6 +545,142 @@ class EventController extends Controller
             'success' => true,
             'conflicts' => $allConflicts
         ]);
+    }
+
+    /**
+     * Export events to Excel
+     */
+    public function export(Request $request)
+    {
+        $query = Event::with(['venue']);
+
+        // Apply status filter
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        // Apply search filter
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('title', 'like', "%{$searchTerm}%")
+                  ->orWhere('event_id', 'like', "%{$searchTerm}%")
+                  ->orWhere('description', 'like', "%{$searchTerm}%")
+                  ->orWhere('organizer', 'like', "%{$searchTerm}%")
+                  ->orWhere('department', 'like', "%{$searchTerm}%")
+                  ->orWhereHas('venue', function ($venueQuery) use ($searchTerm) {
+                      $venueQuery->where('name', 'like', "%{$searchTerm}%");
+                  });
+            });
+        }
+
+        // Apply date range filters
+        if ($request->filled('start_date_from')) {
+            $query->where('start_date', '>=', $request->start_date_from);
+        }
+        if ($request->filled('start_date_to')) {
+            $query->where('start_date', '<=', $request->start_date_to . ' 23:59:59');
+        }
+
+        // Apply venue filter
+        if ($request->filled('venue_id')) {
+            $query->where('venue_id', $request->venue_id);
+        }
+
+        // Apply department filter
+        if ($request->filled('department')) {
+            $query->where('department', $request->department);
+        }
+
+        // Apply organizer filter
+        if ($request->filled('organizer')) {
+            $query->where('organizer', 'like', "%{$request->organizer}%");
+        }
+
+        // Apply equipment filter
+        if ($request->filled('has_equipment')) {
+            if ($request->has_equipment == '1') {
+                $query->whereNotNull('equipment_details')
+                      ->where(function($q) {
+                          $q->whereJsonLength('equipment_details', '>', 0)
+                            ->orWhere('equipment_details', '!=', '[]');
+                      });
+            } else {
+                $query->where(function($q) {
+                    $q->whereNull('equipment_details')
+                      ->orWhereJsonLength('equipment_details', 0)
+                      ->orWhere('equipment_details', '[]');
+                });
+            }
+        }
+
+        // Apply duration filter
+        if ($request->filled('duration')) {
+            $duration = $request->duration;
+            $query->whereNotNull('start_date')
+                  ->whereNotNull('end_date')
+                  ->where(function($q) use ($duration) {
+                      switch ($duration) {
+                          case '1':
+                              $q->whereRaw('TIMESTAMPDIFF(HOUR, start_date, end_date) <= 1');
+                              break;
+                          case '2':
+                              $q->whereRaw('TIMESTAMPDIFF(HOUR, start_date, end_date) BETWEEN 2 AND 4');
+                              break;
+                          case '5':
+                              $q->whereRaw('TIMESTAMPDIFF(HOUR, start_date, end_date) BETWEEN 5 AND 8');
+                              break;
+                          case '9':
+                              $q->whereRaw('TIMESTAMPDIFF(HOUR, start_date, end_date) > 8');
+                              break;
+                      }
+                  });
+        }
+
+        // Apply created date filter
+        if ($request->filled('created_period')) {
+            $period = $request->created_period;
+            switch ($period) {
+                case 'today':
+                    $query->whereDate('created_at', today());
+                    break;
+                case 'week':
+                    $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+                    break;
+                case 'month':
+                    $query->whereMonth('created_at', now()->month)
+                          ->whereYear('created_at', now()->year);
+                    break;
+                case 'year':
+                    $query->whereYear('created_at', now()->year);
+                    break;
+            }
+        }
+
+        // Get all filtered events (no pagination for export)
+        $events = $query->orderByDesc('created_at')->get();
+
+        // Generate filename with filters if applicable
+        $filename = 'Mhadel_Events';
+        if ($request->filled('status') && $request->status !== 'all') {
+            $filename .= '_' . ucfirst($request->status);
+        }
+        if ($request->filled('search')) {
+            $filename .= '_Search_' . str_replace(' ', '_', $request->search);
+        }
+        if ($request->filled('venue_id')) {
+            $venue = \App\Models\Venue::find($request->venue_id);
+            $filename .= '_' . str_replace(' ', '_', $venue->name ?? 'Venue');
+        }
+        if ($request->filled('department')) {
+            $filename .= '_' . str_replace(' ', '_', $request->department);
+        }
+        if ($request->filled('start_date_from') || $request->filled('start_date_to')) {
+            $filename .= '_DateFiltered';
+        }
+        $filename .= '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\MhadelEventsExport($events), $filename);
     }
 
 }

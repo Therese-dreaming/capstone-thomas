@@ -168,7 +168,7 @@
             <button class="tab-button flex-1 py-3 px-4 text-center font-medium text-gray-500 hover:text-gray-700 focus:outline-none" data-tab="pricing">
                 <i class="fas fa-money-bill-wave mr-2"></i>Pricing
             </button>
-            @if(!empty($reservation->equipment_details))
+            @if(!empty($reservation->equipment_details) || !empty($reservation->custom_equipment_requests))
             <button class="tab-button flex-1 py-3 px-4 text-center font-medium text-gray-500 hover:text-gray-700 focus:outline-none" data-tab="equipment">
                 <i class="fas fa-toolbox mr-2"></i>Equipment
             </button>
@@ -257,47 +257,6 @@
                 </div>
             </div>
 
-            <!-- Custom Equipment Requests Section -->
-            @if(!empty($reservation->custom_equipment_requests))
-            <div class="mt-6 pt-6 border-t border-gray-200">
-                <div class="flex items-center mb-4">
-                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                        <i class="fas fa-plus-circle text-blue-600"></i>
-                    </div>
-                    <h3 class="text-lg font-semibold text-gray-800">Custom Equipment Requests</h3>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    @foreach($reservation->custom_equipment_requests as $customEquipment)
-                        <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                                        <i class="fas fa-wrench text-blue-600 text-sm"></i>
-                                    </div>
-                                    <div>
-                                        <span class="text-gray-800 font-medium text-sm">{{ $customEquipment['name'] ?? 'Custom Equipment' }}</span>
-                                        <div class="text-xs text-blue-600 mt-1">Custom Request</div>
-                                    </div>
-                                </div>
-                                <span class="text-blue-600 bg-white px-2 py-1 rounded-full border border-blue-200 text-xs font-medium">× {{ $customEquipment['quantity'] ?? 1 }}</span>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-                
-                <div class="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div class="flex items-start">
-                        <div class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mr-3 mt-0.5">
-                            <i class="fas fa-info-circle text-blue-600 text-xs"></i>
-                        </div>
-                        <div class="text-sm text-blue-800">
-                            <strong>Note:</strong> Custom equipment requests are subject to availability and admin approval. Additional charges may apply.
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @endif
         </div>
     </div>
 
@@ -510,7 +469,7 @@
         </div>
     </div>
 
-    @if(!empty($reservation->equipment_details))
+    @if(!empty($reservation->equipment_details) || !empty($reservation->custom_equipment_requests))
     <div class="tab-content" id="equipment-content">
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 detail-card">
             <div class="flex items-center mb-4">
@@ -520,25 +479,79 @@
                 <h3 class="text-lg font-semibold text-gray-800">Equipment & Resources</h3>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                @foreach((array)$reservation->equipment_details as $eq)
-                    @php 
-                        $name = is_array($eq) ? ($eq['name'] ?? 'Item') : (string)$eq; 
-                        $qty = is_array($eq) ? ($eq['quantity'] ?? 1) : 1; 
-                    @endphp
-                    <div class="p-3 bg-orange-50 rounded-lg border border-orange-200">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center">
-                                <div class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center mr-3">
-                                    <i class="fas fa-toolbox text-orange-600 text-sm"></i>
+            @if(!empty($reservation->equipment_details))
+            <!-- Standard Equipment Section -->
+            <div class="mb-6">
+                <div class="flex items-center mb-3">
+                    <div class="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center mr-2">
+                        <i class="fas fa-toolbox text-orange-600 text-xs"></i>
+                    </div>
+                    <h4 class="text-md font-semibold text-gray-800">Standard Equipment</h4>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    @foreach((array)$reservation->equipment_details as $eq)
+                        @php 
+                            $name = is_array($eq) ? ($eq['name'] ?? 'Item') : (string)$eq; 
+                            $qty = is_array($eq) ? ($eq['quantity'] ?? 1) : 1; 
+                        @endphp
+                        <div class="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center mr-3">
+                                        <i class="fas fa-toolbox text-orange-600 text-sm"></i>
+                                    </div>
+                                    <span class="text-gray-800 font-medium text-sm">{{ $name }}</span>
                                 </div>
-                                <span class="text-gray-800 font-medium text-sm">{{ $name }}</span>
+                                <span class="text-orange-600 bg-white px-2 py-1 rounded-full border border-orange-200 text-xs font-medium">× {{ $qty }}</span>
                             </div>
-                            <span class="text-orange-600 bg-white px-2 py-1 rounded-full border border-orange-200 text-xs font-medium">× {{ $qty }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+            
+            @if(!empty($reservation->custom_equipment_requests))
+            <!-- Custom Equipment Requests Section -->
+            <div class="{{ !empty($reservation->equipment_details) ? 'pt-6 border-t border-gray-200' : '' }}">
+                <div class="flex items-center mb-3">
+                    <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mr-2">
+                        <i class="fas fa-plus-circle text-blue-600 text-xs"></i>
+                    </div>
+                    <h4 class="text-md font-semibold text-gray-800">Custom Equipment Requests</h4>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                    @foreach($reservation->custom_equipment_requests as $customEquipment)
+                        <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                                        <i class="fas fa-wrench text-blue-600 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-800 font-medium text-sm">{{ $customEquipment['name'] ?? 'Custom Equipment' }}</span>
+                                        <div class="text-xs text-blue-600 mt-1">Custom Request</div>
+                                    </div>
+                                </div>
+                                <span class="text-blue-600 bg-white px-2 py-1 rounded-full border border-blue-200 text-xs font-medium">× {{ $customEquipment['quantity'] ?? 1 }}</span>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                
+                <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mr-3 mt-0.5">
+                            <i class="fas fa-info-circle text-blue-600 text-xs"></i>
+                        </div>
+                        <div class="text-sm text-blue-800">
+                            <strong>Note:</strong> Custom equipment requests are subject to availability and admin approval. Additional charges may apply.
                         </div>
                     </div>
-                @endforeach
+                </div>
             </div>
+            @endif
         </div>
     </div>
     @endif

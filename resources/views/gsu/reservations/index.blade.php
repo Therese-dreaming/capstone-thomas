@@ -358,14 +358,25 @@
                                         <i class="fas fa-tools text-maroon mr-2"></i>
                                         Equipment
                                     </h4>
-                                    @if($reservation->equipment_details && count($reservation->equipment_details) > 0)
+                                    @if(($reservation->equipment_details && count($reservation->equipment_details) > 0) || (!empty($reservation->custom_equipment_requests)))
                                         <div class="space-y-1 text-sm">
-                                            @foreach($reservation->equipment_details as $eq)
-                                                <div class="text-xs bg-blue-50 text-blue-800 px-2 py-1 rounded-md border border-blue-200">
-                                                    <span class="font-medium">{{ $eq['name'] }}</span> 
-                                                    <span class="text-blue-600">({{ $eq['quantity'] }})</span>
-                                                </div>
-                                            @endforeach
+                                            @if($reservation->equipment_details && count($reservation->equipment_details) > 0)
+                                                @foreach($reservation->equipment_details as $eq)
+                                                    <div class="text-xs bg-blue-50 text-blue-800 px-2 py-1 rounded-md border border-blue-200">
+                                                        <span class="font-medium">{{ $eq['name'] }}</span> 
+                                                        <span class="text-blue-600">({{ $eq['quantity'] }})</span>
+                                                    </div>
+                                                @endforeach
+                                            @endif
+                                            @if(!empty($reservation->custom_equipment_requests))
+                                                @foreach($reservation->custom_equipment_requests as $customEquipment)
+                                                    <div class="text-xs bg-orange-50 text-orange-800 px-2 py-1 rounded-md border border-orange-200">
+                                                        <span class="font-medium">{{ $customEquipment['name'] ?? 'Custom Equipment' }}</span> 
+                                                        <span class="text-orange-600">({{ $customEquipment['quantity'] ?? 1 }})</span>
+                                                        <span class="text-orange-500 ml-1">[Custom]</span>
+                                                    </div>
+                                                @endforeach
+                                            @endif
                                         </div>
                                     @else
                                         <div class="text-gray-500 text-xs bg-gray-50 px-2 py-1 rounded-md">No equipment requested</div>
