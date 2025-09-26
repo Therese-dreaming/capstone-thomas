@@ -32,6 +32,8 @@ class Reservation extends Model
         'completion_notes',
         'completion_date',
         'completed_by',
+        'cancellation_reason',
+        'cancelled_at',
     ];
 
     protected $casts = [
@@ -46,6 +48,7 @@ class Reservation extends Model
         'final_price' => 'decimal:2',
         'duration_hours' => 'integer',
         'completion_date' => 'datetime',
+        'cancelled_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

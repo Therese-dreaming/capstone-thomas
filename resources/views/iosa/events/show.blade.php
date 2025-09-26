@@ -260,6 +260,88 @@
 				</div>
 			</div>
 			@endif
+
+			<!-- Equipment Information -->
+			@if($event->equipment_details && count($event->equipment_details) > 0)
+			<div class="info-card">
+				<div class="p-6 border-b border-gray-200 bg-gray-50">
+					<h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
+						<i class="fas fa-tools text-maroon mr-3"></i>
+						Equipment Requirements
+					</h2>
+				</div>
+				<div class="p-6">
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+						@foreach($event->equipment_details as $equipment)
+							<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+								<div class="flex items-center">
+									<i class="fas fa-wrench text-maroon mr-3"></i>
+									<span class="font-medium text-gray-800">{{ $equipment['name'] ?? 'Unknown Equipment' }}</span>
+								</div>
+								<span class="text-sm text-gray-600 bg-white px-2 py-1 rounded-full border">
+									Qty: {{ $equipment['quantity'] ?? 1 }}
+								</span>
+							</div>
+						@endforeach
+					</div>
+				</div>
+			</div>
+			@endif
+
+			<!-- Custom Equipment Requests -->
+			@if($event->custom_equipment_requests && count($event->custom_equipment_requests) > 0)
+			<div class="info-card">
+				<div class="p-6 border-b border-gray-200 bg-gray-50">
+					<h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
+						<i class="fas fa-plus-circle text-maroon mr-3"></i>
+						Custom Equipment Requests
+					</h2>
+				</div>
+				<div class="p-6">
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+						@foreach($event->custom_equipment_requests as $customEquipment)
+							<div class="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
+								<div class="flex items-center">
+									<i class="fas fa-plus text-orange-600 mr-3"></i>
+									<span class="font-medium text-gray-800">{{ $customEquipment['name'] ?? 'Unknown Equipment' }}</span>
+								</div>
+								<span class="text-sm text-orange-700 bg-white px-2 py-1 rounded-full border border-orange-300">
+									Qty: {{ $customEquipment['quantity'] ?? 1 }}
+								</span>
+							</div>
+						@endforeach
+					</div>
+					<div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+						<div class="flex items-start">
+							<i class="fas fa-info-circle text-blue-600 mr-2 mt-0.5"></i>
+							<div class="text-sm text-blue-700">
+								<strong>Note:</strong> Custom equipment requests need to be arranged separately and may require additional coordination.
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			@endif
+
+			@if((!$event->equipment_details || count($event->equipment_details) === 0) && (!$event->custom_equipment_requests || count($event->custom_equipment_requests) === 0))
+			<div class="info-card">
+				<div class="p-6 border-b border-gray-200 bg-gray-50">
+					<h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
+						<i class="fas fa-tools text-maroon mr-3"></i>
+						Equipment Requirements
+					</h2>
+				</div>
+				<div class="p-6">
+					<div class="text-center py-8">
+						<div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+							<i class="fas fa-tools text-gray-400 text-2xl"></i>
+						</div>
+						<p class="text-gray-600 font-medium">No Equipment Required</p>
+						<p class="text-sm text-gray-500 mt-1">This event does not require any special equipment.</p>
+					</div>
+				</div>
+			</div>
+			@endif
 		</div>
 
 		<!-- Sidebar -->

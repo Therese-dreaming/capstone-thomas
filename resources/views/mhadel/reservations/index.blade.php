@@ -130,8 +130,35 @@
         border-color: #d1d5db;
     }
     
-
+    .fee-selection-radio {
+        transition: all 0.2s ease;
+    }
     
+    .fee-selection-radio:checked + label {
+        background-color: #f0f9ff;
+        border-color: #0ea5e9;
+    }
+    
+    .fee-selection-label {
+        border: 2px solid transparent;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .fee-selection-label:hover {
+        background-color: #f9fafb;
+        border-color: #e5e7eb;
+    }
+    
+    #approvalGrid {
+        transition: all 0.3s ease;
+    }
+    
+    #pricingSection, #discountSection {
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
 
 </style>
 
@@ -342,6 +369,11 @@
                                         <div class="flex items-center">
                                             <i class="fas fa-users mr-2 text-maroon w-4"></i>
                                             <span>{{ $reservation->capacity ?? 'N/A' }} participants</span>
+                                            @if($reservation->capacity && $reservation->venue && $reservation->capacity > $reservation->venue->capacity)
+                                                <span class="ml-2 px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium animate-pulse">
+                                                    ⚠️ Overcapacity
+                                                </span>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -356,6 +388,11 @@
                                         <div class="flex items-center">
                                             <i class="fas fa-building mr-2 text-maroon w-4"></i>
                                             <span>{{ $reservation->venue->capacity }} capacity</span>
+                                            @if($reservation->capacity && $reservation->venue && $reservation->capacity > $reservation->venue->capacity)
+                                                <span class="ml-2 px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">
+                                                    Exceeded by {{ $reservation->capacity - $reservation->venue->capacity }}
+                                                </span>
+                                            @endif
                                         </div>
                                         <div class="flex items-center">
                                             <i class="fas fa-info-circle mr-2 text-maroon w-4"></i>
@@ -618,9 +655,9 @@
             </div>
             
             <div class="p-6">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div id="approvalGrid" class="grid grid-cols-1 gap-6">
                     <!-- Left Column: Reservation Details -->
-                    <div>
+                    <div id="reservationDetailsColumn">
                         <h4 class="font-medium text-gray-800 mb-3 text-lg">Reservation Details</h4>
                         <div class="bg-gray-50 p-4 rounded-lg mb-4">
                             <h4 class="font-semibold text-gray-800" id="approveEventTitle"></h4>
@@ -637,6 +674,33 @@
                             </div>
                         </div>
                         
+                        <!-- Fee Selection -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-3">Fee Selection <span class="text-red-500">*</span></label>
+                            <div class="space-y-3">
+                                <div>
+                                    <input type="radio" id="feeTypeFree" name="feeType" value="free" class="fee-selection-radio h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300" checked>
+                                    <label for="feeTypeFree" class="fee-selection-label block text-sm font-medium text-gray-700 ml-6">
+                                        <span class="flex items-center">
+                                            <i class="fas fa-gift text-green-500 mr-2"></i>
+                                            Free Reservation
+                                        </span>
+                                        <span class="text-xs text-gray-500 mt-1 block">No charges will be applied to this reservation</span>
+                                    </label>
+                                </div>
+                                <div>
+                                    <input type="radio" id="feeTypeWithFee" name="feeType" value="with_fee" class="fee-selection-radio h-4 w-4 text-maroon focus:ring-maroon border-gray-300">
+                                    <label for="feeTypeWithFee" class="fee-selection-label block text-sm font-medium text-gray-700 ml-6">
+                                        <span class="flex items-center">
+                                            <i class="fas fa-money-bill-wave text-maroon mr-2"></i>
+                                            With Fee (Charged)
+                                        </span>
+                                        <span class="text-xs text-gray-500 mt-1 block">Pricing will be applied based on venue rates and duration</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Additional Notes (Optional)</label>
                             <textarea id="approveNotes" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Add any additional notes for this approval..."></textarea>
@@ -644,7 +708,7 @@
                     </div>
                     
                     <!-- Middle Column: Pricing Information -->
-                    <div>
+                    <div id="pricingSection" class="hidden">
                         <h4 class="font-medium text-gray-800 mb-3 text-lg">Pricing Information</h4>
                         
                         <!-- Venue Rate and Base Price Display -->
@@ -698,7 +762,7 @@
                     </div>
                     
                     <!-- Right Column: Discount & Final Price -->
-                    <div>
+                    <div id="discountSection" class="hidden">
                         <h4 class="font-medium text-gray-800 mb-3 text-lg">Discount & Final Price</h4>
                         
                         <!-- Discount Selection -->
@@ -756,6 +820,7 @@
                 <form id="approveForm" method="POST" class="inline">
                     @csrf
                     <input type="hidden" id="approveNotesInput" name="notes">
+                    <input type="hidden" id="approveFeeTypeInput" name="fee_type">
                     <input type="hidden" id="approveBasePriceInput" name="base_price">
                     <input type="hidden" id="approveDiscountInput" name="discount">
                     <input type="hidden" id="approveFinalPriceInput" name="final_price">
@@ -1010,12 +1075,51 @@
     
 
     
+    // Fee Selection Functions
+    function togglePricingSection() {
+        const feeTypeFree = document.getElementById('feeTypeFree');
+        const feeTypeWithFee = document.getElementById('feeTypeWithFee');
+        const pricingSection = document.getElementById('pricingSection');
+        const discountSection = document.getElementById('discountSection');
+        const approvalGrid = document.getElementById('approvalGrid');
+        
+        if (feeTypeWithFee.checked) {
+            // Show pricing sections when "With Fee" is selected
+            pricingSection.classList.remove('hidden');
+            discountSection.classList.remove('hidden');
+            
+            // Change to 3-column layout
+            approvalGrid.className = 'grid grid-cols-1 lg:grid-cols-3 gap-6';
+        } else {
+            // Hide pricing sections when "Free" is selected
+            pricingSection.classList.add('hidden');
+            discountSection.classList.add('hidden');
+            
+            // Change to single column layout (full width)
+            approvalGrid.className = 'grid grid-cols-1 gap-6';
+            
+            // Reset pricing values when switching to free
+            document.getElementById('basePrice').value = '0';
+            selectedDiscount = 0;
+            calculateFinalPrice();
+        }
+    }
+    
     // Approve Modal Functions
     function openApproveModal(reservationId, eventTitle) {
         document.getElementById('approveEventTitle').textContent = eventTitle;
         document.getElementById('approveForm').action = `/mhadel/reservations/${reservationId}/approve`;
         document.getElementById('approveModal').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
+        
+        // Reset fee selection to "Free" by default
+        document.getElementById('feeTypeFree').checked = true;
+        document.getElementById('feeTypeWithFee').checked = false;
+        
+        // Hide pricing sections initially and set single column layout
+        document.getElementById('pricingSection').classList.add('hidden');
+        document.getElementById('discountSection').classList.add('hidden');
+        document.getElementById('approvalGrid').className = 'grid grid-cols-1 gap-6';
         
         // Get the existing price from the reservation data
         const reservation = reservationsData.data.find(r => r.id == reservationId);
@@ -1079,8 +1183,7 @@
             basePriceCalculation.textContent = 'Free event or no pricing data';
         }
         
-        // Don't reset the pricing display - we want to show the actual data from the database
-        // Only reset the form input fields and discount selection
+        // Reset the form input fields and discount selection
         document.getElementById('basePrice').value = '';
         selectedDiscount = 0;
         
@@ -1102,6 +1205,16 @@
     function closeApproveModal() {
         document.getElementById('approveModal').classList.add('hidden');
         document.getElementById('approveNotes').value = '';
+        
+        // Reset fee selection
+        document.getElementById('feeTypeFree').checked = true;
+        document.getElementById('feeTypeWithFee').checked = false;
+        
+        // Hide pricing sections and reset grid layout
+        document.getElementById('pricingSection').classList.add('hidden');
+        document.getElementById('discountSection').classList.add('hidden');
+        document.getElementById('approvalGrid').className = 'grid grid-cols-1 gap-6';
+        
         document.body.style.overflow = 'auto';
     }
     
@@ -1195,31 +1308,47 @@
         // Set up event listeners
         document.getElementById('openFilterBtn').addEventListener('click', openFilterModal);
         
+        // Add event listeners for fee type radio buttons
+        document.getElementById('feeTypeFree').addEventListener('change', togglePricingSection);
+        document.getElementById('feeTypeWithFee').addEventListener('change', togglePricingSection);
+        
         // Handle approve form submission
         document.getElementById('approveForm').addEventListener('submit', function(e) {
             const notes = document.getElementById('approveNotes').value;
-            const finalPriceInput = document.getElementById('basePrice').value;
+            const feeType = document.querySelector('input[name="feeType"]:checked').value;
             
-            // Validate that final price is entered
-            if (finalPriceInput === '') {
-                e.preventDefault();
-                alert('Please enter the final price for this reservation.');
-                document.getElementById('basePrice').focus();
-                return;
-            }
+            // Set fee type in hidden input
+            document.getElementById('approveFeeTypeInput').value = feeType;
             
-            const finalPrice = parseFloat(finalPriceInput) || 0;
-            const discount = selectedDiscount;
-            let priceAfterDiscount = finalPrice;
-            
-            if (discount > 0) {
-                priceAfterDiscount = finalPrice - (finalPrice * discount / 100);
+            if (feeType === 'with_fee') {
+                // Validate that final price is entered for paid reservations
+                const finalPriceInput = document.getElementById('basePrice').value;
+                if (finalPriceInput === '' || parseFloat(finalPriceInput) < 0) {
+                    e.preventDefault();
+                    alert('Please enter a valid final price for this paid reservation.');
+                    document.getElementById('basePrice').focus();
+                    return;
+                }
+                
+                const finalPrice = parseFloat(finalPriceInput) || 0;
+                const discount = selectedDiscount;
+                let priceAfterDiscount = finalPrice;
+                
+                if (discount > 0) {
+                    priceAfterDiscount = finalPrice - (finalPrice * discount / 100);
+                }
+                
+                document.getElementById('approveBasePriceInput').value = finalPrice;
+                document.getElementById('approveDiscountInput').value = discount;
+                document.getElementById('approveFinalPriceInput').value = priceAfterDiscount.toFixed(2);
+            } else {
+                // For free reservations, set all prices to 0
+                document.getElementById('approveBasePriceInput').value = 0;
+                document.getElementById('approveDiscountInput').value = 0;
+                document.getElementById('approveFinalPriceInput').value = 0;
             }
             
             document.getElementById('approveNotesInput').value = notes;
-            document.getElementById('approveBasePriceInput').value = finalPrice;
-            document.getElementById('approveDiscountInput').value = discount;
-            document.getElementById('approveFinalPriceInput').value = priceAfterDiscount.toFixed(2);
         });
         
         // Add event listener for base price input

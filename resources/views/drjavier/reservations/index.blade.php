@@ -290,10 +290,20 @@
                                         <div class="flex items-center">
                                             <i class="fas fa-building mr-2 text-maroon w-4"></i>
                                             <span>{{ $reservation->venue->capacity }} capacity</span>
+                                            @if($reservation->capacity && $reservation->venue && $reservation->capacity > $reservation->venue->capacity)
+                                                <span class="ml-2 px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">
+                                                    Exceeded by {{ $reservation->capacity - $reservation->venue->capacity }}
+                                                </span>
+                                            @endif
                                         </div>
                                         <div class="flex items-center">
                                             <i class="fas fa-users mr-2 text-maroon w-4"></i>
                                             <span>{{ $reservation->capacity ?? 'N/A' }} participants</span>
+                                            @if($reservation->capacity && $reservation->venue && $reservation->capacity > $reservation->venue->capacity)
+                                                <span class="ml-2 px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium animate-pulse">
+                                                    ⚠️ Overcapacity
+                                                </span>
+                                            @endif
                                         </div>
                                         <div class="flex items-center">
                                             <i class="fas fa-info-circle mr-2 text-maroon w-4"></i>

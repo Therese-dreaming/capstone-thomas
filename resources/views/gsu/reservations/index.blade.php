@@ -1005,14 +1005,24 @@ function confirmComplete() {
 }
 
 function toggleReportSection() {
-	const reportSection = document.getElementById('reportSection');
+	const rightColumn = document.getElementById('rightColumn');
+	const modalContent = document.getElementById('modalContent');
+	const modalContainer = document.getElementById('completeModalContainer');
 	const toggleText = document.getElementById('reportToggleText');
 	
-	if (reportSection.classList.contains('hidden')) {
-		reportSection.classList.remove('hidden');
+	if (rightColumn.classList.contains('hidden')) {
+		// Show report section - switch to 2-column layout
+		rightColumn.classList.remove('hidden');
+		modalContent.classList.add('grid', 'grid-cols-2', 'gap-6');
+		modalContainer.classList.remove('max-w-md');
+		modalContainer.classList.add('max-w-4xl');
 		toggleText.textContent = 'Hide Report';
 	} else {
-		reportSection.classList.add('hidden');
+		// Hide report section - switch back to single column
+		rightColumn.classList.add('hidden');
+		modalContent.classList.remove('grid', 'grid-cols-2', 'gap-6');
+		modalContainer.classList.remove('max-w-4xl');
+		modalContainer.classList.add('max-w-md');
 		toggleText.textContent = 'Report Issue';
 		// Clear form fields when hiding
 		document.getElementById('reportType').value = '';
@@ -1055,7 +1065,7 @@ function showNotification(message, type) {
 <!-- Complete Modal -->
 <div id="completeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full font-poppins">
+        <div id="completeModalContainer" class="bg-white rounded-xl shadow-2xl max-w-md w-full font-poppins transition-all duration-300">
             <div class="p-6 border-b border-gray-200 bg-gray-50">
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-bold text-gray-800 font-montserrat">
@@ -1068,64 +1078,82 @@ function showNotification(message, type) {
                 </div>
             </div>
             <div class="p-6">
+                <!-- Item Details Section -->
                 <div class="mb-4">
                     <p class="text-gray-700 mb-2">Are you sure you want to mark this item as completed?</p>
                     <div id="completeItemDetails" class="bg-gray-50 p-3 rounded-lg text-sm text-gray-600"></div>
                 </div>
-                				<div class="mb-4">
-					<label for="completionNotes" class="block text-sm font-medium text-gray-700 mb-2">Completion Notes (Optional)</label>
-					<textarea id="completionNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200" placeholder="Add any notes about the completion..."></textarea>
-				</div>
-				
-				<!-- Report Issue Section -->
-				<div class="mb-4 border-t border-gray-200 pt-4">
-					<div class="flex items-center justify-between mb-3">
-						<h4 class="text-sm font-medium text-gray-700">Report Issue (Optional)</h4>
-						<button type="button" onclick="toggleReportSection()" class="text-sm text-maroon hover:text-red-700 font-medium">
-							<i class="fas fa-exclamation-triangle mr-1"></i>
-							<span id="reportToggleText">Report Issue</span>
-						</button>
-					</div>
-					
-					<div id="reportSection" class="hidden space-y-3">
-						<div class="grid grid-cols-2 gap-3">
-							<div>
-								<label for="reportType" class="block text-xs font-medium text-gray-700 mb-1">Issue Type</label>
-								<select id="reportType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 text-sm">
-									<option value="">Select type...</option>
-									<option value="accident">Accident</option>
-									<option value="problem">Problem</option>
-									<option value="violation">Violation</option>
-									<option value="damage">Damage</option>
-									<option value="other">Other</option>
-								</select>
-							</div>
-							<div>
-								<label for="reportSeverity" class="block text-xs font-medium text-gray-700 mb-1">Severity</label>
-								<select id="reportSeverity" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 text-sm">
-									<option value="">Select severity...</option>
-									<option value="low">Low</option>
-									<option value="medium">Medium</option>
-									<option value="high">High</option>
-									<option value="critical">Critical</option>
-								</select>
-							</div>
-						</div>
-						<div>
-							<label for="reportDescription" class="block text-xs font-medium text-gray-700 mb-1">Description</label>
-							<textarea id="reportDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 text-sm" placeholder="Describe what happened..."></textarea>
-						</div>
-						<div>
-							<label for="reportActions" class="block text-xs font-medium text-gray-700 mb-1">Actions Taken (Optional)</label>
-							<textarea id="reportActions" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 text-sm" placeholder="What actions were taken to address the issue..."></textarea>
-						</div>
-					</div>
-				</div>
-				
-				<div class="text-sm text-gray-600 mb-4">
-					<i class="fas fa-info-circle text-blue-600 mr-1"></i>
-					This will notify IOSA, Ms. Mhadel, and OTP about the completion.
-				</div>
+                
+                <!-- Two Column Layout Container -->
+                <div id="modalContent" class="space-y-4">
+                    <!-- Left Column (or full width when no report) -->
+                    <div id="leftColumn" class="space-y-4">
+                        <div>
+                            <label for="completionNotes" class="block text-sm font-medium text-gray-700 mb-2">Completion Notes (Optional)</label>
+                            <textarea id="completionNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200" placeholder="Add any notes about the completion..."></textarea>
+                        </div>
+                        
+                        <!-- Report Issue Toggle -->
+                        <div class="border-t border-gray-200 pt-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="text-sm font-medium text-gray-700">Report Issue (Optional)</h4>
+                                <button type="button" onclick="toggleReportSection()" class="text-sm text-maroon hover:text-red-700 font-medium">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                                    <span id="reportToggleText">Report Issue</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="text-sm text-gray-600">
+                            <i class="fas fa-info-circle text-blue-600 mr-1"></i>
+                            This will notify IOSA, OTP, and PPGS about the completion.
+                        </div>
+                    </div>
+                    
+                    <!-- Right Column (Report Section - appears when toggled) -->
+                    <div id="rightColumn" class="hidden">
+                        <div id="reportSection" class="space-y-4 bg-red-50 p-4 rounded-lg border border-red-200">
+                            <h5 class="font-medium text-red-800 mb-3">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                Issue Report Details
+                            </h5>
+                            
+                            <div class="grid grid-cols-1 gap-3">
+                                <div>
+                                    <label for="reportType" class="block text-xs font-medium text-gray-700 mb-1">Issue Type</label>
+                                    <select id="reportType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 text-sm">
+                                        <option value="">Select type...</option>
+                                        <option value="accident">Accident</option>
+                                        <option value="problem">Problem</option>
+                                        <option value="violation">Violation</option>
+                                        <option value="damage">Damage</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="reportSeverity" class="block text-xs font-medium text-gray-700 mb-1">Severity</label>
+                                    <select id="reportSeverity" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 text-sm">
+                                        <option value="">Select severity...</option>
+                                        <option value="low">Low</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
+                                        <option value="critical">Critical</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="reportDescription" class="block text-xs font-medium text-gray-700 mb-1">Description</label>
+                                <textarea id="reportDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 text-sm" placeholder="Describe what happened..."></textarea>
+                            </div>
+                            
+                            <div>
+                                <label for="reportActions" class="block text-xs font-medium text-gray-700 mb-1">Actions Taken (Optional)</label>
+                                <textarea id="reportActions" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-all duration-200 text-sm" placeholder="What actions were taken to address the issue..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
                 <button onclick="closeCompleteModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Cancel</button>

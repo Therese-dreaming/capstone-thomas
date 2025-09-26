@@ -140,33 +140,34 @@ class UserController extends Controller
 	public function storeReservation(Request $request)
 	{
 		$request->validate([
-			'event_title' => 'required|string|max:255',
-			'capacity' => 'required|integer|min:1',
-			'venue_id' => 'required|exists:venues,id',
-			'purpose' => 'required|string',
-			'start_date' => 'required|date|after:now',
-			'end_date' => 'required|date|after:start_date',
-			'activity_grid' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
-			'equipment' => 'nullable|array',
-			'equipment.*' => 'string',
-			'equipment_quantity' => 'nullable|array',
-			'equipment_quantity.*' => 'integer|min:1',
-			'custom_equipment_name' => 'nullable|array',
-			'custom_equipment_name.*' => 'nullable|string|max:255',
-			'custom_equipment_quantity' => 'nullable|array',
-			'custom_equipment_quantity.*' => 'nullable|integer|min:1',
-			'price_per_hour' => 'required|numeric|min:0',
-			'base_price' => 'required|numeric|min:0',
-			'department' => 'required|string|max:255',
-			'other_department' => 'nullable|string|max:255',
+				'event_title' => 'required|string|max:255',
+				'capacity' => 'required|integer|min:1',
+				'venue_id' => 'required|exists:venues,id',
+				'purpose' => 'required|string',
+				'start_date' => 'required|date|after:now',
+				'end_date' => 'required|date|after:start_date',
+				'activity_grid' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
+				'equipment' => 'nullable|array',
+				'equipment.*' => 'string',
+				'equipment_quantity' => 'nullable|array',
+				'equipment_quantity.*' => 'integer|min:1',
+				'custom_equipment_name' => 'nullable|array',
+				'custom_equipment_name.*' => 'nullable|string|max:255',
+				'custom_equipment_quantity' => 'nullable|array',
+				'custom_equipment_quantity.*' => 'nullable|integer|min:1',
+				'price_per_hour' => 'required|numeric|min:0',
+				'base_price' => 'required|numeric|min:0',
+				'department' => 'required|string|max:255',
+				'other_department' => 'nullable|string|max:255',
 		]);
 
 		$venue = Venue::find($request->venue_id);
-		if (!$venue || $venue->capacity < $request->capacity) {
-			return back()->withErrors(['capacity' => 'No suitable venue found for the specified capacity.'])->withInput();
+		if (!$venue) {
+			return back()->withErrors(['venue_id' => 'Selected venue not found.'])->withInput();
 		}
 
-		$minDate = now()->addDays(3);
+		// Use calendar days (midnight) instead of exact time for 3-day rule
+		$minDate = now()->addDays(3)->startOfDay();
 		if (strtotime($request->start_date) < strtotime($minDate)) {
 			return back()->withErrors(['start_date' => 'Reservations must be made at least 3 days in advance.'])->withInput();
 		}
@@ -263,13 +264,6 @@ class UserController extends Controller
 			$data['activity_grid'] = $filePath;
 		}
 
-		\Log::info('Creating reservation with data:', [
-			'user_id' => $data['user_id'],
-			'base_price' => $data['base_price'] ?? 'not set',
-			'price_per_hour' => $data['price_per_hour'] ?? 'not set',
-			'duration_hours' => $data['duration_hours'] ?? 'not set'
-		]);
-
 		$reservation = Reservation::create($data);
 
 		// Self notification to the requester
@@ -299,7 +293,7 @@ class UserController extends Controller
 		}
 
 		// Return JSON response for AJAX requests
-		if ($request->expectsJson()) {
+		if ($request->expectsJson() || $request->has('ajax')) {
 			return response()->json([
 				'success' => true,
 				'message' => 'Reservation submitted successfully!',
@@ -326,14 +320,12 @@ class UserController extends Controller
 			'last_name' => 'nullable|string|max:255',
 			'name' => 'nullable|string|max:255',
 			'email' => 'required|email|max:255|unique:users,email,' . $user->id,
-			'phone' => 'nullable|string|max:50',
 		]);
 
 		$user->first_name = $request->first_name ?? $user->first_name;
 		$user->last_name = $request->last_name ?? $user->last_name;
 		$user->name = $request->name ?? trim(($request->first_name ?? $user->first_name).' '.($request->last_name ?? $user->last_name)) ?: $user->name;
 		$user->email = $request->email;
-		if ($request->filled('phone')) { $user->phone = $request->phone; }
 		$user->save();
 
 		return redirect()->route('user.profile')->with('success', 'Profile updated successfully.');
@@ -415,10 +407,10 @@ class UserController extends Controller
 			->with(['venue'])
 			->firstOrFail();
 
-		// Only allow editing of pending reservations
-		if (!in_array($reservation->status, ['pending', 'approved_IOSA', 'approved_mhadel'])) {
+		// Only allow editing of pending reservations (not yet approved by IOSA)
+		if ($reservation->status !== 'pending') {
 			return redirect()->route('user.reservations.show', $reservation->id)
-				->with('error', 'This reservation cannot be edited.');
+				->with('error', 'This reservation cannot be edited. You can only edit reservations that have not been reviewed by IOSA yet.');
 		}
 
 		$venues = Venue::where('is_available', true)->get();
@@ -432,10 +424,10 @@ class UserController extends Controller
 			->where('user_id', Auth::id())
 			->firstOrFail();
 
-		// Only allow updating of pending reservations
-		if (!in_array($reservation->status, ['pending', 'approved_IOSA', 'approved_mhadel'])) {
+		// Only allow updating of pending reservations (not yet approved by IOSA)
+		if ($reservation->status !== 'pending') {
 			return redirect()->route('user.reservations.show', $reservation->id)
-				->with('error', 'This reservation cannot be updated.');
+				->with('error', 'This reservation cannot be updated. You can only edit reservations that have not been reviewed by IOSA yet.');
 		}
 
 		$request->validate([
@@ -450,6 +442,10 @@ class UserController extends Controller
 			'equipment.*' => 'string',
 			'equipment_quantity' => 'nullable|array',
 			'equipment_quantity.*' => 'integer|min:1',
+			'custom_equipment_name' => 'nullable|array',
+			'custom_equipment_name.*' => 'nullable|string|max:255',
+			'custom_equipment_quantity' => 'nullable|array',
+			'custom_equipment_quantity.*' => 'nullable|integer|min:1',
 			'price_per_hour' => 'required|numeric|min:0',
 			'base_price' => 'required|numeric|min:0',
 			'department' => 'required|string|max:255',
@@ -474,17 +470,52 @@ class UserController extends Controller
 			'department' => $department,
 		];
 
-		// Handle equipment data
-		if ($request->has('equipment')) {
-			$equipmentData = [];
+		// Handle equipment data (same as store method)
+		if ($request->has('equipment') && is_array($request->equipment)) {
+			$equipmentDetails = [];
 			foreach ($request->equipment as $equipment) {
 				if ($equipment !== 'none') {
 					$quantity = $request->input("equipment_quantity.{$equipment}", 1);
-					$equipmentData[$equipment] = $quantity;
+					$equipmentDetails[] = [
+						'name' => $equipment,
+						'quantity' => $quantity
+					];
 				}
 			}
-			$data['equipment'] = $equipmentData;
+			$data['equipment_details'] = $equipmentDetails;
+		} else {
+			// If no equipment selected, clear equipment_details
+			$data['equipment_details'] = [];
 		}
+
+		// Handle custom equipment requests
+		if ($request->has('custom_equipment_name') && is_array($request->custom_equipment_name)) {
+			$customEquipmentRequests = [];
+			$customNames = $request->input('custom_equipment_name', []);
+			$customQuantities = $request->input('custom_equipment_quantity', []);
+			
+			foreach ($customNames as $index => $name) {
+				if (!empty(trim($name))) {
+					$quantity = isset($customQuantities[$index]) ? (int)$customQuantities[$index] : 1;
+					$customEquipmentRequests[] = [
+						'name' => trim($name),
+						'quantity' => max(1, $quantity)
+					];
+				}
+			}
+			if (!empty($customEquipmentRequests)) {
+				$data['custom_equipment_requests'] = $customEquipmentRequests;
+			}
+		} else {
+			// Clear custom equipment if not provided
+			$data['custom_equipment_requests'] = [];
+		}
+
+		// Calculate duration hours
+		$startDate = \Carbon\Carbon::parse($request->start_date);
+		$endDate = \Carbon\Carbon::parse($request->end_date);
+		$durationHours = ceil($startDate->diffInSeconds($endDate) / 3600);
+		$data['duration_hours'] = max(1, $durationHours);
 
 		// Handle activity grid file
 		if ($request->hasFile('activity_grid')) {
@@ -516,40 +547,49 @@ class UserController extends Controller
 			->with('success', 'Reservation updated successfully!');
 	}
 
-	public function cancel($id)
+	public function cancel(Request $request, $id)
 	{
 		$reservation = Reservation::where('id', $id)
 			->where('user_id', Auth::id())
 			->firstOrFail();
 
-		// Only allow cancellation of pending reservations
-		if (!in_array($reservation->status, ['pending', 'approved_IOSA', 'approved_mhadel'])) {
+		// Only allow cancellation of pending reservations (not yet approved by IOSA)
+		if ($reservation->status !== 'pending') {
 			return response()->json([
 				'success' => false,
-				'message' => 'This reservation cannot be cancelled.'
+				'message' => 'This reservation cannot be cancelled. You can only cancel reservations that have not been reviewed by IOSA yet.'
 			], 400);
 		}
 
-		// Update status to cancelled
-		$reservation->update(['status' => 'cancelled']);
+		// Validate cancellation reason
+		$request->validate([
+			'cancellation_reason' => 'required|string|min:10|max:500'
+		]);
 
-		// Create notification
+		// Update status to cancelled with reason and timestamp
+		$reservation->update([
+			'status' => 'cancelled',
+			'cancellation_reason' => $request->cancellation_reason,
+			'cancelled_at' => now()
+		]);
+
+		// Create notification for user
 		Notification::create([
 			'user_id' => Auth::id(),
 			'title' => 'Reservation cancelled',
-			'body' => 'Your reservation "' . $reservation->event_title . '" has been cancelled.',
+			'body' => 'Your reservation "' . $reservation->event_title . '" has been cancelled. Reason: ' . Str::limit($request->cancellation_reason, 100),
 			'type' => 'self_info',
 			'related_id' => 0,
 			'related_type' => Reservation::class,
 		]);
 
-		// Notify admins about cancellation
-		$adminUsers = User::whereIn('role', ['admin', 'iosa', 'mhadel'])->get();
+		// Notify admins about cancellation with reason
+		$adminUsers = User::whereIn('role', ['admin', 'IOSA', 'OTP', 'PPGS'])->get();
 		foreach ($adminUsers as $admin) {
 			Notification::create([
 				'user_id' => $admin->id,
-				'title' => 'Reservation cancelled',
-				'body' => 'User ' . Auth::user()->name . ' cancelled reservation "' . $reservation->event_title . '".',
+				'title' => 'Reservation cancelled by user',
+				'body' => 'User ' . Auth::user()->name . ' cancelled reservation "' . $reservation->event_title . '". Reason: ' . Str::limit($request->cancellation_reason, 100),
 				'type' => 'reservation_action',
 				'related_id' => $reservation->id,
 				'related_type' => Reservation::class,

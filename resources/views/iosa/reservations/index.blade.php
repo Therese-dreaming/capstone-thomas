@@ -911,7 +911,7 @@
                                 <div><i class="fas fa-clock mr-2 text-gray-500"></i>${startTime} – ${endTime}</div>
                                 <div><i class="fas fa-user mr-2 text-gray-500"></i>${userName}</div>
                                 <div><i class="fas fa-map-marker-alt mr-2 text-gray-500"></i>${venueName}</div>
-                                <div><i class="fas fa-users mr-2 text-gray-500"></i>${reservation.capacity ?? ''} attendees</div>
+                                <div><i class="fas fa-users mr-2 text-gray-500"></i>${reservation.capacity ?? ''} attendees${reservation.capacity && reservation.venue && reservation.capacity > reservation.venue.capacity ? ' <span class="ml-2 px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium animate-pulse">⚠️ Overcapacity</span>' : ''}</div>
                                 ${price ? `<div><i class=\"fas fa-tag mr-2 text-gray-500\"></i>${price}</div>` : ''}
                             </div>
                             ${reservation.purpose ? `<div class="mt-2 text-sm text-gray-600"><strong>Purpose:</strong> ${reservation.purpose}</div>` : ''}

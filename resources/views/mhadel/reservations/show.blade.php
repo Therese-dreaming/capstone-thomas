@@ -193,6 +193,9 @@ use Illuminate\Support\Facades\Storage;
                     @elseif($reservation->status === 'rejected_OTP')
                         <span class="status-badge bg-red-100 text-red-800">Rejected by PPGS</span>
                         <p class="text-sm text-gray-500 mt-2">Final Decision</p>
+                    @elseif($reservation->status === 'cancelled')
+                        <span class="status-badge bg-red-100 text-red-800">Cancelled by User</span>
+                        <p class="text-sm text-gray-500 mt-2">User Cancelled</p>
                     @else
                         <span class="status-badge bg-gray-100 text-gray-800">{{ ucfirst(str_replace('_', ' ', $reservation->status)) }}</span>
                     @endif
@@ -257,6 +260,41 @@ use Illuminate\Support\Facades\Storage;
                     @endif
                 </div>
             </div>
+
+            <!-- Cancellation Information -->
+            @if($reservation->status === 'cancelled' && $reservation->cancellation_reason)
+                <div class="category-card animate-fadeIn">
+                    <div class="category-header bg-red-50 border-b border-red-200">
+                        <h2 class="text-xl font-bold text-red-800 font-poppins flex items-center">
+                            <i class="fas fa-times-circle text-red-600 mr-3 text-2xl"></i>
+                            Cancellation Information
+                        </h2>
+                    </div>
+                    <div class="category-content bg-red-50">
+                        <div class="bg-white p-6 rounded-lg border border-red-200">
+                            <div class="flex items-start space-x-4">
+                                <div class="flex-shrink-0">
+                                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-exclamation text-red-600 text-lg"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-lg font-semibold text-red-800 mb-3">Reason for Cancellation</h4>
+                                    <p class="text-red-700 leading-relaxed mb-4">{{ $reservation->cancellation_reason }}</p>
+                                    @if($reservation->cancelled_at)
+                                        <div class="pt-4 border-t border-red-200">
+                                            <div class="flex items-center text-sm text-red-600">
+                                                <i class="fas fa-clock mr-2"></i>
+                                                <span class="font-medium">Cancelled on {{ $reservation->cancelled_at->format('M d, Y g:i A') }}</span>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <!-- Custom Equipment Requests Category -->
             @if($reservation && !empty($reservation->custom_equipment_requests))

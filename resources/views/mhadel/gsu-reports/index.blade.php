@@ -141,74 +141,83 @@
     </div>
 
     <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
-            <div class="rounded-full bg-blue-50 p-3 mr-4">
-                <i class="fas fa-file-alt text-blue-500 text-xl"></i>
-            </div>
-            <div>
-                <p class="text-sm text-gray-500 font-medium">Total Reports</p>
-                <h3 class="text-2xl font-bold text-gray-800">{{ $stats['total'] }}</h3>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
-            <div class="rounded-full bg-yellow-50 p-3 mr-4">
-                <i class="fas fa-clock text-yellow-500 text-xl"></i>
-            </div>
-            <div>
-                <p class="text-sm text-gray-500 font-medium">Pending</p>
-                <h3 class="text-2xl font-bold text-gray-800">{{ $stats['pending'] }}</h3>
+    <div class="space-y-6">
+        <!-- Total Reports - Single Row -->
+        <div class="w-full">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn w-full">
+                <div class="rounded-full bg-blue-50 p-3 mr-4">
+                    <i class="fas fa-file-alt text-blue-500 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Total Reports</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ $stats['total'] }}</h3>
+                </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
-            <div class="rounded-full bg-blue-50 p-3 mr-4">
-                <i class="fas fa-search text-blue-500 text-xl"></i>
+        <!-- Priority & Status Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
+                <div class="rounded-full bg-yellow-50 p-3 mr-4">
+                    <i class="fas fa-clock text-yellow-500 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Pending</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ $stats['pending'] }}</h3>
+                </div>
             </div>
-            <div>
-                <p class="text-sm text-gray-500 font-medium">Investigating</p>
-                <h3 class="text-2xl font-bold text-gray-800">{{ $stats['investigating'] }}</h3>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
+                <div class="rounded-full bg-blue-50 p-3 mr-4">
+                    <i class="fas fa-search text-blue-500 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Investigating</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ $stats['investigating'] }}</h3>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
+                <div class="rounded-full bg-green-50 p-3 mr-4">
+                    <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Resolved</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ $stats['resolved'] }}</h3>
+                </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
-            <div class="rounded-full bg-green-50 p-3 mr-4">
-                <i class="fas fa-check-circle text-green-500 text-xl"></i>
+        <!-- Severity & Additional Status Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
+                <div class="rounded-full bg-red-50 p-3 mr-4">
+                    <i class="fas fa-exclamation text-red-500 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Critical</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ $stats['critical'] }}</h3>
+                </div>
             </div>
-            <div>
-                <p class="text-sm text-gray-500 font-medium">Resolved</p>
-                <h3 class="text-2xl font-bold text-gray-800">{{ $stats['resolved'] }}</h3>
-            </div>
-        </div>
 
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
-            <div class="rounded-full bg-gray-50 p-3 mr-4">
-                <i class="fas fa-times-circle text-gray-500 text-xl"></i>
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
+                <div class="rounded-full bg-orange-50 p-3 mr-4">
+                    <i class="fas fa-exclamation-triangle text-orange-500 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">High Priority</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ $stats['high'] }}</h3>
+                </div>
             </div>
-            <div>
-                <p class="text-sm text-gray-500 font-medium">Dismissed</p>
-                <h3 class="text-2xl font-bold text-gray-800">{{ $stats['dismissed'] ?? 0 }}</h3>
-            </div>
-        </div>
 
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
-            <div class="rounded-full bg-red-50 p-3 mr-4">
-                <i class="fas fa-exclamation text-red-500 text-xl"></i>
-            </div>
-            <div>
-                <p class="text-sm text-gray-500 font-medium">Critical</p>
-                <h3 class="text-2xl font-bold text-gray-800">{{ $stats['critical'] }}</h3>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
-            <div class="rounded-full bg-orange-50 p-3 mr-4">
-                <i class="fas fa-exclamation-triangle text-orange-500 text-xl"></i>
-            </div>
-            <div>
-                <p class="text-sm text-gray-500 font-medium">High Priority</p>
-                <h3 class="text-2xl font-bold text-gray-800">{{ $stats['high'] }}</h3>
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center animate-fadeIn">
+                <div class="rounded-full bg-gray-50 p-3 mr-4">
+                    <i class="fas fa-times-circle text-gray-500 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Dismissed</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ $stats['dismissed'] ?? 0 }}</h3>
+                </div>
             </div>
         </div>
     </div>

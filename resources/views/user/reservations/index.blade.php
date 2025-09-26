@@ -338,11 +338,11 @@
                                                     class="p-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-all duration-200 group-hover:scale-105" title="Cancel Reservation">
                                                 <i class="fas fa-times"></i>
                                             </button>
-                                        @elseif(in_array($reservation->status, ['approved_IOSA','approved_mhadel','approved_OTP']))
-                                            <button onclick="openCancelModal({{ $reservation->id }}, '{{ addslashes($reservation->event_title) }}', '{{ $reservation->start_date ? $reservation->start_date->format('M d, Y g:i A') : 'No date' }}')" 
-                                                    class="p-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-all duration-200 group-hover:scale-105" title="Cancel Reservation">
-                                                <i class="fas fa-times"></i>
-                                            </button>
+                                        @else
+                                            <div class="flex items-center text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-md">
+                                                <i class="fas fa-info-circle mr-1"></i>
+                                                <span>Cannot edit/cancel after IOSA review</span>
+                                            </div>
                                         @endif
                                     </div>
                                     
@@ -452,6 +452,28 @@
                         </div>
                     </div>
                     
+                    <!-- Cancellation Reason Input -->
+                    <div class="mb-4">
+                        <label for="cancellationReason" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-comment-alt text-red-500 mr-1"></i>
+                            Reason for Cancellation <span class="text-red-500">*</span>
+                        </label>
+                        <textarea 
+                            id="cancellationReason" 
+                            name="cancellation_reason"
+                            rows="3" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors resize-none"
+                            placeholder="Please provide a reason for cancelling this reservation (minimum 10 characters)..."
+                            required
+                            minlength="10"
+                            maxlength="500"></textarea>
+                        <div class="flex justify-between items-center mt-1">
+                            <span class="text-xs text-gray-500">Minimum 10 characters required</span>
+                            <span class="text-xs text-gray-500" id="reasonCharCount">0/500</span>
+                        </div>
+                        <div id="reasonError" class="text-red-500 text-xs mt-1 hidden"></div>
+                    </div>
+
                     <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
                         <div class="flex items-start">
                             <i class="fas fa-info-circle text-yellow-600 mr-2 mt-0.5"></i>
@@ -461,7 +483,7 @@
                                     <li>• Your reservation will be marked as cancelled</li>
                                     <li>• The venue will become available for other users</li>
                                     <li>• You'll receive a confirmation email</li>
-                                    <li>• Admins will be notified of the cancellation</li>
+                                    <li>• Admins will be notified with your cancellation reason</li>
                                 </ul>
                             </div>
                         </div>
@@ -473,7 +495,9 @@
                             <i class="fas fa-times mr-1.5"></i> Keep Reservation
                         </button>
                         <button onclick="confirmCancel()" 
-                                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 shadow-md flex items-center text-sm">
+                                id="confirmCancelBtn"
+                                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 shadow-md flex items-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled>
                             <i class="fas fa-check mr-1.5"></i> Yes, Cancel It
                         </button>
                     </div>
@@ -593,6 +617,45 @@
                 closeCancelModal();
             }
         });
+        
+        // Handle cancellation reason textarea
+        const reasonTextarea = document.getElementById('cancellationReason');
+        const charCountSpan = document.getElementById('reasonCharCount');
+        const confirmBtn = document.getElementById('confirmCancelBtn');
+        const errorDiv = document.getElementById('reasonError');
+        
+        if (reasonTextarea && charCountSpan && confirmBtn) {
+            reasonTextarea.addEventListener('input', function() {
+                const length = this.value.length;
+                charCountSpan.textContent = `${length}/500`;
+                
+                // Enable/disable confirm button based on minimum length
+                if (length >= 10 && length <= 500) {
+                    confirmBtn.disabled = false;
+                    errorDiv.classList.add('hidden');
+                } else {
+                    confirmBtn.disabled = true;
+                    if (length > 0 && length < 10) {
+                        errorDiv.textContent = `Need ${10 - length} more characters (minimum 10 required)`;
+                        errorDiv.classList.remove('hidden');
+                    } else if (length > 500) {
+                        errorDiv.textContent = `${length - 500} characters over limit`;
+                        errorDiv.classList.remove('hidden');
+                    } else {
+                        errorDiv.classList.add('hidden');
+                    }
+                }
+                
+                // Update character count color
+                if (length > 450) {
+                    charCountSpan.classList.add('text-red-500');
+                    charCountSpan.classList.remove('text-gray-500');
+                } else {
+                    charCountSpan.classList.remove('text-red-500');
+                    charCountSpan.classList.add('text-gray-500');
+                }
+            });
+        }
     });
 
     // Global variables for cancel modal
@@ -614,6 +677,12 @@
         document.getElementById('cancelEventTitle').textContent = eventTitle;
         document.getElementById('cancelEventDate').textContent = eventDate;
         
+        // Reset form
+        document.getElementById('cancellationReason').value = '';
+        document.getElementById('reasonCharCount').textContent = '0/500';
+        document.getElementById('confirmCancelBtn').disabled = true;
+        document.getElementById('reasonError').classList.add('hidden');
+        
         // Show modal
         document.getElementById('cancelModal').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
@@ -621,12 +690,23 @@
         // Add animation
         const modalContent = document.querySelector('#cancelModal > div > div');
         modalContent.classList.add('animate-fadeIn');
+        
+        // Focus on reason textarea
+        setTimeout(() => {
+            document.getElementById('cancellationReason').focus();
+        }, 100);
     }
 
     // Function to close cancel modal
     function closeCancelModal() {
         document.getElementById('cancelModal').classList.add('hidden');
         document.body.style.overflow = 'auto';
+        
+        // Reset form
+        document.getElementById('cancellationReason').value = '';
+        document.getElementById('reasonCharCount').textContent = '0/500';
+        document.getElementById('confirmCancelBtn').disabled = true;
+        document.getElementById('reasonError').classList.add('hidden');
         
         // Reset variables
         currentReservationId = null;
@@ -638,19 +718,45 @@
     function confirmCancel() {
         if (!currentReservationId) return;
         
+        const reasonTextarea = document.getElementById('cancellationReason');
+        const reason = reasonTextarea.value.trim();
+        const errorDiv = document.getElementById('reasonError');
+        
+        // Validate reason
+        if (reason.length < 10) {
+            errorDiv.textContent = 'Cancellation reason must be at least 10 characters long.';
+            errorDiv.classList.remove('hidden');
+            reasonTextarea.focus();
+            return;
+        }
+        
+        if (reason.length > 500) {
+            errorDiv.textContent = 'Cancellation reason cannot exceed 500 characters.';
+            errorDiv.classList.remove('hidden');
+            reasonTextarea.focus();
+            return;
+        }
+        
+        // Hide error if validation passes
+        errorDiv.classList.add('hidden');
+        
         // Show loading state
-        const confirmBtn = document.querySelector('#cancelModal button[onclick="confirmCancel()"]');
+        const confirmBtn = document.getElementById('confirmCancelBtn');
         const originalText = confirmBtn.innerHTML;
         confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Cancelling...';
         confirmBtn.disabled = true;
+        
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('cancellation_reason', reason);
         
         fetch(`/user/reservations/${currentReservationId}`, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            }
+            },
+            body: formData
         })
         .then(response => response.json())
         .then(data => {

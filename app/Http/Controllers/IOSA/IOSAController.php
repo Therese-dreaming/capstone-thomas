@@ -645,16 +645,12 @@ class IOSAController extends Controller
             'last_name' => 'nullable|string|max:255',
             'name' => 'nullable|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . $user->id,
-            'phone' => 'nullable|string|max:50',
         ]);
 
         $user->first_name = $request->first_name ?? $user->first_name;
         $user->last_name = $request->last_name ?? $user->last_name;
         $user->name = $request->name ?? trim(($request->first_name ?? $user->first_name).' '.($request->last_name ?? $user->last_name)) ?: $user->name;
         $user->email = $request->email;
-        if ($request->filled('phone')) { 
-            $user->phone = $request->phone; 
-        }
         $user->save();
 
         return redirect()->route('iosa.profile')->with('success', 'Profile updated successfully.');

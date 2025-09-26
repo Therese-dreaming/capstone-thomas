@@ -36,10 +36,44 @@
         animation: pulse 2s infinite;
     }
     
+    .capacity-warning {
+        animation: capacityPulse 2s infinite;
+    }
+    
     @keyframes pulse {
         0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
         70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
         100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    
+    @keyframes capacityPulse {
+        0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+        70% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+    }
+    
+    .capacity-info {
+        animation: fadeIn 0.3s ease-out;
+    }
+    
+    .venue-suggestions {
+        animation: slideDown 0.3s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .suggestion-item:hover {
+        background-color: #f0fdf4 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
 </style>
 
@@ -111,6 +145,27 @@
                     @error('capacity')
                         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                     @enderror
+                    
+                    <!-- Capacity Warning -->
+                    <div id="capacityWarning" class="hidden mt-2 p-3 bg-red-50 border border-red-200 rounded-lg capacity-warning">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-triangle text-red-600 mr-2 mt-0.5"></i>
+                            <div class="text-sm text-red-800">
+                                <p class="font-medium mb-1">⚠️ Capacity Exceeded!</p>
+                                <p id="capacityWarningText" class="text-xs"><!-- Warning text will be populated here --></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Capacity Info -->
+                    <div id="capacityInfo" class="hidden mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg capacity-info">
+                        <div class="flex items-start">
+                            <i class="fas fa-info-circle text-blue-600 mr-2 mt-0.5"></i>
+                            <div class="text-sm text-blue-800">
+                                <p id="capacityInfoText" class="text-xs"><!-- Capacity info will be populated here --></p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="input-group">
@@ -141,14 +196,29 @@
                         @foreach($venues as $venue)
                             <option value="{{ $venue->id }}" 
                                     {{ old('venue_id', $reservation->venue_id) == $venue->id ? 'selected' : '' }}
-                                    data-price="{{ $venue->price_per_hour }}">
-                                {{ $venue->name }} - ₱{{ number_format($venue->price_per_hour, 2) }}/hour
+                                    data-price="{{ $venue->price_per_hour }}"
+                                    data-capacity="{{ $venue->capacity }}">
+                                {{ $venue->name }} - ₱{{ number_format($venue->price_per_hour, 2) }}/hour ({{ $venue->capacity }} capacity)
                             </option>
                         @endforeach
                     </select>
                     @error('venue_id')
                         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                     @enderror
+                    
+                    <!-- Venue Suggestions -->
+                    <div id="venueSuggestions" class="hidden mt-2 p-3 bg-green-50 border border-green-200 rounded-lg venue-suggestions">
+                        <div class="flex items-start">
+                            <i class="fas fa-lightbulb text-green-600 mr-2 mt-0.5"></i>
+                            <div class="text-sm text-green-800">
+                                <p class="font-medium mb-1">💡 Recommended Venues</p>
+                                <p class="text-xs mb-2">Based on your expected attendees, these venues are suitable:</p>
+                                <div id="suggestedVenuesList" class="space-y-1">
+                                    <!-- Suggested venues will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="input-group">
@@ -383,10 +453,20 @@
         calculateDuration();
         
         // Add event listeners
-        document.getElementById('venue_id').addEventListener('change', updatePricing);
+        document.getElementById('venue_id').addEventListener('change', function() {
+            updatePricing();
+            validateCapacity();
+        });
+        document.getElementById('capacity').addEventListener('input', function() {
+            validateCapacity();
+            showVenueSuggestions();
+        });
         document.getElementById('start_date').addEventListener('change', calculateDuration);
         document.getElementById('end_date').addEventListener('change', calculateDuration);
         document.getElementById('discount_percentage').addEventListener('input', updatePricing);
+        
+        // Initial capacity validation
+        validateCapacity();
     });
     
     // Update pricing when venue or discount changes
@@ -430,6 +510,150 @@
                 durationInput.value = diffHours.toFixed(1);
                 updatePricing();
             }
+        }
+    }
+    
+    // Show venue suggestions based on capacity
+    function showVenueSuggestions() {
+        const capacityInput = document.getElementById('capacity');
+        const venueSuggestions = document.getElementById('venueSuggestions');
+        const suggestedVenuesList = document.getElementById('suggestedVenuesList');
+        const venueSelect = document.getElementById('venue_id');
+        
+        const requestedCapacity = parseInt(capacityInput.value) || 0;
+        
+        if (requestedCapacity > 0) {
+            // Get all venue options and filter suitable ones
+            const venueOptions = Array.from(venueSelect.options).slice(1); // Skip first "Select a venue" option
+            const suitableVenues = venueOptions.filter(option => {
+                const venueCapacity = parseInt(option.dataset.capacity) || 0;
+                return venueCapacity >= requestedCapacity;
+            });
+            
+            if (suitableVenues.length > 0) {
+                // Sort by capacity (ascending) to show most appropriate venues first
+                suitableVenues.sort((a, b) => {
+                    const capacityA = parseInt(a.dataset.capacity) || 0;
+                    const capacityB = parseInt(b.dataset.capacity) || 0;
+                    return capacityA - capacityB;
+                });
+                
+                // Generate suggestion list
+                let suggestionsHtml = '';
+                suitableVenues.slice(0, 3).forEach(option => { // Show top 3 suggestions
+                    const venueName = option.text.split(' - ')[0];
+                    const venueCapacity = parseInt(option.dataset.capacity) || 0;
+                    const pricePerHour = parseFloat(option.dataset.price) || 0;
+                    const remainingCapacity = venueCapacity - requestedCapacity;
+                    
+                    suggestionsHtml += `
+                        <div class="suggestion-item flex items-center justify-between p-2 bg-white rounded border border-green-200 transition-all duration-200 cursor-pointer" 
+                             onclick="selectSuggestedVenue('${option.value}')">
+                            <div class="flex-1">
+                                <div class="font-medium text-green-800 text-xs">${venueName}</div>
+                                <div class="text-xs text-green-600">
+                                    Capacity: ${venueCapacity} | Price: ₱${pricePerHour.toFixed(2)}/hr | +${remainingCapacity} extra spaces
+                                </div>
+                            </div>
+                            <button type="button" class="ml-2 px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors">
+                                Select
+                            </button>
+                        </div>
+                    `;
+                });
+                
+                suggestedVenuesList.innerHTML = suggestionsHtml;
+                venueSuggestions.classList.remove('hidden');
+            } else {
+                // No suitable venues found
+                suggestedVenuesList.innerHTML = `
+                    <div class="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        No venues can accommodate ${requestedCapacity} attendees. Consider reducing the number of attendees.
+                    </div>
+                `;
+                venueSuggestions.classList.remove('hidden');
+            }
+        } else {
+            // Hide suggestions when no capacity entered
+            venueSuggestions.classList.add('hidden');
+        }
+    }
+    
+    // Select a suggested venue
+    function selectSuggestedVenue(venueId) {
+        const venueSelect = document.getElementById('venue_id');
+        venueSelect.value = venueId;
+        
+        // Trigger change events to update pricing and validation
+        venueSelect.dispatchEvent(new Event('change'));
+        
+        // Hide suggestions after selection
+        document.getElementById('venueSuggestions').classList.add('hidden');
+        
+        // Show success feedback
+        const successNotification = document.createElement('div');
+        successNotification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transform transition-all duration-300';
+        successNotification.innerHTML = `
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-check-circle"></i>
+                <span class="text-sm">Venue selected!</span>
+            </div>
+        `;
+        document.body.appendChild(successNotification);
+        
+        // Remove notification after 2 seconds
+        setTimeout(() => {
+            successNotification.remove();
+        }, 2000);
+    }
+    
+    // Validate capacity against venue capacity
+    function validateCapacity() {
+        const venueSelect = document.getElementById('venue_id');
+        const capacityInput = document.getElementById('capacity');
+        const capacityWarning = document.getElementById('capacityWarning');
+        const capacityWarningText = document.getElementById('capacityWarningText');
+        const capacityInfo = document.getElementById('capacityInfo');
+        const capacityInfoText = document.getElementById('capacityInfoText');
+        
+        const requestedCapacity = parseInt(capacityInput.value) || 0;
+        
+        if (venueSelect.value && requestedCapacity > 0) {
+            const selectedOption = venueSelect.options[venueSelect.selectedIndex];
+            const venueCapacity = parseInt(selectedOption.dataset.capacity) || 0;
+            const venueName = selectedOption.text.split(' - ')[0]; // Extract venue name
+            
+            // Hide both info boxes first
+            capacityWarning.classList.add('hidden');
+            capacityInfo.classList.add('hidden');
+            
+            if (requestedCapacity > venueCapacity) {
+                // Show warning for overcapacity
+                capacityWarningText.textContent = `You are requesting ${requestedCapacity} attendees, but ${venueName} can only accommodate ${venueCapacity} people. Please reduce the number of attendees or select a larger venue.`;
+                capacityWarning.classList.remove('hidden');
+                
+                // Add red border to capacity input
+                capacityInput.classList.add('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+                capacityInput.classList.remove('border-gray-300', 'focus:ring-maroon', 'focus:border-maroon');
+            } else {
+                // Show info for acceptable capacity
+                const remainingCapacity = venueCapacity - requestedCapacity;
+                capacityInfoText.textContent = `${venueName} can accommodate ${venueCapacity} people. You have ${remainingCapacity} additional spaces available.`;
+                capacityInfo.classList.remove('hidden');
+                
+                // Reset input styling
+                capacityInput.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+                capacityInput.classList.add('border-gray-300', 'focus:ring-maroon', 'focus:border-maroon');
+            }
+        } else {
+            // Hide both info boxes when no venue selected or no capacity entered
+            capacityWarning.classList.add('hidden');
+            capacityInfo.classList.add('hidden');
+            
+            // Reset input styling
+            capacityInput.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+            capacityInput.classList.add('border-gray-300', 'focus:ring-maroon', 'focus:border-maroon');
         }
     }
     
@@ -624,6 +848,27 @@
                 e.preventDefault();
                 alert('End date must be after start date.');
                 return false;
+            }
+        }
+        
+        // Check capacity validation
+        const venueSelect = document.getElementById('venue_id');
+        const capacityInput = document.getElementById('capacity');
+        const requestedCapacity = parseInt(capacityInput.value) || 0;
+        
+        if (venueSelect.value && requestedCapacity > 0) {
+            const selectedOption = venueSelect.options[venueSelect.selectedIndex];
+            const venueCapacity = parseInt(selectedOption.dataset.capacity) || 0;
+            
+            if (requestedCapacity > venueCapacity) {
+                // Show warning but allow submission
+                const proceed = confirm(`⚠️ Warning: The requested capacity (${requestedCapacity}) exceeds the venue capacity (${venueCapacity}). This reservation will be flagged as overcapacity. Do you want to proceed?`);
+                if (!proceed) {
+                    e.preventDefault();
+                    capacityInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    capacityInput.focus();
+                    return false;
+                }
             }
         }
         

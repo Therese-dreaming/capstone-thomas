@@ -209,7 +209,17 @@
                                     @php
                                         $equipmentId = strtolower(str_replace(' ', '_', $equipment['name']));
                                         $maxQuantity = $equipment['quantity'] ?? 1;
-                                        $currentQuantity = $reservation->equipment[$equipment['name']] ?? 0;
+                                        
+                                        // Check if this equipment is in the reservation's equipment_details
+                                        $currentQuantity = 0;
+                                        if ($reservation->equipment_details && is_array($reservation->equipment_details)) {
+                                            foreach ($reservation->equipment_details as $reservedEquipment) {
+                                                if (isset($reservedEquipment['name']) && $reservedEquipment['name'] === $equipment['name']) {
+                                                    $currentQuantity = $reservedEquipment['quantity'] ?? 0;
+                                                    break;
+                                                }
+                                            }
+                                        }
                                     @endphp
                                     <div class="border border-gray-200 rounded-lg p-3">
                                         <div class="flex items-center justify-between mb-2">
@@ -241,13 +251,75 @@
                         <div class="border border-gray-200 rounded-lg p-3 mt-4">
                             <div class="flex items-center">
                                 <input type="checkbox" id="equipment_none" name="equipment[]" value="none" 
-                                       {{ empty($reservation->equipment) ? 'checked' : '' }}
+                                       {{ empty($reservation->equipment_details) || count($reservation->equipment_details) === 0 ? 'checked' : '' }}
                                        class="w-4 h-4 text-maroon border-gray-300 rounded focus:ring-maroon">
                                 <label for="equipment_none" class="ml-2 text-sm font-medium text-gray-700">No Equipment Needed</label>
                             </div>
                         </div>
                         
                         <p class="text-xs text-gray-500 mt-2">Select equipment and specify quantities. Quantities cannot exceed available amounts.</p>
+                    </div>
+
+                    <!-- Custom Equipment Requests -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                            <i class="fas fa-plus-circle text-maroon mr-2"></i>
+                            Custom Equipment Requests
+                        </label>
+                        <div class="space-y-3">
+                            <div id="custom_equipment_container">
+                                @if($reservation->custom_equipment_requests && count($reservation->custom_equipment_requests) > 0)
+                                    @foreach($reservation->custom_equipment_requests as $index => $customEquipment)
+                                        <div class="custom-equipment-item border border-gray-200 rounded-lg p-3">
+                                            <div class="flex items-center space-x-3">
+                                                <div class="flex-1">
+                                                    <input type="text" name="custom_equipment_name[]" 
+                                                           value="{{ $customEquipment['name'] ?? '' }}"
+                                                           placeholder="Equipment name" 
+                                                           class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-maroon focus:border-maroon">
+                                                </div>
+                                                <div class="w-20">
+                                                    <input type="number" name="custom_equipment_quantity[]" 
+                                                           value="{{ $customEquipment['quantity'] ?? 1 }}"
+                                                           min="1" placeholder="Qty" 
+                                                           class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-maroon focus:border-maroon">
+                                                </div>
+                                                <button type="button" onclick="removeCustomEquipment(this)" 
+                                                        class="text-red-500 hover:text-red-700 p-1">
+                                                    <i class="fas fa-trash text-sm"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <!-- Default empty custom equipment item -->
+                                    <div class="custom-equipment-item border border-gray-200 rounded-lg p-3">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="flex-1">
+                                                <input type="text" name="custom_equipment_name[]" 
+                                                       placeholder="Equipment name" 
+                                                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-maroon focus:border-maroon">
+                                            </div>
+                                            <div class="w-20">
+                                                <input type="number" name="custom_equipment_quantity[]" 
+                                                       value="1" min="1" placeholder="Qty" 
+                                                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-maroon focus:border-maroon">
+                                            </div>
+                                            <button type="button" onclick="removeCustomEquipment(this)" 
+                                                    class="text-red-500 hover:text-red-700 p-1">
+                                                <i class="fas fa-trash text-sm"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                            
+                            <button type="button" onclick="addCustomEquipment()" 
+                                    class="w-full px-4 py-2 text-sm text-maroon border border-maroon rounded-lg hover:bg-maroon hover:text-white transition-colors flex items-center justify-center">
+                                <i class="fas fa-plus mr-2"></i> Add Custom Equipment
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">Request equipment not available in the standard list. Leave empty if not needed.</p>
                     </div>
 
                     <!-- Base Price Calculation -->
@@ -542,6 +614,49 @@ function generateEquipmentOptions(venue) {
     
     // Re-attach event listeners for the new equipment checkboxes
     attachEquipmentEventListeners();
+}
+
+// Custom Equipment Functions
+function addCustomEquipment() {
+    const container = document.getElementById('custom_equipment_container');
+    const newItem = document.createElement('div');
+    newItem.className = 'custom-equipment-item border border-gray-200 rounded-lg p-3';
+    newItem.innerHTML = `
+        <div class="flex items-center space-x-3">
+            <div class="flex-1">
+                <input type="text" name="custom_equipment_name[]" 
+                       placeholder="Equipment name" 
+                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-maroon focus:border-maroon">
+            </div>
+            <div class="w-20">
+                <input type="number" name="custom_equipment_quantity[]" 
+                       value="1" min="1" placeholder="Qty" 
+                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-maroon focus:border-maroon">
+            </div>
+            <button type="button" onclick="removeCustomEquipment(this)" 
+                    class="text-red-500 hover:text-red-700 p-1">
+                <i class="fas fa-trash text-sm"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(newItem);
+}
+
+function removeCustomEquipment(button) {
+    const container = document.getElementById('custom_equipment_container');
+    const items = container.querySelectorAll('.custom-equipment-item');
+    
+    // Keep at least one item
+    if (items.length > 1) {
+        button.closest('.custom-equipment-item').remove();
+    } else {
+        // Clear the inputs instead of removing the item
+        const item = button.closest('.custom-equipment-item');
+        const nameInput = item.querySelector('input[name="custom_equipment_name[]"]');
+        const quantityInput = item.querySelector('input[name="custom_equipment_quantity[]"]');
+        nameInput.value = '';
+        quantityInput.value = '1';
+    }
 }
 
 // Form validation

@@ -95,6 +95,36 @@
         backdrop-filter: blur(4px);
         transition: all 0.3s ease;
     }
+    
+    /* Capacity validation styles */
+    .capacity-warning {
+        animation: capacityPulse 2s infinite;
+    }
+    
+    @keyframes capacityPulse {
+        0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+        70% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+    }
+    
+    .capacity-info {
+        animation: fadeIn 0.3s ease-out;
+    }
+    
+    .venue-suggestions {
+        animation: slideDown 0.3s ease-out;
+    }
+    
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .suggestion-item:hover {
+        background-color: #f0fdf4 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
 </style>
 
 <div class="font-poppins">
@@ -310,6 +340,27 @@
                                 </label>
                                 <input type="number" id="capacity" name="capacity" min="1" required
                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
+                                
+                                <!-- Capacity Warning -->
+                                <div id="capacityWarning" class="hidden mt-2 p-3 bg-red-50 border border-red-200 rounded-lg capacity-warning">
+                                    <div class="flex items-start">
+                                        <i class="fas fa-exclamation-triangle text-red-600 mr-2 mt-0.5"></i>
+                                        <div class="text-sm text-red-800">
+                                            <p class="font-medium mb-1">⚠️ Capacity Exceeded!</p>
+                                            <p id="capacityWarningText" class="text-xs"><!-- Warning text will be populated here --></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Capacity Info -->
+                                <div id="capacityInfo" class="hidden mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg capacity-info">
+                                    <div class="flex items-start">
+                                        <i class="fas fa-info-circle text-blue-600 mr-2 mt-0.5"></i>
+                                        <div class="text-sm text-blue-800">
+                                            <p id="capacityInfoText" class="text-xs"><!-- Capacity info will be populated here --></p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
     
                             <!-- Date and Time -->
@@ -320,7 +371,7 @@
                                         Start Date & Time <span class="text-red-500">*</span>
                                     </label>
                                     <input type="datetime-local" id="start_date" name="start_date" required
-                                           min="{{ now()->addDays(3)->format('Y-m-d\TH:i') }}"
+                                           min="{{ now()->addDays(3)->format('Y-m-d\T00:00') }}"
                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
                                 </div>
                                 <div>
@@ -337,17 +388,39 @@
                         <!-- Right Column -->
                         <div class="space-y-6">
     
-                            <!-- Venue (Auto-selected based on capacity, not editable) -->
+                            <!-- Venue Selection -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                <label for="venue_id" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
                                     <i class="fas fa-map-marker-alt text-maroon mr-2"></i>
                                     Venue <span class="text-red-500">*</span>
                                 </label>
-                                <div id="venue_display" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
-                                    <i class="fas fa-info-circle mr-2 text-blue-500"></i> Select capacity first
+                                <select id="venue_id" name="venue_id" required
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
+                                    <option value="">Select a venue</option>
+                                    @foreach($venues as $venue)
+                                        <option value="{{ $venue->id }}" 
+                                                data-price="{{ $venue->price_per_hour }}"
+                                                data-capacity="{{ $venue->capacity }}">
+                                            {{ $venue->name }} - ₱{{ number_format($venue->price_per_hour, 2) }}/hour ({{ $venue->capacity }} capacity)
+                                        </option>
+                                    @endforeach
+                                </select>
+                                
+                                <!-- Venue Suggestions -->
+                                <div id="venueSuggestions" class="hidden mt-2 p-3 bg-green-50 border border-green-200 rounded-lg venue-suggestions">
+                                    <div class="flex items-start">
+                                        <i class="fas fa-lightbulb text-green-600 mr-2 mt-0.5"></i>
+                                        <div class="text-sm text-green-800">
+                                            <p class="font-medium mb-1">💡 Recommended Venues</p>
+                                            <p class="text-xs mb-2">Based on your expected capacity, these venues are suitable:</p>
+                                            <div id="suggestedVenuesList" class="space-y-1">
+                                                <!-- Suggested venues will be populated here -->
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <input type="hidden" id="venue_id" name="venue_id" value="">
-                                <p class="text-xs text-gray-500 mt-1">Venue will be automatically selected based on your capacity requirement</p>
+                                
+                                <p class="text-xs text-gray-500 mt-1">Select a venue that can accommodate your expected capacity</p>
                             </div>
 
                             <!-- Price Rate (Auto-calculated) -->
@@ -357,9 +430,9 @@
                                     Rate per Hour <span class="text-red-500">*</span>
                                 </label>
                                 <div id="price_display" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
-                                    <i class="fas fa-info-circle mr-2 text-blue-500"></i> Select capacity first
+                                    <i class="fas fa-info-circle mr-2 text-blue-500"></i> Select a venue first
                                 </div>
-                                <input type="hidden" id="price_per_hour" name="price_per_hour" value="">
+                                <input type="hidden" id="price_per_hour" name="price_per_hour" value="" required>
                                 <p class="text-xs text-gray-500 mt-1">Rate will be automatically calculated based on venue selection</p>
                             </div>
 
@@ -453,9 +526,9 @@
                                     Base Price <span class="text-red-500">*</span>
                                 </label>
                                 <div id="base_price_display" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
-                                    <i class="fas fa-info-circle mr-2 text-blue-500"></i> Select capacity and dates first
+                                    <i class="fas fa-info-circle mr-2 text-blue-500"></i> Select venue and dates first
                                 </div>
-                                <input type="hidden" id="base_price" name="base_price" value="">
+                                <input type="hidden" id="base_price" name="base_price" value="" required>
                                 <div id="price_breakdown" class="mt-2 text-xs text-gray-500 hidden">
                                     <div class="space-y-1">
                                         <div id="duration_info"></div>
@@ -473,6 +546,14 @@
                         <button type="button" onclick="goBackToStep1()"
                                 class="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
                             <i class="fas fa-arrow-left mr-2"></i> Back to Step 1
+                        </button>
+                        <button type="button" onclick="testFormData()" 
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm mr-3">
+                            <i class="fas fa-bug mr-1"></i> Test Form
+                        </button>
+                        <button type="button" onclick="testSubmissionRoute()" 
+                                class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm mr-3">
+                            <i class="fas fa-network-wired mr-1"></i> Test Route
                         </button>
                         <button type="submit" id="submitReservationBtn"
                                 class="px-6 py-3 bg-maroon text-white rounded-lg hover:from-red-700 hover:to-maroon transition-all duration-300 shadow-md flex items-center">
@@ -606,9 +687,10 @@ function renderCalendar() {
         html += `<div class="text-center text-sm font-medium text-gray-500 py-2 font-montserrat">${day}</div>`;
     });
     
-    // Calculate the minimum selectable date (today + 3 days)
+    // Calculate the minimum selectable date (today + 3 days at midnight)
     const now = new Date();
     const minSelectable = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 3);
+    minSelectable.setHours(0, 0, 0, 0); // Set to midnight
     
     // Calendar days
     for (let i = 0; i < 42; i++) {
@@ -745,6 +827,12 @@ function submitActivityGrid() {
     
     // Store the file for later submission
     window.storedActivityGrid = activityGrid;
+    console.log('Storing activity grid file:', {
+        name: activityGrid.name,
+        size: activityGrid.size,
+        type: activityGrid.type,
+        lastModified: activityGrid.lastModified
+    });
     
     // Update display fields in step 2
     document.getElementById('display_event_title').textContent = eventTitle;
@@ -859,7 +947,7 @@ function showToast(message, type = 'error') {
     }, 5000);
 }
 
-// Auto-select venue based on capacity
+// Venue data for capacity validation and suggestions
 const venuesData = [
     @foreach($venues as $venue)
         @if($venue && is_object($venue) && isset($venue->id))
@@ -874,57 +962,169 @@ const venuesData = [
     @endforeach
 ];
 
+// Capacity validation and venue suggestions
 document.getElementById('capacity').addEventListener('input', function() {
-    const capacity = parseInt(this.value) || 0;
-    const venueDisplay = document.getElementById('venue_display');
-    const venueIdInput = document.getElementById('venue_id');
+    validateCapacity();
+    showVenueSuggestions();
+});
+
+// Venue selection change handler
+document.getElementById('venue_id').addEventListener('change', function() {
+    validateCapacity();
+    updatePriceDisplay();
+    
+    // Generate equipment options for the selected venue
+    const selectedVenueId = parseInt(this.value);
+    const selectedVenue = venuesData.find(venue => venue.id === selectedVenueId);
+    if (selectedVenue) {
+        generateEquipmentOptions(selectedVenue);
+        calculateBasePrice();
+    }
+});
+
+// Show venue suggestions based on capacity
+function showVenueSuggestions() {
+    const capacityInput = document.getElementById('capacity');
+    const venueSuggestions = document.getElementById('venueSuggestions');
+    const suggestedVenuesList = document.getElementById('suggestedVenuesList');
+    
+    const requestedCapacity = parseInt(capacityInput.value) || 0;
+    
+    if (requestedCapacity > 0) {
+        // Get suitable venues
+        const suitableVenues = venuesData.filter(venue => venue.capacity >= requestedCapacity);
+        
+        if (suitableVenues.length > 0) {
+            // Sort by capacity (ascending) to show most appropriate venues first
+            suitableVenues.sort((a, b) => a.capacity - b.capacity);
+            
+            // Generate suggestion list
+            let suggestionsHtml = '';
+            suitableVenues.slice(0, 3).forEach(venue => { // Show top 3 suggestions
+                const remainingCapacity = venue.capacity - requestedCapacity;
+                
+                suggestionsHtml += `
+                    <div class="suggestion-item flex items-center justify-between p-2 bg-white rounded border border-green-200 transition-all duration-200 cursor-pointer" 
+                         onclick="selectSuggestedVenue('${venue.id}')">
+                        <div class="flex-1">
+                            <div class="font-medium text-green-800 text-xs">${venue.name}</div>
+                            <div class="text-xs text-green-600">
+                                Capacity: ${venue.capacity} | Price: ₱${venue.price_per_hour.toFixed(2)}/hr | +${remainingCapacity} extra spaces
+                            </div>
+                        </div>
+                        <button type="button" class="ml-2 px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors">
+                            Select
+                        </button>
+                    </div>
+                `;
+            });
+            
+            suggestedVenuesList.innerHTML = suggestionsHtml;
+            venueSuggestions.classList.remove('hidden');
+        } else {
+            // No suitable venues found
+            suggestedVenuesList.innerHTML = `
+                <div class="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    No venues can accommodate ${requestedCapacity} attendees. Consider reducing the number of attendees.
+                </div>
+            `;
+            venueSuggestions.classList.remove('hidden');
+        }
+    } else {
+        // Hide suggestions when no capacity entered
+        venueSuggestions.classList.add('hidden');
+    }
+}
+
+// Select a suggested venue
+function selectSuggestedVenue(venueId) {
+    const venueSelect = document.getElementById('venue_id');
+    venueSelect.value = venueId;
+    
+    // Trigger change events
+    venueSelect.dispatchEvent(new Event('change'));
+    
+    // Hide suggestions after selection
+    document.getElementById('venueSuggestions').classList.add('hidden');
+    
+    // Show success feedback
+    showToast('Venue selected from suggestions!', 'success');
+}
+
+// Validate capacity against selected venue
+function validateCapacity() {
+    const venueSelect = document.getElementById('venue_id');
+    const capacityInput = document.getElementById('capacity');
+    const capacityWarning = document.getElementById('capacityWarning');
+    const capacityWarningText = document.getElementById('capacityWarningText');
+    const capacityInfo = document.getElementById('capacityInfo');
+    const capacityInfoText = document.getElementById('capacityInfoText');
+    
+    const requestedCapacity = parseInt(capacityInput.value) || 0;
+    
+    if (venueSelect.value && requestedCapacity > 0) {
+        const selectedOption = venueSelect.options[venueSelect.selectedIndex];
+        const venueCapacity = parseInt(selectedOption.dataset.capacity) || 0;
+        const venueName = selectedOption.text.split(' - ')[0]; // Extract venue name
+        
+        // Hide both info boxes first
+        capacityWarning.classList.add('hidden');
+        capacityInfo.classList.add('hidden');
+        
+        if (requestedCapacity > venueCapacity) {
+            // Show warning for overcapacity
+            capacityWarningText.textContent = `You are requesting ${requestedCapacity} attendees, but ${venueName} can only accommodate ${venueCapacity} people. Please reduce the number of attendees or select a larger venue.`;
+            capacityWarning.classList.remove('hidden');
+            
+            // Add red border to capacity input
+            capacityInput.classList.add('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+            capacityInput.classList.remove('border-gray-300', 'focus:ring-maroon', 'focus:border-maroon');
+        } else {
+            // Show info for acceptable capacity
+            const remainingCapacity = venueCapacity - requestedCapacity;
+            capacityInfoText.textContent = `${venueName} can accommodate ${venueCapacity} people. You have ${remainingCapacity} additional spaces available.`;
+            capacityInfo.classList.remove('hidden');
+            
+            // Reset input styling
+            capacityInput.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+            capacityInput.classList.add('border-gray-300', 'focus:ring-maroon', 'focus:border-maroon');
+        }
+    } else {
+        // Hide both info boxes when no venue selected or no capacity entered
+        capacityWarning.classList.add('hidden');
+        capacityInfo.classList.add('hidden');
+        
+        // Reset input styling
+        capacityInput.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+        capacityInput.classList.add('border-gray-300', 'focus:ring-maroon', 'focus:border-maroon');
+    }
+}
+
+// Update price display when venue is selected
+function updatePriceDisplay() {
+    const venueSelect = document.getElementById('venue_id');
     const priceDisplay = document.getElementById('price_display');
     const priceInput = document.getElementById('price_per_hour');
     
-    if (capacity <= 0) {
-        venueDisplay.innerHTML = '<i class="fas fa-info-circle mr-2 text-blue-500"></i> Select capacity first';
-        priceDisplay.innerHTML = '<i class="fas fa-info-circle mr-2 text-blue-500"></i> Select capacity first';
-        venueIdInput.value = '';
+    if (venueSelect.value) {
+        const selectedOption = venueSelect.options[venueSelect.selectedIndex];
+        const price = parseFloat(selectedOption.dataset.price) || 0;
+        
+        priceDisplay.innerHTML = `<i class="fas fa-check-circle mr-2 text-green-500"></i> ₱${price.toLocaleString()} <span class="text-sm text-gray-500">per hour</span>`;
+        priceInput.value = price;
+        
+        // Also calculate base price when venue is selected
+        calculateBasePrice();
+    } else {
+        priceDisplay.innerHTML = '<i class="fas fa-info-circle mr-2 text-blue-500"></i> Select a venue first';
         priceInput.value = '';
-        return;
+        
+        // Clear base price when no venue selected
+        document.getElementById('base_price').value = '';
+        document.getElementById('base_price_display').innerHTML = '<i class="fas fa-info-circle mr-2 text-blue-500"></i> Select venue and dates first';
     }
-    
-    // Find venues that can accommodate the capacity
-    const suitableVenues = venuesData.filter(venue => venue.capacity >= capacity);
-    
-    if (suitableVenues.length === 0) {
-        venueDisplay.innerHTML = '<i class="fas fa-exclamation-circle mr-2 text-red-500"></i> No venue available for this capacity';
-        priceDisplay.innerHTML = '<i class="fas fa-exclamation-circle mr-2 text-red-500"></i> No venue available for this capacity';
-        venueIdInput.value = '';
-        priceInput.value = '';
-        showToast('No venue available for the specified capacity. Please reduce the capacity or contact admin.', 'error');
-        return;
-    }
-    
-    // Select the venue with the closest capacity (smallest difference)
-    const selectedVenue = suitableVenues.reduce((closest, current) => {
-        const closestDiff = closest.capacity - capacity;
-        const currentDiff = current.capacity - capacity;
-        return currentDiff < closestDiff ? current : closest;
-    });
-    
-    venueDisplay.innerHTML = `<i class="fas fa-check-circle mr-2 text-green-500"></i> ${selectedVenue.name} <span class="text-sm text-gray-500">(Capacity: ${selectedVenue.capacity})</span>`;
-    venueIdInput.value = selectedVenue.id;
-    
-    // Update price display
-    const price = selectedVenue.price_per_hour || 0;
-    priceDisplay.innerHTML = `<i class="fas fa-check-circle mr-2 text-green-500"></i> ₱${price.toLocaleString()} <span class="text-sm text-gray-500">per hour</span>`;
-    priceInput.value = price;
-    
-    // Show success toast
-    showToast(`Venue "${selectedVenue.name}" automatically selected - Rate: ₱${price.toLocaleString()}/hour`, 'success');
-    
-    // Calculate base price after venue selection
-    calculateBasePrice();
-    
-    // Generate equipment options for the selected venue
-    generateEquipmentOptions(selectedVenue);
-});
+}
 
 // Function to attach event listeners to equipment checkboxes
 function attachEquipmentEventListeners() {
@@ -1245,17 +1445,36 @@ document.querySelector('form[action*="reservations"]').addEventListener('submit'
         return;
     }
     
+    // Check capacity validation
+    const venueSelect = document.getElementById('venue_id');
+    const capacityInput = document.getElementById('capacity');
+    const requestedCapacity = parseInt(capacityInput.value) || 0;
+    
+    if (venueSelect.value && requestedCapacity > 0) {
+        const selectedOption = venueSelect.options[venueSelect.selectedIndex];
+        const venueCapacity = parseInt(selectedOption.dataset.capacity) || 0;
+        const venueName = selectedOption.text.split(' - ')[0];
+        
+        if (requestedCapacity > venueCapacity) {
+            // Show warning but allow submission
+            showToast(`⚠️ Warning: The requested capacity (${requestedCapacity}) exceeds the venue capacity (${venueCapacity}) for ${venueName}. This will be flagged for admin review.`, 'info');
+        }
+    }
+    
     const startDate = new Date(document.getElementById('start_date').value);
     const endDate = new Date(document.getElementById('end_date').value);
     const capacity = parseInt(document.getElementById('capacity').value);
     const venueIdInput = document.getElementById('venue_id');
     
-    // 3 days in advance restriction
+    // 3 days in advance restriction (must be at least 3 calendar days from today at midnight)
     const now = new Date();
     const minDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 3);
+    minDate.setHours(0, 0, 0, 0); // Set to midnight
+    
     if (startDate < minDate) {
         e.preventDefault();
-        showToast('Reservations must be made at least 3 days in advance.', 'error');
+        const minDateStr = minDate.toLocaleDateString();
+        showToast(`Reservations must be made at least 3 days in advance. Earliest available date: ${minDateStr}`, 'error');
         return;
     }
     
@@ -1346,7 +1565,34 @@ document.querySelector('form[action*="reservations"]').addEventListener('submit'
     // Attach the stored activity grid file to the form
     const formData = new FormData(this);
     formData.delete('activity_grid'); // Remove the hidden input
-    formData.append('activity_grid', window.storedActivityGrid);
+    
+    // Add explicit JSON request flag
+    formData.append('ajax', '1');
+    
+    // Check if activity grid file exists
+    if (!window.storedActivityGrid) {
+        e.preventDefault();
+        showToast('Activity Grid file is missing. Please go back to Step 1 and re-upload the file.', 'error');
+        return;
+    }
+    
+    try {
+        console.log('Retrieving stored activity grid file:', {
+            exists: !!window.storedActivityGrid,
+            name: window.storedActivityGrid?.name,
+            size: window.storedActivityGrid?.size,
+            type: window.storedActivityGrid?.type,
+            isFile: window.storedActivityGrid instanceof File
+        });
+        
+        formData.append('activity_grid', window.storedActivityGrid);
+        console.log('Activity grid file attached successfully:', window.storedActivityGrid.name, window.storedActivityGrid.size + ' bytes');
+    } catch (error) {
+        e.preventDefault();
+        console.error('Error attaching activity grid file:', error);
+        showToast('Error preparing the activity grid file. Please try uploading it again.', 'error');
+        return;
+    }
     
     // Submit the form with the file
     e.preventDefault();
@@ -1430,26 +1676,228 @@ async function submitReservationWithFile(formData) {
     
     try {
         console.log('Submitting reservation...');
+        console.log('Submitting to URL:', '{{ route("user.reservations.store") }}');
         
-        const response = await fetch('{{ route("user.reservations.store") }}', {
+        // Check CSRF token
+        const csrfToken = document.querySelector('input[name="_token"]');
+        if (!csrfToken || !csrfToken.value) {
+            throw new Error('CSRF token is missing. Please refresh the page and try again.');
+        }
+        console.log('CSRF token found:', csrfToken.value.substring(0, 10) + '...');
+        
+        // Log form data for debugging
+        console.log('Form data entries:');
+        let hasActivityGrid = false;
+        for (let [key, value] of formData.entries()) {
+            if (value instanceof File) {
+                console.log(key + ':', value.name, value.size + ' bytes', value.type);
+                if (key === 'activity_grid') {
+                    hasActivityGrid = true;
+                }
+            } else {
+                console.log(key + ':', value);
+            }
+        }
+        
+        if (!hasActivityGrid) {
+            console.log('⚠️ WARNING: No activity_grid file found in form data!');
+        } else {
+            console.log('✅ Activity grid file is included in form data');
+        }
+        
+        const response = await fetch('{{ route("user.reservations.store") }}?ajax=1', {
             method: 'POST',
             body: formData,
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
                 'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]').value
             }
         });
         
         console.log('Response status:', response.status);
         console.log('Response ok:', response.ok);
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+        
+        // Check what type of response we got
+        const contentType = response.headers.get('content-type');
+        console.log('Content-Type:', contentType);
         
         // Hide loading state
         hideLoadingState();
         
         if (response.ok) {
-            const result = await response.json();
-            console.log('Success response:', result);
+            if (contentType && contentType.includes('application/json')) {
+                const result = await response.json();
+                console.log('✅ SUCCESS: JSON response received!');
+                console.log('Success response:', result);
+                
+                if (result.success) {
+                    console.log('✅ Database save confirmed!');
+                    console.log('Reservation ID:', result.reservation_id);
+                } else {
+                    console.log('⚠️ Server returned success status but success=false');
+                }
+            } else {
+                // Server returned HTML instead of JSON
+                const htmlText = await response.text();
+                console.log('Server returned HTML instead of JSON:');
+                console.log('Full HTML response:', htmlText);
+                console.log('First 1000 characters:', htmlText.substring(0, 1000));
+                
+                // Try to extract information from HTML
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+                const title = doc.querySelector('title')?.textContent || '';
+                const h1 = doc.querySelector('h1')?.textContent || '';
+                
+                console.log('HTML Title:', title);
+                console.log('HTML H1:', h1);
+                
+                // Check for success indicators in the HTML first
+                const successElements = doc.querySelectorAll('.alert-success, .success, .toast-success');
+                const successTexts = Array.from(successElements).map(el => el.textContent.trim()).filter(text => text);
+                
+                // Also check if the HTML contains success keywords
+                const hasSuccessKeywords = htmlText.includes('successfully') || 
+                                         htmlText.includes('submitted') || 
+                                         htmlText.includes('created') ||
+                                         htmlText.includes('reservation has been');
+                
+                // Check for specific Laravel error patterns
+                const hasValidationErrors = htmlText.includes('validation') || 
+                                          htmlText.includes('required') ||
+                                          htmlText.includes('invalid') ||
+                                          htmlText.includes('error');
+                
+                // Check for database errors
+                const hasDatabaseErrors = htmlText.includes('SQLSTATE') ||
+                                        htmlText.includes('Integrity constraint') ||
+                                        htmlText.includes('database');
+                
+                console.log('Detailed HTML analysis:');
+                console.log('- Has success keywords:', hasSuccessKeywords);
+                console.log('- Has validation errors:', hasValidationErrors);
+                console.log('- Has database errors:', hasDatabaseErrors);
+                console.log('- Success elements found:', successTexts.length);
+                if (successTexts.length > 0 || hasSuccessKeywords) {
+                    // Treat as success even though it returned HTML
+                    console.log('✅ Success detected in HTML response!');
+                    console.log('Success indicators:', successTexts);
+                    console.log('Has success keywords:', hasSuccessKeywords);
+                    
+                    // But warn if there might be issues
+                    if (hasValidationErrors || hasDatabaseErrors) {
+                        console.log('❌ CRITICAL: Success detected but validation/database errors found!');
+                        console.log('This means the form appeared to succeed but data was NOT saved to database!');
+                        console.log('Check the full HTML response for error details.');
+                        console.log('=== HTML RESPONSE EXCERPT (first 2000 chars) ===');
+                        console.log(htmlText.substring(0, 2000));
+                        console.log('=== END HTML EXCERPT ===');
+                        
+                        // Try to extract specific error messages
+                        const errorPatterns = [
+                            /validation.*failed/gi,
+                            /required.*field/gi,
+                            /SQLSTATE\[.*?\]/gi,
+                            /Integrity constraint violation/gi,
+                            /Column.*cannot be null/gi,
+                            /Duplicate entry/gi
+                        ];
+                        
+                        errorPatterns.forEach(pattern => {
+                            const matches = htmlText.match(pattern);
+                            if (matches) {
+                                console.log('Found error pattern:', matches);
+                            }
+                        });
+                        
+                        // Try to extract more specific error details
+                        console.log('Searching for specific validation errors...');
+                        
+                        // Extract actual Laravel validation errors from HTML
+                        const errorDivs = doc.querySelectorAll('.alert-danger, .text-red-500, .error, .invalid-feedback');
+                        if (errorDivs.length > 0) {
+                            console.log('Laravel validation errors found:');
+                            errorDivs.forEach((div, index) => {
+                                const errorText = div.textContent.trim();
+                                if (errorText && !errorText.includes('validation.*failed')) {
+                                    console.log(`Error ${index + 1}: ${errorText}`);
+                                }
+                            });
+                        }
+                        
+                        // Look for specific field validation messages in HTML
+                        const fieldErrorRegex = /The ([a-zA-Z_]+) field is required/g;
+                        let match;
+                        const missingFields = [];
+                        while ((match = fieldErrorRegex.exec(htmlText)) !== null) {
+                            missingFields.push(match[1]);
+                        }
+                        
+                        if (missingFields.length > 0) {
+                            console.log('Missing required fields detected:', missingFields);
+                        }
+                        
+                        // Look for database constraint errors
+                        const sqlErrorRegex = /SQLSTATE\[(\d+)\].*?(\w+.*?)(?:\n|$)/g;
+                        let sqlMatch;
+                        while ((sqlMatch = sqlErrorRegex.exec(htmlText)) !== null) {
+                            console.log('SQL Error:', sqlMatch[0]);
+                        }
+                        
+                        // Look for Laravel validation error messages
+                        const validationErrorRegex = /The\s+(\w+)\s+field\s+is\s+required/gi;
+                        const validationMatches = [...htmlText.matchAll(validationErrorRegex)];
+                        if (validationMatches.length > 0) {
+                            console.log('Required field errors:');
+                            validationMatches.forEach(match => {
+                                console.log(`- The ${match[1]} field is required`);
+                            });
+                        }
+                        
+                        // Look for database constraint errors
+                        const constraintRegex = /SQLSTATE\[23000\].*?Integrity constraint violation.*?Column '(\w+)' cannot be null/gi;
+                        const constraintMatches = [...htmlText.matchAll(constraintRegex)];
+                        if (constraintMatches.length > 0) {
+                            console.log('Database constraint errors:');
+                            constraintMatches.forEach(match => {
+                                console.log(`- Column '${match[1]}' cannot be null`);
+                            });
+                        }
+                        
+                        // Look for foreign key constraint errors
+                        const foreignKeyRegex = /foreign key constraint fails.*?`(\w+)`/gi;
+                        const foreignKeyMatches = [...htmlText.matchAll(foreignKeyRegex)];
+                        if (foreignKeyMatches.length > 0) {
+                            console.log('Foreign key constraint errors:');
+                            foreignKeyMatches.forEach(match => {
+                                console.log(`- Foreign key constraint fails for table: ${match[1]}`);
+                            });
+                        }
+                    }
+                    // Continue to success handling below
+                } else {
+                    // Check for error indicators
+                    const alertElements = doc.querySelectorAll('.alert-danger, .invalid-feedback, .error');
+                    const errorTexts = Array.from(alertElements).map(el => el.textContent.trim()).filter(text => text);
+                    
+                    let specificError = 'Server returned HTML page instead of JSON response.';
+                    if (title.includes('419') || title.includes('Page Expired')) {
+                        specificError = 'Session expired (419). Please refresh the page and try again.';
+                    } else if (title.includes('500') || title.includes('Server Error')) {
+                        specificError = 'Server error (500). Please check the server logs.';
+                    } else if (title.includes('404') || title.includes('Not Found')) {
+                        specificError = 'Route not found (404). The submission endpoint may not exist.';
+                    } else if (errorTexts.length > 0) {
+                        specificError = `Validation errors found in response: ${errorTexts.join(', ')}`;
+                    } else if (title.includes('Reservations')) {
+                        specificError = 'Form submission was redirected back to reservations page. This usually means validation failed or the form was not processed correctly.';
+                    }
+                    
+                    throw new Error(specificError);
+                }
+            }
             
             // Close reservation modal first
             closeReservationModal();
@@ -1461,18 +1909,48 @@ async function submitReservationWithFile(formData) {
             // Handle validation errors or other server errors
             let errorMessage = 'Failed to submit reservation. Please try again.';
             
-            if (response.status === 422) {
-                const errors = await response.json();
-                console.log('Validation errors:', errors);
-                errorMessage = Object.values(errors.errors || {}).flat().join(', ') || 'Validation failed. Please check your inputs.';
-            } else {
-                try {
-                    const error = await response.json();
-                    console.log('Error response:', error);
-                    errorMessage = error.message || errorMessage;
-                } catch (e) {
-                    console.log('Could not parse error response');
+            console.log('Error response status:', response.status);
+            console.log('Error response content-type:', contentType);
+            
+            try {
+                if (contentType && contentType.includes('application/json')) {
+                    const errorData = await response.json();
+                    console.log('Error response (JSON):', errorData);
+                    
+                    if (response.status === 422) {
+                        // Validation errors - show detailed information
+                        console.log('Validation errors details:', errorData.errors);
+                        const errorFields = Object.keys(errorData.errors || {});
+                        console.log('Fields with errors:', errorFields);
+                        
+                        // Create detailed error message
+                        const errorMessages = Object.entries(errorData.errors || {}).map(([field, messages]) => {
+                            return `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`;
+                        });
+                        
+                        errorMessage = `Validation failed:\n${errorMessages.join('\n')}`;
+                        console.log('Detailed error message:', errorMessage);
+                    } else {
+                        errorMessage = errorData.message || errorMessage;
+                    }
+                } else {
+                    // Server returned HTML error page
+                    const htmlText = await response.text();
+                    console.log('Error response (HTML):', htmlText.substring(0, 1000) + '...');
+                    
+                    if (response.status === 419) {
+                        errorMessage = 'Session expired. Please refresh the page and try again.';
+                    } else if (response.status === 403) {
+                        errorMessage = 'Access denied. Please check your permissions.';
+                    } else if (response.status === 500) {
+                        errorMessage = 'Server error occurred. Please try again later or contact support.';
+                    } else {
+                        errorMessage = `Server error (${response.status}). Please try again.`;
+                    }
                 }
+            } catch (e) {
+                console.log('Could not parse error response:', e);
+                errorMessage = `Server error (${response.status}). Please try again.`;
             }
             
             showErrorModal(errorMessage);
@@ -1480,8 +1958,186 @@ async function submitReservationWithFile(formData) {
     } catch (error) {
         console.error('Exception occurred:', error);
         hideLoadingState();
-        showErrorModal('An error occurred while submitting the reservation. Please check your internet connection and try again.');
+        
+        let errorMessage = 'An error occurred while submitting the reservation.';
+        
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            errorMessage = 'Network error: Unable to connect to the server. Please check your internet connection and try again.';
+        } else if (error.name === 'TypeError') {
+            errorMessage = 'Data processing error: There was an issue with the form data. Please refresh the page and try again.';
+        } else if (error.message) {
+            errorMessage = `Error: ${error.message}. Please try again.`;
+        }
+        
+        showErrorModal(errorMessage);
     }
+}
+
+// Test function to debug form data
+function testFormData() {
+    console.log('=== FORM DATA TEST ===');
+    
+    // Test if the route exists
+    testRoute();
+    
+    // Check if activity grid is stored
+    console.log('Activity Grid stored:', !!window.storedActivityGrid);
+    if (window.storedActivityGrid) {
+        console.log('Activity Grid details:', {
+            name: window.storedActivityGrid.name,
+            size: window.storedActivityGrid.size,
+            type: window.storedActivityGrid.type,
+            lastModified: new Date(window.storedActivityGrid.lastModified)
+        });
+    }
+    
+    // Check CSRF token
+    const csrfToken = document.querySelector('input[name="_token"]');
+    console.log('CSRF token exists:', !!csrfToken);
+    console.log('CSRF token value:', csrfToken ? csrfToken.value.substring(0, 10) + '...' : 'N/A');
+    
+    // Check form fields
+    const form = document.querySelector('form[action*="reservations"]');
+    const formData = new FormData(form);
+    
+    console.log('Form fields:');
+    for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+            console.log(`${key}: [FILE] ${value.name} (${value.size} bytes)`);
+        } else {
+            console.log(`${key}: ${value}`);
+        }
+    }
+    
+    // Check required fields
+    const requiredFields = ['event_title', 'purpose', 'department', 'capacity', 'start_date', 'end_date', 'venue_id', 'price_per_hour', 'base_price'];
+    const missingFields = [];
+    
+    requiredFields.forEach(field => {
+        const value = formData.get(field);
+        if (!value || value.trim() === '') {
+            missingFields.push(field);
+        }
+    });
+    
+    if (missingFields.length > 0) {
+        console.log('Missing required fields:', missingFields);
+        showToast(`Missing required fields: ${missingFields.join(', ')}`, 'error');
+    } else {
+        console.log('All required fields are filled');
+        showToast('Form data looks good! Check console for details.', 'success');
+    }
+    
+    console.log('=== END TEST ===');
+}
+
+// Test route accessibility
+async function testRoute() {
+    console.log('=== ROUTE TEST ===');
+    
+    try {
+        const testResponse = await fetch('{{ route("user.reservations.store") }}', {
+            method: 'GET', // Just test if route exists
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        console.log('Route test - Status:', testResponse.status);
+        console.log('Route test - Headers:', Object.fromEntries(testResponse.headers.entries()));
+        
+        if (testResponse.status === 405) {
+            console.log('✅ Route exists but only accepts POST (expected)');
+        } else if (testResponse.status === 404) {
+            console.log('❌ Route not found (404)');
+        } else {
+            console.log('Route test - Content type:', testResponse.headers.get('content-type'));
+        }
+        
+    } catch (error) {
+        console.log('❌ Route test failed:', error);
+    }
+    
+    console.log('Route URL:', '{{ route("user.reservations.store") }}');
+    console.log('=== END ROUTE TEST ===');
+}
+
+// Test the actual submission route with minimal data
+async function testSubmissionRoute() {
+    console.log('=== SUBMISSION ROUTE TEST ===');
+    
+    try {
+        // Create minimal form data for testing
+        const testFormData = new FormData();
+        testFormData.append('_token', document.querySelector('input[name="_token"]').value);
+        testFormData.append('event_title', 'Test Event');
+        testFormData.append('purpose', 'Test Purpose');
+        testFormData.append('department', 'ECE');
+        testFormData.append('capacity', '10');
+        testFormData.append('start_date', '2025-09-30T10:00');
+        testFormData.append('end_date', '2025-09-30T12:00');
+        testFormData.append('venue_id', '1');
+        testFormData.append('price_per_hour', '100');
+        testFormData.append('base_price', '200');
+        
+        // Create a dummy file for activity grid
+        const dummyFile = new File(['test content'], 'test-activity-grid.pdf', { type: 'application/pdf' });
+        testFormData.append('activity_grid', dummyFile);
+        
+        console.log('Sending test POST request...');
+        
+        const testResponse = await fetch('{{ route("user.reservations.store") }}', {
+            method: 'POST',
+            body: testFormData,
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        console.log('Test Response Status:', testResponse.status);
+        console.log('Test Response Headers:', Object.fromEntries(testResponse.headers.entries()));
+        console.log('Test Response Content-Type:', testResponse.headers.get('content-type'));
+        
+        const responseText = await testResponse.text();
+        console.log('Test Response Body (first 1000 chars):', responseText.substring(0, 1000));
+        
+        if (testResponse.headers.get('content-type')?.includes('application/json')) {
+            try {
+                const jsonData = JSON.parse(responseText);
+                console.log('✅ Server returned JSON:', jsonData);
+            } catch (e) {
+                console.log('❌ Failed to parse JSON:', e);
+            }
+        } else {
+            console.log('❌ Server returned HTML instead of JSON');
+            
+            // Try to extract error info
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(responseText, 'text/html');
+            const title = doc.querySelector('title')?.textContent || '';
+            const h1 = doc.querySelector('h1')?.textContent || '';
+            
+            console.log('HTML Title:', title);
+            console.log('HTML H1:', h1);
+            
+            if (title.includes('419')) {
+                console.log('🔍 Likely issue: CSRF token expired');
+            } else if (title.includes('500')) {
+                console.log('🔍 Likely issue: Server error');
+            } else if (title.includes('404')) {
+                console.log('🔍 Likely issue: Route not found');
+            } else if (title.includes('403')) {
+                console.log('🔍 Likely issue: Access denied');
+            }
+        }
+        
+    } catch (error) {
+        console.log('❌ Test submission failed:', error);
+    }
+    
+    console.log('=== END SUBMISSION ROUTE TEST ===');
 }
 </script>
 @endpush

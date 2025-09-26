@@ -187,6 +187,9 @@ use Illuminate\Support\Facades\Storage;
                     @elseif($reservation->status === 'rejected_OTP')
                         <span class="status-badge-inline bg-red-100 text-red-800">Rejected by PPGS</span>
                         <p class="text-sm text-gray-500 mt-2">Decision Complete</p>
+                    @elseif($reservation->status === 'cancelled')
+                        <span class="status-badge-inline bg-red-100 text-red-800">Cancelled by User</span>
+                        <p class="text-sm text-gray-500 mt-2">User Cancelled</p>
                     @else
                         <span class="status-badge-inline bg-gray-100 text-gray-800">{{ ucfirst(str_replace('_', ' ', $reservation->status)) }}</span>
                     @endif
@@ -216,7 +219,14 @@ use Illuminate\Support\Facades\Storage;
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Expected Participants</label>
-                                <p class="text-gray-900">{{ $reservation->expected_participants }} attendees</p>
+                                <div class="flex items-center">
+                                    <p class="text-gray-900">{{ $reservation->expected_participants }} attendees</p>
+                                    @if($reservation->expected_participants && $reservation->venue && $reservation->expected_participants > $reservation->venue->capacity)
+                                        <span class="ml-2 px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium animate-pulse">
+                                            ⚠️ Overcapacity
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Start Date & Time</label>
@@ -250,6 +260,41 @@ use Illuminate\Support\Facades\Storage;
                     @endif
                 </div>
             </div>
+
+            <!-- Cancellation Information -->
+            @if($reservation->status === 'cancelled' && $reservation->cancellation_reason)
+                <div class="category-card animate-fadeIn">
+                    <div class="category-header bg-red-50 border-b border-red-200">
+                        <h2 class="text-xl font-bold text-red-800 font-poppins flex items-center">
+                            <i class="fas fa-times-circle text-red-600 mr-3 text-2xl"></i>
+                            Cancellation Information
+                        </h2>
+                    </div>
+                    <div class="category-content bg-red-50">
+                        <div class="bg-white p-6 rounded-lg border border-red-200">
+                            <div class="flex items-start space-x-4">
+                                <div class="flex-shrink-0">
+                                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-exclamation text-red-600 text-lg"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-lg font-semibold text-red-800 mb-3">Reason for Cancellation</h4>
+                                    <p class="text-red-700 leading-relaxed mb-4">{{ $reservation->cancellation_reason }}</p>
+                                    @if($reservation->cancelled_at)
+                                        <div class="pt-4 border-t border-red-200">
+                                            <div class="flex items-center text-sm text-red-600">
+                                                <i class="fas fa-clock mr-2"></i>
+                                                <span class="font-medium">Cancelled on {{ $reservation->cancelled_at->format('M d, Y g:i A') }}</span>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <!-- Custom Equipment Requests -->
             @if($reservation && !empty($reservation->custom_equipment_requests))
@@ -510,7 +555,14 @@ use Illuminate\Support\Facades\Storage;
                             @if($reservation->venue->capacity)
                                 <div>
                                     <label class="block text-xs text-gray-500 mb-1">Capacity</label>
-                                    <p class="text-sm text-gray-700">{{ $reservation->venue->capacity }} people</p>
+                                    <div class="flex items-center">
+                                        <p class="text-sm text-gray-700">{{ $reservation->venue->capacity }} people</p>
+                                        @if($reservation->expected_participants && $reservation->venue && $reservation->expected_participants > $reservation->venue->capacity)
+                                            <span class="ml-2 px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">
+                                                Exceeded by {{ $reservation->expected_participants - $reservation->venue->capacity }}
+                                            </span>
+                                        @endif
+                                    </div>
                                 </div>
                             @endif
                         </div>
