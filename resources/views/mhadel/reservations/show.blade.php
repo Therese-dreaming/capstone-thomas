@@ -119,26 +119,52 @@ use Illuminate\Support\Facades\Storage;
     
     .category-card {
         background: white;
-        border-radius: 1rem;
+        border-radius: 0.75rem;
         box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-        border: 1px solid #f3f4f6;
+        border: 1px solid #e5e7eb;
         transition: all 0.3s ease;
     }
     
     .category-card:hover {
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        transform: translateY(-2px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        transform: translateY(-1px);
     }
     
     .category-header {
-        padding: 1.5rem;
-        border-bottom: 1px solid #f3f4f6;
-        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-        border-radius: 1rem 1rem 0 0;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+        border-radius: 0.75rem 0.75rem 0 0;
     }
     
     .category-content {
         padding: 1.5rem;
+    }
+    
+    .fee-selection-radio {
+        transition: all 0.2s ease;
+    }
+    
+    .fee-selection-radio:checked + label {
+        background-color: #f0f9ff;
+        border-color: #0ea5e9;
+    }
+    
+    .fee-selection-label {
+        border: 2px solid transparent;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .fee-selection-label:hover {
+        background-color: #f9fafb;
+        border-color: #e5e7eb;
+    }
+    
+    #pricingSection, #discountSection {
+        transition: opacity 0.3s ease, transform 0.3s ease;
     }
 </style>
 
@@ -149,14 +175,14 @@ use Illuminate\Support\Facades\Storage;
 @endsection
 
 @section('content')
-<div class="space-y-8 font-inter">
+<div class="space-y-6 font-inter">
     <!-- Status Banner -->
-    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden animate-fadeIn">
-        <div class="p-8 border-b border-gray-200">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden animate-fadeIn">
+        <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
-                    <h1 class="text-3xl font-bold text-gray-800 font-poppins mb-2">{{ $reservation->event_title }}</h1>
-                    <p class="text-gray-600 text-lg">Submitted by {{ $reservation->user->name }}</p>
+                    <h1 class="text-2xl font-bold text-gray-800 font-poppins mb-2">{{ $reservation->event_title }}</h1>
+                    <p class="text-gray-600">Submitted by {{ $reservation->user->name }}</p>
                     <div class="text-sm text-gray-500 font-mono mt-2">
                         Reservation ID: {{ $reservation->reservation_id ?? 'N/A' }}
                     </div>
@@ -180,7 +206,7 @@ use Illuminate\Support\Facades\Storage;
                 <div class="text-right">
                     @if($reservation->status === 'approved_IOSA')
                         <span class="status-badge bg-yellow-100 text-yellow-800">Pending Review</span>
-                        <p class="text-sm text-gray-500 mt-2">Waiting for Ms. Mhadel</p>
+                        <p class="text-sm text-gray-500 mt-2">Waiting for OTP</p>
                     @elseif($reservation->status === 'approved_mhadel')
                         <span class="status-badge bg-green-100 text-green-800">Approved by OTP</span>
                         <p class="text-sm text-gray-500 mt-2">Forwarded to PPGS</p>
@@ -205,14 +231,14 @@ use Illuminate\Support\Facades\Storage;
     </div>
 
     <!-- Main Content Grid -->
-    <div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
+    <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
         <!-- Left Column - Main Content -->
-        <div class="xl:col-span-3 space-y-8">
+        <div class="xl:col-span-3 space-y-6">
             <!-- Event Details Category -->
             <div class="category-card animate-fadeIn">
                 <div class="category-header">
-                    <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
-                        <i class="fas fa-calendar-alt text-maroon mr-3 text-2xl"></i>
+                    <h2 class="text-lg font-bold text-gray-800 font-poppins flex items-center">
+                        <i class="fas fa-calendar-alt text-maroon mr-3"></i>
                         Event Details
                     </h2>
                 </div>
@@ -265,8 +291,8 @@ use Illuminate\Support\Facades\Storage;
             @if($reservation->status === 'cancelled' && $reservation->cancellation_reason)
                 <div class="category-card animate-fadeIn">
                     <div class="category-header bg-red-50 border-b border-red-200">
-                        <h2 class="text-xl font-bold text-red-800 font-poppins flex items-center">
-                            <i class="fas fa-times-circle text-red-600 mr-3 text-2xl"></i>
+                        <h2 class="text-lg font-bold text-red-800 font-poppins flex items-center">
+                            <i class="fas fa-times-circle text-red-600 mr-3"></i>
                             Cancellation Information
                         </h2>
                     </div>
@@ -300,8 +326,8 @@ use Illuminate\Support\Facades\Storage;
             @if($reservation && !empty($reservation->custom_equipment_requests))
             <div class="category-card animate-fadeIn">
                 <div class="category-header">
-                    <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
-                        <i class="fas fa-plus-circle text-maroon mr-3 text-2xl"></i>
+                    <h2 class="text-lg font-bold text-gray-800 font-poppins flex items-center">
+                        <i class="fas fa-plus-circle text-maroon mr-3"></i>
                         Custom Equipment Requests
                     </h2>
                 </div>
@@ -343,8 +369,8 @@ use Illuminate\Support\Facades\Storage;
             @if($reservation->notes)
                 <div class="category-card animate-fadeIn">
                     <div class="category-header">
-                        <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
-                            <i class="fas fa-sticky-note text-maroon mr-3 text-2xl"></i>
+                        <h2 class="text-lg font-bold text-gray-800 font-poppins flex items-center">
+                            <i class="fas fa-sticky-note text-maroon mr-3"></i>
                             Notes & History
                         </h2>
                     </div>
@@ -360,8 +386,8 @@ use Illuminate\Support\Facades\Storage;
             @if($reservation->status === 'approved_IOSA')
                 <div class="category-card animate-fadeIn">
                     <div class="category-header">
-                        <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
-                            <i class="fas fa-bolt text-maroon mr-3 text-2xl"></i>
+                        <h2 class="text-lg font-bold text-gray-800 font-poppins flex items-center">
+                            <i class="fas fa-bolt text-maroon mr-3"></i>
                             Quick Actions
                         </h2>
                     </div>
@@ -385,8 +411,8 @@ use Illuminate\Support\Facades\Storage;
             @elseif($reservation->status === 'approved_mhadel')
                 <div class="category-card animate-fadeIn">
                     <div class="category-header">
-                        <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
-                            <i class="fas fa-info-circle text-blue-500 mr-3 text-2xl"></i>
+                        <h2 class="text-lg font-bold text-gray-800 font-poppins flex items-center">
+                            <i class="fas fa-info-circle text-blue-500 mr-3"></i>
                             Status Information
                         </h2>
                     </div>
@@ -405,8 +431,8 @@ use Illuminate\Support\Facades\Storage;
             @elseif($reservation->status === 'rejected_mhadel')
                 <div class="category-card animate-fadeIn">
                     <div class="category-header">
-                        <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
-                            <i class="fas fa-info-circle text-red-500 mr-3 text-2xl"></i>
+                        <h2 class="text-lg font-bold text-gray-800 font-poppins flex items-center">
+                            <i class="fas fa-info-circle text-red-500 mr-3"></i>
                             Status Information
                         </h2>
                     </div>
@@ -426,12 +452,12 @@ use Illuminate\Support\Facades\Storage;
         </div>
 
         <!-- Right Column - Sidebar -->
-        <div class="space-y-8">
+        <div class="space-y-6">
             <!-- Approval Timeline Category -->
             <div class="category-card animate-fadeIn">
                 <div class="category-header">
-                    <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
-                        <i class="fas fa-clock text-maroon mr-3 text-2xl"></i>
+                    <h2 class="text-lg font-bold text-gray-800 font-poppins flex items-center">
+                        <i class="fas fa-clock text-maroon mr-3"></i>
                         Approval Timeline
                     </h2>
                 </div>
@@ -522,8 +548,8 @@ use Illuminate\Support\Facades\Storage;
             <!-- Requester Information Category -->
             <div class="category-card animate-fadeIn">
                 <div class="category-header">
-                    <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
-                        <i class="fas fa-user text-maroon mr-3 text-2xl"></i>
+                    <h2 class="text-lg font-bold text-gray-800 font-poppins flex items-center">
+                        <i class="fas fa-user text-maroon mr-3"></i>
                         Requester Details
                     </h2>
                 </div>
@@ -555,8 +581,8 @@ use Illuminate\Support\Facades\Storage;
             @if($reservation->venue)
                 <div class="category-card animate-fadeIn">
                     <div class="category-header">
-                        <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
-                            <i class="fas fa-building text-maroon mr-3 text-2xl"></i>
+                        <h2 class="text-lg font-bold text-gray-800 font-poppins flex items-center">
+                            <i class="fas fa-building text-maroon mr-3"></i>
                             Venue Information
                         </h2>
                     </div>
@@ -593,8 +619,8 @@ use Illuminate\Support\Facades\Storage;
             @if($reservation->status === 'completed' && $reservation->total_ratings > 0)
                 <div class="category-card animate-fadeIn">
                     <div class="category-header">
-                        <h2 class="text-xl font-bold text-gray-800 font-poppins flex items-center">
-                            <i class="fas fa-star text-maroon mr-3 text-2xl"></i>
+                        <h2 class="text-lg font-bold text-gray-800 font-poppins flex items-center">
+                            <i class="fas fa-star text-maroon mr-3"></i>
                             User Rating
                         </h2>
                     </div>
@@ -657,10 +683,9 @@ use Illuminate\Support\Facades\Storage;
             </div>
             
             <div class="p-6">
-                                <!-- Left Column: Reservation Details -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div id="approvalGrid" class="grid grid-cols-1 gap-6">
                     <!-- Left Column: Reservation Details -->
-                    <div>
+                    <div id="reservationDetailsColumn">
                         <h4 class="font-medium text-gray-800 mb-3 text-lg">Reservation Details</h4>
                         <div class="bg-gray-50 p-4 rounded-lg mb-4">
                             <h4 class="font-semibold text-gray-800" id="approveEventTitle"></h4>
@@ -672,7 +697,34 @@ use Illuminate\Support\Facades\Storage;
                                 </div>
                                 <div class="flex items-center text-sm text-gray-600 mt-1">
                                     <i class="fas fa-arrow-right text-green-500 mr-2"></i>
-                                    <span>Next Step: <span class="font-medium text-green-600">Ms. Mhadel Review</span></span>
+                                    <span>Next Step: <span class="font-medium text-green-600">OTP Review</span></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Fee Selection -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-3">Fee Selection <span class="text-red-500">*</span></label>
+                            <div class="space-y-3">
+                                <div>
+                                    <input type="radio" id="feeTypeFree" name="feeType" value="free" class="fee-selection-radio h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300" checked>
+                                    <label for="feeTypeFree" class="fee-selection-label block text-sm font-medium text-gray-700 ml-6">
+                                        <span class="flex items-center">
+                                            <i class="fas fa-gift text-green-500 mr-2"></i>
+                                            Free Reservation
+                                        </span>
+                                        <span class="text-xs text-gray-500 mt-1 block">No charges will be applied to this reservation</span>
+                                    </label>
+                                </div>
+                                <div>
+                                    <input type="radio" id="feeTypeWithFee" name="feeType" value="with_fee" class="fee-selection-radio h-4 w-4 text-maroon focus:ring-maroon border-gray-300">
+                                    <label for="feeTypeWithFee" class="fee-selection-label block text-sm font-medium text-gray-700 ml-6">
+                                        <span class="flex items-center">
+                                            <i class="fas fa-money-bill-wave text-maroon mr-2"></i>
+                                            With Fee (Charged)
+                                        </span>
+                                        <span class="text-xs text-gray-500 mt-1 block">Pricing will be applied based on venue rates and duration</span>
+                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -681,26 +733,10 @@ use Illuminate\Support\Facades\Storage;
                             <label class="block text-sm font-medium text-gray-700 mb-2">Additional Notes (Optional)</label>
                             <textarea id="approveNotes" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Add any additional notes for this approval..."></textarea>
                         </div>
-
-                        <!-- Summary -->
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                            <div class="flex items-start">
-                                <i class="fas fa-save text-blue-500 mr-2 mt-0.5"></i>
-                                <div class="text-xs text-blue-700">
-                                    <p class="font-medium">This information will be saved:</p>
-                                    <ul class="mt-1 space-y-1">
-                                        <li>• Final price set by Ms. Mhadel</li>
-                                        <li>• Discount percentage (if applied)</li>
-                                        <li>• Approval notes and timestamp</li>
-                                        <li>• Status updated to "Ms. Mhadel Approved"</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                     
                     <!-- Middle Column: Pricing Information -->
-                    <div>
+                    <div id="pricingSection" class="hidden">
                         <h4 class="font-medium text-gray-800 mb-3 text-lg">Pricing Information</h4>
                         
                         <!-- Venue Rate and Base Price Display -->
@@ -735,10 +771,26 @@ use Illuminate\Support\Facades\Storage;
                             <p class="text-xs text-gray-600 mb-2">Set the final price for this reservation. Enter 0 for free events.</p>
                             <input type="number" id="basePrice" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Enter final price or 0 for free events" required>
                         </div>
+                        
+                        <!-- Summary -->
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div class="flex items-start">  
+                                <i class="fas fa-save text-blue-500 mr-2"></i>
+                                <div class="text-xs text-blue-700">
+                                    <p class="font-medium">This information will be saved:</p>
+                                    <ul class="mt-1 space-y-1">
+                                        <li>• Final price set by OTP</li>
+                                        <li>• Discount percentage (if applied)</li>
+                                        <li>• Approval notes and timestamp</li>
+                                        <li>• Status updated to "OTP Approved"</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
                     <!-- Right Column: Discount & Final Price -->
-                    <div>
+                    <div id="discountSection" class="hidden">
                         <h4 class="font-medium text-gray-800 mb-3 text-lg">Discount & Final Price</h4>
                         
                         <!-- Discount Selection -->
@@ -786,6 +838,7 @@ use Illuminate\Support\Facades\Storage;
                             </div>
                         </div>
                     </div>
+                </div>
             </div>
             
             <!-- Modal Footer -->
@@ -796,6 +849,7 @@ use Illuminate\Support\Facades\Storage;
                 <form id="approveForm" method="POST" class="inline">
                     @csrf
                     <input type="hidden" id="approveNotesInput" name="notes">
+                    <input type="hidden" id="approveFeeTypeInput" name="fee_type">
                     <input type="hidden" id="approveBasePriceInput" name="base_price">
                     <input type="hidden" id="approveDiscountInput" name="discount">
                     <input type="hidden" id="approveFinalPriceInput" name="final_price">
@@ -902,6 +956,64 @@ use Illuminate\Support\Facades\Storage;
         }
     }
     
+    // Fee Selection Functions
+    function handleFeeTypeChange() {
+        const feeTypeFree = document.getElementById('feeTypeFree');
+        const feeTypeWithFee = document.getElementById('feeTypeWithFee');
+        const pricingSection = document.getElementById('pricingSection');
+        const discountSection = document.getElementById('discountSection');
+        const approvalGrid = document.getElementById('approvalGrid');
+        const basePrice = document.getElementById('basePrice');
+        
+        if (feeTypeFree && feeTypeFree.checked) {
+            // Single column layout for free reservations
+            if (approvalGrid) {
+                approvalGrid.className = 'grid grid-cols-1 gap-6';
+            }
+            
+            // Hide pricing and discount sections for free reservations
+            if (pricingSection) {
+                pricingSection.style.display = 'none';
+                pricingSection.classList.add('hidden');
+            }
+            if (discountSection) {
+                discountSection.style.display = 'none';
+                discountSection.classList.add('hidden');
+            }
+            
+            // Set base price to 0 for free reservations
+            if (basePrice) {
+                basePrice.value = '0';
+                basePrice.removeAttribute('required');
+            }
+            
+            // Reset discount
+            selectedDiscount = 0;
+            calculateFinalPrice();
+        } else if (feeTypeWithFee && feeTypeWithFee.checked) {
+            // Three column layout for paid reservations
+            if (approvalGrid) {
+                approvalGrid.className = 'grid grid-cols-1 lg:grid-cols-3 gap-6';
+            }
+            
+            // Show pricing and discount sections for paid reservations
+            if (pricingSection) {
+                pricingSection.style.display = 'block';
+                pricingSection.classList.remove('hidden');
+            }
+            if (discountSection) {
+                discountSection.style.display = 'block';
+                discountSection.classList.remove('hidden');
+            }
+            
+            // Make base price required for paid reservations
+            if (basePrice) {
+                basePrice.setAttribute('required', 'required');
+                basePrice.value = '';
+            }
+        }
+    }
+    
     // Approve Modal Functions
     function openApproveModal(reservationId, eventTitle) {
         const approveEventTitle = document.getElementById('approveEventTitle');
@@ -981,6 +1093,15 @@ use Illuminate\Support\Facades\Storage;
         document.getElementById('basePrice').value = '';
         selectedDiscount = 0;
         
+        // Reset fee type to free by default
+        const feeTypeFree = document.getElementById('feeTypeFree');
+        const feeTypeWithFee = document.getElementById('feeTypeWithFee');
+        if (feeTypeFree) feeTypeFree.checked = true;
+        if (feeTypeWithFee) feeTypeWithFee.checked = false;
+        
+        // Handle initial fee type state
+        handleFeeTypeChange();
+        
         // Reset button styles
         document.querySelectorAll('.discount-btn').forEach(btn => {
             btn.classList.remove('bg-green-500', 'text-white', 'border-green-500');
@@ -1029,10 +1150,18 @@ use Illuminate\Support\Facades\Storage;
         if (approveForm) {
             approveForm.addEventListener('submit', function(e) {
                 const notes = document.getElementById('approveNotes')?.value || '';
+                const feeTypeFree = document.getElementById('feeTypeFree');
+                const feeTypeWithFee = document.getElementById('feeTypeWithFee');
                 const finalPriceInput = basePrice?.value || '';
                 
-                // Validate that final price is entered
-                if (finalPriceInput === '') {
+                // Get fee type
+                let feeType = 'free';
+                if (feeTypeWithFee && feeTypeWithFee.checked) {
+                    feeType = 'with_fee';
+                }
+                
+                // Validate based on fee type
+                if (feeType === 'with_fee' && finalPriceInput === '') {
                     e.preventDefault();
                     alert('Please enter the final price for this reservation.');
                     basePrice?.focus();
@@ -1043,25 +1172,39 @@ use Illuminate\Support\Facades\Storage;
                 const discount = selectedDiscount;
                 let priceAfterDiscount = finalPrice;
                 
-                if (discount > 0) {
+                if (discount > 0 && feeType === 'with_fee') {
                     priceAfterDiscount = finalPrice - (finalPrice * discount / 100);
                 }
                 
                 const approveNotesInput = document.getElementById('approveNotesInput');
+                const approveFeeTypeInput = document.getElementById('approveFeeTypeInput');
                 const approveBasePriceInput = document.getElementById('approveBasePriceInput');
                 const approveDiscountInput = document.getElementById('approveDiscountInput');
                 const approveFinalPriceInput = document.getElementById('approveFinalPriceInput');
 
                 if (approveNotesInput) approveNotesInput.value = notes;
-                if (approveBasePriceInput) approveBasePriceInput.value = finalPrice;
-                if (approveDiscountInput) approveDiscountInput.value = discount;
-                if (approveFinalPriceInput) approveFinalPriceInput.value = priceAfterDiscount.toFixed(2);
+                if (approveFeeTypeInput) approveFeeTypeInput.value = feeType;
+                if (approveBasePriceInput) approveBasePriceInput.value = feeType === 'free' ? 0 : finalPrice;
+                if (approveDiscountInput) approveDiscountInput.value = feeType === 'free' ? 0 : discount;
+                if (approveFinalPriceInput) approveFinalPriceInput.value = feeType === 'free' ? 0 : priceAfterDiscount.toFixed(2);
             });
         }
         
         // Add event listener for base price input
         if (basePrice) {
             basePrice.addEventListener('input', calculateFinalPrice);
+        }
+        
+        // Add event listeners for fee type radio buttons
+        const feeTypeFree = document.getElementById('feeTypeFree');
+        const feeTypeWithFee = document.getElementById('feeTypeWithFee');
+        
+        if (feeTypeFree) {
+            feeTypeFree.addEventListener('change', handleFeeTypeChange);
+        }
+        
+        if (feeTypeWithFee) {
+            feeTypeWithFee.addEventListener('change', handleFeeTypeChange);
         }
         
         // Handle reject form submission

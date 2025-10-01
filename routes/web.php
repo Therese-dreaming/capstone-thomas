@@ -18,6 +18,7 @@ use App\Http\Controllers\Mhadel\VenueController as MhadelVenueController;
 use App\Http\Controllers\Mhadel\EventController as MhadelEventController;
 use App\Http\Controllers\DrJavier\DrJavierController;
 use App\Http\Controllers\DrJavier\ReservationController as OTPReservationController;
+use App\Http\Controllers\OTP\EventController as OTPEventController;
 use App\Http\Controllers\GSU\GSUController as GSUController;
 use App\Http\Controllers\GSU\ReservationController as GSUReservationController;
 use App\Http\Controllers\GSU\EventController as GSUEventController;
@@ -183,9 +184,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('reservations/{id}/download-activity-grid', [OTPReservationController::class, 'downloadActivityGrid'])->name('reservations.download-activity-grid');
         // Removed export route for Dr. Javier reservations
         
-        // Dr. Javier Events Routes
-        Route::get('events', [\App\Http\Controllers\DrJavier\EventController::class, 'index'])->name('events.index');
-        Route::get('events/{event}', [\App\Http\Controllers\DrJavier\EventController::class, 'show'])->name('events.show');
+        // OTP Events Routes (View-only with Excel export)
+        Route::get('events', [OTPEventController::class, 'index'])->name('events.index');
+        Route::get('events/{event}', [OTPEventController::class, 'show'])->name('events.show');
+        Route::get('events/export/excel', [OTPEventController::class, 'export'])->name('events.export');
         Route::get('events-calendar', [\App\Http\Controllers\DrJavier\EventController::class, 'calendar'])->name('events.calendar');
     });
 
