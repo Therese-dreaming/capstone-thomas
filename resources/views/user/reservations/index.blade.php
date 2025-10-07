@@ -452,6 +452,19 @@
                         </div>
                     </div>
                     
+                    <!-- Cancellation Reason -->
+                    <div class="mb-4">
+                        <label for="cancellation_reason" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                            <i class="fas fa-comment-alt text-maroon mr-2"></i>
+                            Reason for Cancellation <span class="text-red-500">*</span>
+                        </label>
+                        <textarea id="cancellation_reason" name="cancellation_reason" rows="3" required
+                                  placeholder="Please provide a reason for cancelling this reservation (minimum 10 characters)"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors text-sm"></textarea>
+                        <p class="text-xs text-gray-500 mt-1">Minimum 10 characters required</p>
+                        <p id="cancellation_reason_error" class="text-xs text-red-500 mt-1 hidden"></p>
+                    </div>
+                    
                     <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
                         <div class="flex items-start">
                             <i class="fas fa-info-circle text-yellow-600 mr-2 mt-0.5"></i>
@@ -460,8 +473,7 @@
                                 <ul class="text-xs space-y-0.5">
                                     <li>• Your reservation will be marked as cancelled</li>
                                     <li>• The venue will become available for other users</li>
-                                    <li>• You'll receive a confirmation email</li>
-                                    <li>• Admins will be notified of the cancellation</li>
+                                    <li>• Admins will be notified with your cancellation reason</li>
                                 </ul>
                             </div>
                         </div>
@@ -628,15 +640,43 @@
         document.getElementById('cancelModal').classList.add('hidden');
         document.body.style.overflow = 'auto';
         
-        // Reset variables
+        // Reset variables and form
         currentReservationId = null;
         currentEventTitle = null;
         currentEventDate = null;
+        document.getElementById('cancellation_reason').value = '';
+        document.getElementById('cancellation_reason_error').classList.add('hidden');
     }
 
     // Function to confirm cancellation
     function confirmCancel() {
         if (!currentReservationId) return;
+        
+        // Get cancellation reason
+        const cancellationReason = document.getElementById('cancellation_reason').value.trim();
+        const errorElement = document.getElementById('cancellation_reason_error');
+        
+        // Validate cancellation reason
+        if (!cancellationReason) {
+            errorElement.textContent = 'Please provide a reason for cancellation';
+            errorElement.classList.remove('hidden');
+            return;
+        }
+        
+        if (cancellationReason.length < 10) {
+            errorElement.textContent = 'Reason must be at least 10 characters long';
+            errorElement.classList.remove('hidden');
+            return;
+        }
+        
+        if (cancellationReason.length > 500) {
+            errorElement.textContent = 'Reason must not exceed 500 characters';
+            errorElement.classList.remove('hidden');
+            return;
+        }
+        
+        // Hide error if validation passes
+        errorElement.classList.add('hidden');
         
         // Show loading state
         const confirmBtn = document.querySelector('#cancelModal button[onclick="confirmCancel()"]');
@@ -650,7 +690,10 @@
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
-            }
+            },
+            body: JSON.stringify({
+                cancellation_reason: cancellationReason
+            })
         })
         .then(response => response.json())
         .then(data => {

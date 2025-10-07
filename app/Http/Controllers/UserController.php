@@ -516,7 +516,7 @@ class UserController extends Controller
 			->with('success', 'Reservation updated successfully!');
 	}
 
-	public function cancel($id)
+	public function cancel(Request $request, $id)
 	{
 		$reservation = Reservation::where('id', $id)
 			->where('user_id', Auth::id())
@@ -530,8 +530,17 @@ class UserController extends Controller
 			], 400);
 		}
 
-		// Update status to cancelled
-		$reservation->update(['status' => 'cancelled']);
+		// Validate cancellation reason
+		$request->validate([
+			'cancellation_reason' => 'required|string|min:10|max:500'
+		]);
+
+		// Update status to cancelled with reason
+		$reservation->update([
+			'status' => 'cancelled',
+			'cancellation_reason' => $request->cancellation_reason,
+			'cancelled_at' => now()
+		]);
 
 		// Create notification
 		Notification::create([
@@ -549,7 +558,7 @@ class UserController extends Controller
 			Notification::create([
 				'user_id' => $admin->id,
 				'title' => 'Reservation cancelled',
-				'body' => 'User ' . Auth::user()->name . ' cancelled reservation "' . $reservation->event_title . '".',
+				'body' => 'User ' . Auth::user()->name . ' cancelled reservation "' . $reservation->event_title . '". Reason: ' . $request->cancellation_reason,
 				'type' => 'reservation_action',
 				'related_id' => $reservation->id,
 				'related_type' => Reservation::class,

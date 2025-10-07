@@ -99,6 +99,9 @@
         if (in_array($status, ['rejected','rejected_OTP'])) { 
             $badge = ['class' => 'bg-red-100 text-red-800 border-red-300', 'icon' => 'fa-times-circle', 'label' => 'Rejected']; 
         }
+        if ($status === 'cancelled') { 
+            $badge = ['class' => 'bg-gray-100 text-gray-800 border-gray-300', 'icon' => 'fa-ban', 'label' => 'Cancelled']; 
+        }
         $duration = $reservation->duration_hours;
     @endphp
 
@@ -220,6 +223,25 @@
                 </div>
                 
                 <div class="space-y-3">
+                    @if($reservation->status === 'cancelled' && !empty($reservation->cancellation_reason))
+                    <div class="p-3 bg-red-50 rounded-lg border border-red-200">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center mr-3">
+                                <i class="fas fa-ban text-red-600 text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-xs font-medium text-red-600 mb-2">Cancellation Reason</div>
+                                <div class="text-gray-800 text-sm leading-relaxed">{{ $reservation->cancellation_reason }}</div>
+                                @if($reservation->cancelled_at)
+                                <div class="text-xs text-gray-500 mt-2">
+                                    <i class="far fa-clock mr-1"></i>Cancelled on {{ $reservation->cancelled_at->format('M d, Y g:i A') }}
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                    
                     @if(!empty($reservation->notes))
                     <div class="p-3 bg-amber-50 rounded-lg border border-amber-200">
                         <div class="flex items-start">
