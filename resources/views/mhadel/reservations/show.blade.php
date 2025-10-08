@@ -658,7 +658,7 @@ use Illuminate\Support\Facades\Storage;
             
             <div class="p-6">
                                 <!-- Left Column: Reservation Details -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div id="approvalGrid" class="grid grid-cols-1 gap-6">
                     <!-- Left Column: Reservation Details -->
                     <div>
                         <h4 class="font-medium text-gray-800 mb-3 text-lg">Reservation Details</h4>
@@ -673,6 +673,33 @@ use Illuminate\Support\Facades\Storage;
                                 <div class="flex items-center text-sm text-gray-600 mt-1">
                                     <i class="fas fa-arrow-right text-green-500 mr-2"></i>
                                     <span>Next Step: <span class="font-medium text-green-600">Ms. Mhadel Review</span></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Fee Selection -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-3">Fee Selection <span class="text-red-500">*</span></label>
+                            <div class="space-y-3">
+                                <div>
+                                    <input type="radio" id="feeTypeFree" name="feeType" value="free" class="fee-selection-radio h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300" checked>
+                                    <label for="feeTypeFree" class="fee-selection-label block text-sm font-medium text-gray-700 ml-6">
+                                        <span class="flex items-center">
+                                            <i class="fas fa-gift text-green-500 mr-2"></i>
+                                            Free Reservation
+                                        </span>
+                                        <span class="text-xs text-gray-500 mt-1 block">No charges will be applied to this reservation</span>
+                                    </label>
+                                </div>
+                                <div>
+                                    <input type="radio" id="feeTypeWithFee" name="feeType" value="with_fee" class="fee-selection-radio h-4 w-4 text-maroon focus:ring-maroon border-gray-300">
+                                    <label for="feeTypeWithFee" class="fee-selection-label block text-sm font-medium text-gray-700 ml-6">
+                                        <span class="flex items-center">
+                                            <i class="fas fa-money-bill-wave text-maroon mr-2"></i>
+                                            With Fee (Charged)
+                                        </span>
+                                        <span class="text-xs text-gray-500 mt-1 block">Pricing will be applied based on venue rates and duration</span>
+                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -700,7 +727,7 @@ use Illuminate\Support\Facades\Storage;
                     </div>
                     
                     <!-- Middle Column: Pricing Information -->
-                    <div>
+                    <div id="pricingSection" class="hidden">
                         <h4 class="font-medium text-gray-800 mb-3 text-lg">Pricing Information</h4>
                         
                         <!-- Venue Rate and Base Price Display -->
@@ -738,7 +765,7 @@ use Illuminate\Support\Facades\Storage;
                     </div>
                     
                     <!-- Right Column: Discount & Final Price -->
-                    <div>
+                    <div id="discountSection" class="hidden">
                         <h4 class="font-medium text-gray-800 mb-3 text-lg">Discount & Final Price</h4>
                         
                         <!-- Discount Selection -->
@@ -796,6 +823,7 @@ use Illuminate\Support\Facades\Storage;
                 <form id="approveForm" method="POST" class="inline">
                     @csrf
                     <input type="hidden" id="approveNotesInput" name="notes">
+                    <input type="hidden" id="approveFeeTypeInput" name="fee_type">
                     <input type="hidden" id="approveBasePriceInput" name="base_price">
                     <input type="hidden" id="approveDiscountInput" name="discount">
                     <input type="hidden" id="approveFinalPriceInput" name="final_price">
@@ -857,6 +885,73 @@ use Illuminate\Support\Facades\Storage;
 <script>
     // Price and Discount Functions
     let selectedDiscount = 0;
+    
+    // Fee Selection Functions
+    function handleFeeTypeChange() {
+        const freeRadio = document.getElementById('feeTypeFree');
+        const withFeeRadio = document.getElementById('feeTypeWithFee');
+        const pricingSection = document.getElementById('pricingSection');
+        const discountSection = document.getElementById('discountSection');
+        const approvalGrid = document.getElementById('approvalGrid');
+        const basePrice = document.getElementById('basePrice');
+        
+        if (freeRadio && freeRadio.checked) {
+            // Hide pricing sections for free reservation
+            if (pricingSection) pricingSection.classList.add('hidden');
+            if (discountSection) discountSection.classList.add('hidden');
+            
+            // Update grid to single column for free reservations
+            if (approvalGrid) {
+                approvalGrid.className = 'grid grid-cols-1 gap-6';
+            }
+            
+            // Set price to 0 and make it readonly
+            if (basePrice) {
+                basePrice.value = '0';
+                basePrice.readOnly = true;
+                basePrice.classList.add('bg-gray-100');
+            }
+            
+            // Reset final price display
+            document.getElementById('finalPrice').textContent = '₱0.00';
+            document.getElementById('discountInfo').classList.add('hidden');
+            
+            // Reset discount selection
+            selectedDiscount = 0;
+            document.querySelectorAll('.discount-btn').forEach(btn => {
+                btn.classList.remove('bg-green-500', 'text-white', 'border-green-500');
+                btn.classList.add('border-gray-300', 'hover:bg-gray-50');
+            });
+            document.getElementById('discount-0').classList.add('bg-green-500', 'text-white', 'border-green-500');
+            document.getElementById('discount-0').classList.remove('border-gray-300', 'hover:bg-gray-50');
+            
+        } else if (withFeeRadio && withFeeRadio.checked) {
+            // Show pricing sections for paid reservation
+            if (pricingSection) pricingSection.classList.remove('hidden');
+            if (discountSection) discountSection.classList.remove('hidden');
+            
+            // Update grid to three columns for paid reservations
+            if (approvalGrid) {
+                approvalGrid.className = 'grid grid-cols-1 lg:grid-cols-3 gap-6';
+            }
+            
+            // Make price input editable and pre-fill with calculated price
+            if (basePrice) {
+                // Get the calculated price from the display
+                const calculatedPriceText = document.getElementById('calculatedBasePrice')?.textContent || '₱0.00';
+                const calculatedValue = calculatedPriceText.replace('₱', '').replace(',', '');
+                
+                basePrice.value = calculatedValue;
+                basePrice.readOnly = false;
+                basePrice.classList.remove('bg-gray-100');
+                
+                // Trigger calculation to update final price display
+                calculateFinalPrice();
+                
+                basePrice.focus();
+            }
+        }
+    }
     
     function selectDiscount(discount) {
         selectedDiscount = discount;
@@ -953,33 +1048,49 @@ use Illuminate\Support\Facades\Storage;
             }
         }
         
-        // Display calculated base price
-        if (reservation.base_price && parseFloat(reservation.base_price) > 0) {
-            const userPriceFormatted = parseFloat(reservation.base_price).toFixed(2);
-            calculatedBasePrice.textContent = `₱${userPriceFormatted}`;
-            
-            // Show calculation details if we have both rate and duration
-            if (reservation.price_per_hour && reservation.duration_hours) {
-                const rate = parseFloat(reservation.price_per_hour);
-                const duration = parseInt(reservation.duration_hours);
-                basePriceCalculation.textContent = `Rate: ₱${rate.toFixed(2)}/hour × ${duration} hour${duration > 1 ? 's' : ''} = ₱${userPriceFormatted}`;
-            } else if (reservation.venue && reservation.venue.price_per_hour && reservation.duration_hours) {
-                // Fallback to venue rate if reservation rate is not available
-                const rate = parseFloat(reservation.venue.price_per_hour);
-                const duration = parseInt(reservation.duration_hours);
-                const calculatedPrice = rate * duration;
-                basePriceCalculation.textContent = `Rate: ₱${rate.toFixed(2)}/hour × ${duration} hour${duration > 1 ? 's' : ''} = ₱${calculatedPrice.toFixed(2)} (calculated from venue rate)`;
-            } else {
-                basePriceCalculation.textContent = `Base price from reservation data (₱${userPriceFormatted})`;
-            }
-        } else {
-            calculatedBasePrice.textContent = '₱0.00';
-            basePriceCalculation.textContent = 'Free event or no pricing data';
+        // Calculate and display base price
+        let calculatedPrice = 0;
+        let calculationText = '';
+        
+        // Try to calculate from reservation's stored price_per_hour first
+        if (reservation.price_per_hour && parseFloat(reservation.price_per_hour) > 0 && reservation.duration_hours) {
+            const rate = parseFloat(reservation.price_per_hour);
+            const duration = parseInt(reservation.duration_hours);
+            calculatedPrice = rate * duration;
+            calculationText = `Rate: ₱${rate.toFixed(2)}/hour × ${duration} hour${duration > 1 ? 's' : ''} = ₱${calculatedPrice.toFixed(2)}`;
         }
+        // Fallback to venue rate if reservation rate is not available
+        else if (reservation.venue && reservation.venue.price_per_hour && parseFloat(reservation.venue.price_per_hour) > 0 && reservation.duration_hours) {
+            const rate = parseFloat(reservation.venue.price_per_hour);
+            const duration = parseInt(reservation.duration_hours);
+            calculatedPrice = rate * duration;
+            calculationText = `Rate: ₱${rate.toFixed(2)}/hour × ${duration} hour${duration > 1 ? 's' : ''} = ₱${calculatedPrice.toFixed(2)} (from venue)`;
+        }
+        // Use stored base_price if available and no rate calculation possible
+        else if (reservation.base_price && parseFloat(reservation.base_price) > 0) {
+            calculatedPrice = parseFloat(reservation.base_price);
+            calculationText = `Base price from reservation data: ₱${calculatedPrice.toFixed(2)}`;
+        }
+        // Default to free if no pricing data available
+        else {
+            calculatedPrice = 0;
+            calculationText = 'Free event or no pricing data available';
+        }
+        
+        // Update the display
+        calculatedBasePrice.textContent = `₱${calculatedPrice.toFixed(2)}`;
+        basePriceCalculation.textContent = calculationText;
         
         // Reset form fields
         document.getElementById('basePrice').value = '';
         selectedDiscount = 0;
+        
+        // Reset fee selection to "Free" by default
+        document.getElementById('feeTypeFree').checked = true;
+        document.getElementById('feeTypeWithFee').checked = false;
+        
+        // Trigger fee type change to set initial state
+        handleFeeTypeChange();
         
         // Reset button styles
         document.querySelectorAll('.discount-btn').forEach(btn => {
@@ -999,6 +1110,14 @@ use Illuminate\Support\Facades\Storage;
     function closeApproveModal() {
         document.getElementById('approveModal').classList.add('hidden');
         document.getElementById('approveNotes').value = '';
+        
+        // Reset fee selection to "Free" by default
+        document.getElementById('feeTypeFree').checked = true;
+        document.getElementById('feeTypeWithFee').checked = false;
+        
+        // Trigger fee type change to reset state
+        handleFeeTypeChange();
+        
         document.body.style.overflow = 'auto';
     }
     
@@ -1031,12 +1150,29 @@ use Illuminate\Support\Facades\Storage;
                 const notes = document.getElementById('approveNotes')?.value || '';
                 const finalPriceInput = basePrice?.value || '';
                 
-                // Validate that final price is entered
-                if (finalPriceInput === '') {
-                    e.preventDefault();
-                    alert('Please enter the final price for this reservation.');
-                    basePrice?.focus();
-                    return;
+                // Get fee type selection
+                const feeTypeRadios = document.querySelectorAll('input[name="feeType"]');
+                let selectedFeeType = 'free'; // default
+                feeTypeRadios.forEach(radio => {
+                    if (radio.checked) {
+                        selectedFeeType = radio.value;
+                    }
+                });
+                
+                // Validate final price based on fee type
+                if (selectedFeeType === 'free') {
+                    // For free reservations, ensure price is 0
+                    if (basePrice) {
+                        basePrice.value = '0';
+                    }
+                } else {
+                    // For paid reservations, validate that final price is entered
+                    if (finalPriceInput === '') {
+                        e.preventDefault();
+                        alert('Please enter the final price for this reservation.');
+                        basePrice?.focus();
+                        return;
+                    }
                 }
                 
                 const finalPrice = parseFloat(finalPriceInput) || 0;
@@ -1048,11 +1184,13 @@ use Illuminate\Support\Facades\Storage;
                 }
                 
                 const approveNotesInput = document.getElementById('approveNotesInput');
+                const approveFeeTypeInput = document.getElementById('approveFeeTypeInput');
                 const approveBasePriceInput = document.getElementById('approveBasePriceInput');
                 const approveDiscountInput = document.getElementById('approveDiscountInput');
                 const approveFinalPriceInput = document.getElementById('approveFinalPriceInput');
 
                 if (approveNotesInput) approveNotesInput.value = notes;
+                if (approveFeeTypeInput) approveFeeTypeInput.value = selectedFeeType;
                 if (approveBasePriceInput) approveBasePriceInput.value = finalPrice;
                 if (approveDiscountInput) approveDiscountInput.value = discount;
                 if (approveFinalPriceInput) approveFinalPriceInput.value = priceAfterDiscount.toFixed(2);
@@ -1062,6 +1200,18 @@ use Illuminate\Support\Facades\Storage;
         // Add event listener for base price input
         if (basePrice) {
             basePrice.addEventListener('input', calculateFinalPrice);
+        }
+        
+        // Add event listeners for fee type radio buttons
+        const feeTypeFree = document.getElementById('feeTypeFree');
+        const feeTypeWithFee = document.getElementById('feeTypeWithFee');
+        
+        if (feeTypeFree) {
+            feeTypeFree.addEventListener('change', handleFeeTypeChange);
+        }
+        
+        if (feeTypeWithFee) {
+            feeTypeWithFee.addEventListener('change', handleFeeTypeChange);
         }
         
         // Handle reject form submission

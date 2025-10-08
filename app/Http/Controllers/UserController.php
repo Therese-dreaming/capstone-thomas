@@ -555,16 +555,30 @@ class UserController extends Controller
 
 		// Only allow cancellation of pending reservations (not yet approved by IOSA)
 		if ($reservation->status !== 'pending') {
-			return response()->json([
-				'success' => false,
-				'message' => 'This reservation cannot be cancelled. You can only cancel reservations that have not been reviewed by IOSA yet.'
-			], 400);
+			if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
+				return response()->json([
+					'success' => false,
+					'message' => 'This reservation cannot be cancelled. You can only cancel reservations that have not been reviewed by IOSA yet.'
+				], 400);
+			}
+			return back()->with('error', 'This reservation cannot be cancelled. You can only cancel reservations that have not been reviewed by IOSA yet.');
 		}
 
 		// Validate cancellation reason
-		$request->validate([
-			'cancellation_reason' => 'required|string|min:10|max:500'
-		]);
+		try {
+			$request->validate([
+				'cancellation_reason' => 'required|string|min:10|max:500'
+			]);
+		} catch (\Illuminate\Validation\ValidationException $e) {
+			if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
+				return response()->json([
+					'success' => false,
+					'message' => 'The cancellation reason field is required and must be between 10-500 characters.',
+					'errors' => $e->errors()
+				], 422);
+			}
+			throw $e;
+		}
 
 		// Update status to cancelled with reason and timestamp
 		$reservation->update([
@@ -596,10 +610,14 @@ class UserController extends Controller
 			]);
 		}
 
-		return response()->json([
-			'success' => true,
-			'message' => 'Reservation cancelled successfully!'
-		]);
+		if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
+			return response()->json([
+				'success' => true,
+				'message' => 'Reservation cancelled successfully!'
+			]);
+		}
+
+		return redirect()->route('user.reservations.index')->with('success', 'Reservation cancelled successfully!');
 	}
 
 	/**

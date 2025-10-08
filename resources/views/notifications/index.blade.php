@@ -46,6 +46,16 @@
 		border-left-color: #e5e7eb;
 	}
 	
+	.notification-item.cursor-pointer:hover {
+		background-color: #eff6ff !important;
+		border-left-color: #3b82f6;
+		transform: translateX(2px);
+	}
+	
+	.notification-item.cursor-pointer {
+		border-left: 3px solid transparent;
+	}
+	
 	.notification-item:not(.bg-gray-50):hover {
 		background-color: #f9fafb;
 	}
@@ -111,32 +121,117 @@
 		</div>
 		<div>
 			@forelse($notifications as $n)
-				<div class="p-4 border-b border-gray-100 notification-item {{ $n->read_at ? '' : 'bg-gray-50' }}">
-					<div class="flex items-start justify-between">
-						<div class="flex-1">
-							<div class="flex items-start gap-3">
-								<div class="w-2 h-2 rounded-full mt-2 flex-shrink-0 {{ $n->read_at ? 'bg-gray-300' : 'bg-blue-500' }}"></div>
-								<div class="flex-1 min-w-0">
-									<div class="text-sm font-medium text-gray-800">{{ $n->title }}</div>
-									@if($n->body)
-									<div class="text-xs text-gray-600 mt-1">{{ $n->body }}</div>
-									@endif
-									<div class="text-xs text-gray-500 mt-2 flex items-center gap-2">
-										<i class="fas fa-clock"></i>
-										<span>{{ $n->created_at->diffForHumans() }}</span>
+				@php
+					// Generate the appropriate URL based on notification type and related data
+					$notificationUrl = null;
+					$isClickable = false;
+					
+					// Check if notification has related data
+					if ($n->related_id && $n->related_type) {
+						$isClickable = true;
+						
+						// Handle different related types
+						if ($n->related_type === 'App\Models\Event' || $n->related_type === 'Event') {
+							// Event-related notifications
+							$userRole = Auth::user()->role;
+							if ($userRole === 'IOSA') {
+								$notificationUrl = route('iosa.events.show', $n->related_id);
+							} elseif ($userRole === 'Ms. Mhadel' || $userRole === 'Mhadel') {
+								$notificationUrl = route('mhadel.events.show', $n->related_id);
+							} elseif ($userRole === 'OTP') {
+								$notificationUrl = route('drjavier.events.show', $n->related_id);
+							}
+						} elseif ($n->related_type === 'App\Models\Reservation' || $n->related_type === 'Reservation') {
+							// Reservation-related notifications
+							$userRole = Auth::user()->role;
+							if ($userRole === 'User') {
+								$notificationUrl = route('user.reservations.show', $n->related_id);
+							} elseif ($userRole === 'IOSA') {
+								$notificationUrl = route('iosa.reservations.show', $n->related_id);
+							} elseif ($userRole === 'Ms. Mhadel' || $userRole === 'Mhadel') {
+								$notificationUrl = route('mhadel.reservations.show', $n->related_id);
+							} elseif ($userRole === 'OTP') {
+								$notificationUrl = route('drjavier.reservations.show', $n->related_id);
+							} elseif ($userRole === 'GSU') {
+								$notificationUrl = route('gsu.reservations.show', $n->related_id);
+							}
+						}
+					} else {
+						// Fallback: try to extract ID from notification content for older notifications
+						if (preg_match('/reservation.*?(\d+)/i', $n->body, $matches) || preg_match('/event.*?(\d+)/i', $n->body, $matches)) {
+							$extractedId = $matches[1];
+							$userRole = Auth::user()->role;
+							
+							// Determine if it's about reservations or events based on content
+							if (stripos($n->title, 'reservation') !== false || stripos($n->body, 'reservation') !== false) {
+								$isClickable = true;
+								if ($userRole === 'User') {
+									$notificationUrl = route('user.reservations.show', $extractedId);
+								} elseif ($userRole === 'IOSA') {
+									$notificationUrl = route('iosa.reservations.show', $extractedId);
+								} elseif ($userRole === 'Ms. Mhadel' || $userRole === 'Mhadel') {
+									$notificationUrl = route('mhadel.reservations.show', $extractedId);
+								} elseif ($userRole === 'OTP') {
+									$notificationUrl = route('drjavier.reservations.show', $extractedId);
+								} elseif ($userRole === 'GSU') {
+									$notificationUrl = route('gsu.reservations.show', $extractedId);
+								}
+							} elseif (stripos($n->title, 'event') !== false || stripos($n->body, 'event') !== false) {
+								$isClickable = true;
+								if ($userRole === 'IOSA') {
+									$notificationUrl = route('iosa.events.show', $extractedId);
+								} elseif ($userRole === 'Ms. Mhadel' || $userRole === 'Mhadel') {
+									$notificationUrl = route('mhadel.events.show', $extractedId);
+								} elseif ($userRole === 'OTP') {
+									$notificationUrl = route('drjavier.events.show', $extractedId);
+								}
+							}
+						}
+					}
+				@endphp
+				
+				<div class="notification-item {{ $n->read_at ? '' : 'bg-gray-50' }} {{ $isClickable ? 'cursor-pointer hover:bg-blue-50' : '' }}" 
+					 @if($isClickable && $notificationUrl) 
+					 	onclick="handleNotificationClick('{{ $notificationUrl }}', {{ $n->id }}, {{ $n->read_at ? 'true' : 'false' }})"
+					 	data-url="{{ $notificationUrl }}"
+					 	data-notification-id="{{ $n->id }}"
+					 	data-is-read="{{ $n->read_at ? 'true' : 'false' }}"
+					 @endif>
+					<div class="p-4 border-b border-gray-100">
+						<div class="flex items-start justify-between">
+							<div class="flex-1">
+								<div class="flex items-start gap-3">
+									<div class="w-2 h-2 rounded-full mt-2 flex-shrink-0 {{ $n->read_at ? 'bg-gray-300' : 'bg-blue-500' }}"></div>
+									<div class="flex-1 min-w-0">
+										<div class="text-sm font-medium text-gray-800 {{ $isClickable ? 'text-blue-700 hover:text-blue-900' : '' }}">
+											{{ $n->title }}
+											@if($isClickable)
+												<i class="fas fa-external-link-alt text-xs ml-1 opacity-60"></i>
+											@endif
+										</div>
+										@if($n->body)
+										<div class="text-xs text-gray-600 mt-1">{{ $n->body }}</div>
+										@endif
+										<div class="text-xs text-gray-500 mt-2 flex items-center gap-2">
+											<i class="fas fa-clock"></i>
+											<span>{{ $n->created_at->diffForHumans() }}</span>
+											@if($isClickable)
+												<span class="text-blue-600 font-medium">• Click to view</span>
+											@endif
+										</div>
 									</div>
 								</div>
 							</div>
-						</div>
-						<div class="ml-3 flex-shrink-0">
-							@if(!$n->read_at)
-							<form method="POST" action="{{ route('notifications.read', $n->id) }}" class="inline">
-								@csrf
-								<button type="submit" class="text-xs text-blue-600 hover:underline mark-read-btn px-2 py-1 rounded hover:bg-blue-50 transition-colors">Mark read</button>
-							</form>
-							@else
-							<span class="text-xs text-gray-400 px-2 py-1">Read</span>
-							@endif
+							<div class="ml-3 flex-shrink-0">
+								@if(!$n->read_at)
+								<form method="POST" action="{{ route('notifications.read', $n->id) }}" class="inline" onclick="event.stopPropagation()">
+									@csrf
+									<button type="submit" class="text-xs text-blue-600 hover:underline mark-read-btn px-2 py-1 rounded hover:bg-blue-50 transition-colors">Mark read</button>
+								</form>
+								@else
+								<span class="text-xs text-gray-400 px-2 py-1">Read</span>
+								@endif
+							</div>
 						</div>
 					</div>
 				</div>
@@ -159,10 +254,51 @@
 </div>
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
+	// Handle notification click - Define globally
+	window.handleNotificationClick = function(url, notificationId, isRead) {
+		console.log('Notification clicked:', { url, notificationId, isRead });
+		
+		// If notification is unread, mark it as read first
+		if (!isRead) {
+			// Send AJAX request to mark as read
+			fetch(`/notifications/${notificationId}/read`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+				}
+			}).then(() => {
+				// Navigate to the URL
+				window.location.href = url;
+			}).catch((error) => {
+				console.error('Error marking notification as read:', error);
+				// If marking as read fails, still navigate
+				window.location.href = url;
+			});
+		} else {
+			// If already read, just navigate
+			window.location.href = url;
+		}
+	};
+
+	// Alternative: Handle clicks using event delegation
+	function handleNotificationClickAlt(event) {
+		const clickableDiv = event.currentTarget;
+		const url = clickableDiv.dataset.url;
+		const notificationId = clickableDiv.dataset.notificationId;
+		const isRead = clickableDiv.dataset.isRead === 'true';
+		
+		if (url) {
+			window.handleNotificationClick(url, notificationId, isRead);
+		}
+	}
+
 	// Add hover effects and smooth transitions
 	document.addEventListener('DOMContentLoaded', function() {
+		console.log('Notifications page loaded');
+		
 		// Add notification-item class to all notification items
 		const notificationItems = document.querySelectorAll('.p-4.border-b.border-gray-100');
 		notificationItems.forEach(item => {
@@ -175,6 +311,84 @@
 			if (btn.textContent.trim() === 'Mark read') {
 				btn.classList.add('mark-read-btn');
 			}
+		});
+
+		// Set up event delegation for clickable notifications as backup
+		const clickableNotifications = document.querySelectorAll('.notification-item[data-url]');
+		console.log('Found clickable notifications:', clickableNotifications.length);
+		
+		clickableNotifications.forEach(notification => {
+			notification.addEventListener('click', handleNotificationClickAlt);
+		});
+	});
+</script>
+@endpush
+
+@section('scripts')
+<script>
+	// Handle notification click - Define globally (for layouts using @yield('scripts'))
+	window.handleNotificationClick = function(url, notificationId, isRead) {
+		console.log('Notification clicked:', { url, notificationId, isRead });
+		
+		// If notification is unread, mark it as read first
+		if (!isRead) {
+			// Send AJAX request to mark as read
+			fetch(`/notifications/${notificationId}/read`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+				}
+			}).then(() => {
+				// Navigate to the URL
+				window.location.href = url;
+			}).catch((error) => {
+				console.error('Error marking notification as read:', error);
+				// If marking as read fails, still navigate
+				window.location.href = url;
+			});
+		} else {
+			// If already read, just navigate
+			window.location.href = url;
+		}
+	};
+
+	// Alternative: Handle clicks using event delegation
+	function handleNotificationClickAlt(event) {
+		const clickableDiv = event.currentTarget;
+		const url = clickableDiv.dataset.url;
+		const notificationId = clickableDiv.dataset.notificationId;
+		const isRead = clickableDiv.dataset.isRead === 'true';
+		
+		if (url) {
+			window.handleNotificationClick(url, notificationId, isRead);
+		}
+	}
+
+	// Add hover effects and smooth transitions
+	document.addEventListener('DOMContentLoaded', function() {
+		console.log('Notifications page loaded');
+		
+		// Add notification-item class to all notification items
+		const notificationItems = document.querySelectorAll('.p-4.border-b.border-gray-100');
+		notificationItems.forEach(item => {
+			item.classList.add('notification-item');
+		});
+		
+		// Add mark-read-btn class to all mark read buttons
+		const markReadBtns = document.querySelectorAll('button[type="submit"]');
+		markReadBtns.forEach(btn => {
+			if (btn.textContent.trim() === 'Mark read') {
+				btn.classList.add('mark-read-btn');
+			}
+		});
+
+		// Set up event delegation for clickable notifications as backup
+		const clickableNotifications = document.querySelectorAll('.notification-item[data-url]');
+		console.log('Found clickable notifications:', clickableNotifications.length);
+		
+		clickableNotifications.forEach(notification => {
+			notification.addEventListener('click', handleNotificationClickAlt);
 		});
 	});
 </script>

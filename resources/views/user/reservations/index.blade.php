@@ -102,6 +102,16 @@
         color: #374151; 
         border-color: #9CA3AF;
     }
+    .status-cancelled { 
+        background: linear-gradient(135deg, #fef2f2 0%, #fde8e8 100%); 
+        color: #7f1d1d; 
+        border-color: #dc2626;
+    }
+    .status-unknown { 
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); 
+        color: #0c4a6e; 
+        border-color: #0284c7;
+    }
     
     .stats-card {
         background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
@@ -273,10 +283,22 @@
                                     @break
                                 @case('rejected')
                                 @case('rejected_OTP')
+                                @case('rejected_mhadel')
+                                @case('rejected_IOSA')
+                                @case('rejected_PPGS')
                                     <div class="status-badge status-rejected">
                                         <i class="fas fa-times-circle mr-1"></i> Rejected
                                     </div>
                                     @break
+                                @case('cancelled')
+                                    <div class="status-badge status-cancelled">
+                                        <i class="fas fa-ban mr-1"></i> Cancelled
+                                    </div>
+                                    @break
+                                @default
+                                    <div class="status-badge status-unknown">
+                                        <i class="fas fa-question-circle mr-1"></i> {{ ucfirst(str_replace('_', ' ', $reservation->status)) }}
+                                    </div>
                             @endswitch
                             
                             <div class="flex flex-col h-full">
@@ -749,16 +771,25 @@
         // Prepare form data
         const formData = new FormData();
         formData.append('cancellation_reason', reason);
+        formData.append('_method', 'DELETE');
         
         fetch(`/user/reservations/${currentReservationId}`, {
-            method: 'DELETE',
+            method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
             },
             body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.message || `HTTP error! status: ${response.status}`);
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 // Show success message
@@ -778,7 +809,7 @@
         })
         .catch(error => {
             console.error('Error:', error);
-            showToast('An error occurred while cancelling the reservation', 'error');
+            showToast(error.message || 'An error occurred while cancelling the reservation', 'error');
             // Reset button state
             confirmBtn.innerHTML = originalText;
             confirmBtn.disabled = false;

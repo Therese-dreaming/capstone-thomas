@@ -158,13 +158,55 @@
 								</div>
 								<div class="max-h-80 overflow-auto">
 									@forelse(($globalLatestNotifications ?? []) as $n)
-										<div class="p-3 border-b border-gray-100 {{ $n->read_at ? '' : 'bg-gray-50' }}">
-											<div class="text-sm font-medium text-gray-800">{{ $n->title }}</div>
+										@php
+											// Generate the appropriate URL based on notification type and related data
+											$notificationUrl = null;
+											$isClickable = false;
+											
+											// Check if notification has related data
+											if ($n->related_id && $n->related_type) {
+												$isClickable = true;
+												
+												// Handle different related types - User role goes to user routes
+												if ($n->related_type === 'App\Models\Reservation' || $n->related_type === 'Reservation') {
+													$notificationUrl = route('user.reservations.show', $n->related_id);
+												}
+												// Users typically don't have direct access to events, so we skip event notifications
+											} else {
+												// Fallback: try to extract ID from notification content for older notifications
+												if (preg_match('/reservation.*?(\d+)/i', $n->body, $matches)) {
+													$extractedId = $matches[1];
+													
+													// Determine if it's about reservations based on content
+													if (stripos($n->title, 'reservation') !== false || stripos($n->body, 'reservation') !== false) {
+														$isClickable = true;
+														$notificationUrl = route('user.reservations.show', $extractedId);
+													}
+												}
+											}
+										@endphp
+										
+										<div class="p-3 border-b border-gray-100 {{ $n->read_at ? '' : 'bg-gray-50' }} {{ $isClickable ? 'cursor-pointer hover:bg-blue-50 transition-colors' : '' }}"
+											 @if($isClickable && $notificationUrl) 
+												onclick="handleDropdownNotificationClick('{{ $notificationUrl }}', {{ $n->id }}, {{ $n->read_at ? 'true' : 'false' }})"
+												data-url="{{ $notificationUrl }}"
+												data-notification-id="{{ $n->id }}"
+												data-is-read="{{ $n->read_at ? 'true' : 'false' }}"
+											 @endif>
+											<div class="text-sm font-medium text-gray-800 {{ $isClickable ? 'text-blue-700 hover:text-blue-900' : '' }}">
+												{{ $n->title }}
+												@if($isClickable)
+													<i class="fas fa-external-link-alt text-xs ml-1 opacity-60"></i>
+												@endif
+											</div>
 											<div class="text-xs text-gray-600">{{ $n->body }}</div>
 											<div class="mt-2 flex items-center justify-between text-xs text-gray-500">
 												<span>{{ $n->created_at->diffForHumans() }}</span>
+												@if($isClickable)
+													<span class="text-blue-600 font-medium">• Click to view</span>
+												@endif
 												@if(!$n->read_at)
-												<form method="POST" action="{{ route('notifications.read', $n->id) }}">
+												<form method="POST" action="{{ route('notifications.read', $n->id) }}" onclick="event.stopPropagation()">
 													@csrf
 													<button type="submit" class="text-blue-600 hover:underline">Mark read</button>
 												</form>
@@ -282,6 +324,39 @@
 				}, 4000);
 			});
 		});
+
+		// Handle dropdown notification click
+		window.handleDropdownNotificationClick = function(url, notificationId, isRead) {
+			console.log('Dropdown notification clicked:', { url, notificationId, isRead });
+			
+			// Close the dropdown first
+			const dropdown = document.getElementById('notifDropdown');
+			if (dropdown) {
+				dropdown.classList.add('hidden');
+			}
+			
+			// If notification is unread, mark it as read first
+			if (!isRead) {
+				// Send AJAX request to mark as read
+				fetch(`/notifications/${notificationId}/read`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+					}
+				}).then(() => {
+					// Navigate to the URL
+					window.location.href = url;
+				}).catch((error) => {
+					console.error('Error marking notification as read:', error);
+					// If marking as read fails, still navigate
+					window.location.href = url;
+				});
+			} else {
+				// If already read, just navigate
+				window.location.href = url;
+			}
+		};
 
 		// Notifications dropdown toggle
 		document.addEventListener('DOMContentLoaded', function(){

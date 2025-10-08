@@ -1,8 +1,17 @@
-@extends('layouts.iosa')
+@extends('layouts.drjavier')
 
-@section('title', 'Events Management')
-@section('page-title', 'Events Management')
-@section('page-subtitle', 'View all events in the system')
+@section('title', 'Events Overview')
+@section('page-title', 'Events Overview')
+@section('page-subtitle', 'View and monitor all events')
+
+@section('header-actions')
+	<div class="flex items-center space-x-3">
+		<a href="{{ route('drjavier.events.export', request()->query()) }}" 
+		   class="bg-green-600 text-white px-4 py-3 rounded-xl hover:bg-green-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center">
+			<i class="fas fa-file-excel mr-2"></i>Export to Excel
+		</a>
+	</div>
+@endsection
 
 @section('content')
 <!-- Google Fonts Import -->
@@ -116,21 +125,23 @@
 		background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 		border: 1px solid #e2e8f0;
 		border-radius: 0.75rem;
-		padding: 1rem;
+		padding: 0.75rem;
 		text-align: center;
 	}
 	
 	.stats-number {
-		font-size: 1.5rem;
+		font-size: 1.25rem;
 		font-weight: 700;
 		color: #1e293b;
 		margin-bottom: 0.25rem;
+		line-height: 1;
 	}
 	
 	.stats-label {
-		font-size: 0.75rem;
+		font-size: 0.7rem;
 		color: #64748b;
 		font-weight: 500;
+		line-height: 1.2;
 	}
 </style>
 
@@ -140,11 +151,11 @@
 		<div class="p-8 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
 			<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
 				<div>
-					<h1 class="text-3xl font-bold text-gray-800 font-poppins mb-2">Events Management</h1>
-					<p class="text-gray-600 text-lg">View all events in the system</p>
+					<h1 class="text-3xl font-bold text-gray-800 font-poppins mb-2">Events Overview</h1>
+					<p class="text-gray-600 text-lg">View and monitor all events in the system</p>
 				</div>
 				<div class="search-container">
-					<form method="GET" action="{{ route('iosa.events.index') }}">
+					<form method="GET" action="{{ route('drjavier.events.index') }}">
 						<input type="text" name="search" value="{{ request('search') }}" placeholder="Search by title, ID, description, organizer, or venue..." class="search-input">
 						@if(request('status') && request('status') !== 'all')
 							<input type="hidden" name="status" value="{{ request('status') }}">
@@ -171,12 +182,12 @@
 	</div>
 	@endif
 	
-	<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+	<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
 		<div class="stats-card">
-			<div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-				<i class="fas fa-calendar text-blue-600 text-lg"></i>
+			<div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+				<i class="fas fa-calendar text-blue-600 text-sm"></i>
 			</div>
-			<div class="stats-number">{{ $events->total() }}</div>
+			<div class="stats-number text-base">{{ $events->total() }}</div>
 			<div class="stats-label">
 				@if(request('status') && request('status') !== 'all')
 					{{ ucfirst(request('status')) }} Events
@@ -187,46 +198,55 @@
 		</div>
 		
 		<div class="stats-card">
-			<div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-				<i class="fas fa-clock text-green-600 text-lg"></i>
+			<div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+				<i class="fas fa-clock text-green-600 text-sm"></i>
 			</div>
 			<div class="stats-number">{{ $events->where('status', 'upcoming')->count() }}</div>
 			<div class="stats-label">Upcoming</div>
 		</div>
 		
 		<div class="stats-card">
-			<div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-				<i class="fas fa-play text-yellow-600 text-lg"></i>
+			<div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+				<i class="fas fa-play text-yellow-600 text-sm"></i>
 			</div>
 			<div class="stats-number">{{ $events->where('status', 'ongoing')->count() }}</div>
 			<div class="stats-label">Ongoing</div>
 		</div>
 		
 		<div class="stats-card">
-			<div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-				<i class="fas fa-check text-gray-600 text-lg"></i>
+			<div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+				<i class="fas fa-check text-gray-600 text-sm"></i>
 			</div>
 			<div class="stats-number">{{ $events->where('status', 'completed')->count() }}</div>
 			<div class="stats-label">Completed</div>
 		</div>
 		
 		<div class="stats-card">
-			<div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-				<i class="fas fa-times text-red-600 text-lg"></i>
+			<div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+				<i class="fas fa-times text-red-600 text-sm"></i>
 			</div>
 			<div class="stats-number">{{ $events->where('status', 'cancelled')->count() }}</div>
 			<div class="stats-label">Cancelled</div>
+		</div>
+
+		<div class="stats-card">
+			<div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+				<i class="fas fa-building text-purple-600 text-sm"></i>
+			</div>
+			<div class="stats-number">{{ $events->where('status', 'pending_venue')->count() }}</div>
+			<div class="stats-label">Pending Venue</div>
 		</div>
 	</div>
 
 	<!-- Status Tabs -->
 	<div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
 		<div class="p-6 border-b border-gray-200 bg-gray-50">
-			<div class="flex flex-wrap gap-2">
+			<div class="flex flex-wrap items-center justify-between gap-4">
+				<div class="flex flex-wrap gap-2">
 				@php
 					$current = request('status', 'all');
 					$searchQuery = request('search');
-					$baseUrl = route('iosa.events.index');
+					$baseUrl = route('drjavier.events.index');
 				@endphp
 				
 				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'all'])) }}" 
@@ -253,13 +273,29 @@
 				   class="tab-button {{ $current == 'cancelled' ? 'active' : '' }}">
 					<i class="fas fa-times mr-2"></i>Cancelled
 				</a>
+
+				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'pending_venue'])) }}" 
+				   class="tab-button {{ $current == 'pending_venue' ? 'active' : '' }}">
+					<i class="fas fa-building mr-2"></i>Pending Venue
+				</a>
+				</div>
+				
+				<!-- Export Button -->
+				<div class="flex-shrink-0">
+					<a href="{{ route('drjavier.events.export', request()->query()) }}" 
+					   class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg flex items-center space-x-2 text-sm font-medium">
+						<i class="fas fa-file-excel mr-2"></i>
+						<span>Export to Excel</span>
+					</a>
+				</div>
 			</div>
 			
 			<!-- Active Filters Display -->
-			@if(request('status') || request('q'))
+			@if(request('status') || request('search'))
 			<div class="mt-4 pt-4 border-t border-gray-200">
 				<div class="flex flex-wrap items-center gap-2">
 					<span class="text-sm text-gray-600">Active filters:</span>
+					
 					@if(request('status') && request('status') !== 'all')
 					<span class="inline-flex items-center px-2 py-1 bg-maroon text-white text-xs rounded-full">
 						Status: {{ ucfirst(request('status')) }}
@@ -268,6 +304,7 @@
 						</a>
 					</span>
 					@endif
+					
 					@if(request('search'))
 					<span class="inline-flex items-center px-2 py-1 bg-blue-600 text-white text-xs rounded-full">
 						Search: "{{ request('search') }}"
@@ -276,6 +313,7 @@
 						</a>
 					</span>
 					@endif
+					
 					<a href="{{ $baseUrl }}" class="text-sm text-maroon hover:text-red-800 font-medium">
 						Clear all filters
 					</a>
@@ -289,7 +327,7 @@
 			@if($events->count())
 				<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
 					@foreach($events as $event)
-						<div class="event-card group">
+						<div class="event-card group flex flex-col">
 							<!-- Status Badge -->
 							<div class="absolute top-4 right-4 z-20">
 								@switch($event->status)
@@ -304,6 +342,9 @@
 										@break
 									@case('cancelled')
 										<span class="status-badge bg-red-100 text-red-800 border border-red-200">Cancelled</span>
+										@break
+									@case('pending_venue')
+										<span class="status-badge bg-purple-100 text-purple-800 border border-purple-200">Pending Venue</span>
 										@break
 								@endswitch
 							</div>
@@ -361,19 +402,24 @@
 											<span>Max: {{ $event->max_participants }} participants</span>
 										</div>
 									@endif
+									@if($event->equipment_details && count($event->equipment_details) > 0)
+										<div class="flex items-center text-sm text-gray-700">
+											<i class="fas fa-tools mr-3 text-maroon w-4"></i>
+											<span>{{ count($event->equipment_details) }} equipment item{{ count($event->equipment_details) > 1 ? 's' : '' }}</span>
+										</div>
+									@endif
 								</div>
 							</div>
 
-
 							<!-- Event Footer -->
-							<div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
+							<div class="px-6 py-4 border-t border-gray-100 bg-gray-50 mt-auto">
 								<div class="flex items-center justify-between">
 									<div class="text-xs text-gray-500">
 										<i class="far fa-clock mr-1"></i>
 										Created {{ $event->created_at->diffForHumans() }}
 									</div>
 									<div class="flex space-x-2">
-										<a href="{{ route('iosa.events.show', $event) }}" 
+										<a href="{{ route('drjavier.events.show', $event) }}" 
 										   class="action-button bg-blue-50 text-blue-600 hover:bg-blue-100" title="View Details">
 											<i class="fas fa-eye"></i>
 										</a>
@@ -388,7 +434,7 @@
 				@if($events->hasPages())
 					<div class="mt-8 flex justify-center">
 						<div class="bg-white px-6 py-3 rounded-xl shadow-sm border border-gray-200">
-							{{ $events->appends(request()->except('page'))->links() }}
+							{{ $events->appends(request()->query())->links() }}
 						</div>
 					</div>
 				@endif
@@ -410,7 +456,7 @@
 						@endif
 					</p>
 					@if(request('search') || (request('status') && request('status') !== 'all'))
-						<a href="{{ route('iosa.events.index') }}" 
+						<a href="{{ route('drjavier.events.index') }}" 
 						   class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
 							<i class="fas fa-times mr-2"></i>Clear Filters
 						</a>
@@ -421,4 +467,3 @@
 	</div>
 </div>
 @endsection
-

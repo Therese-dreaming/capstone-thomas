@@ -186,6 +186,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Dr. Javier Events Routes
         Route::get('events', [\App\Http\Controllers\DrJavier\EventController::class, 'index'])->name('events.index');
         Route::get('events/{event}', [\App\Http\Controllers\DrJavier\EventController::class, 'show'])->name('events.show');
+        Route::get('events-export', [\App\Http\Controllers\DrJavier\EventController::class, 'export'])->name('events.export');
         Route::get('events-calendar', [\App\Http\Controllers\DrJavier\EventController::class, 'calendar'])->name('events.calendar');
     });
 

@@ -75,6 +75,17 @@
 						</a>
 					</li>
 
+					<!-- Events -->
+					<li>
+						<a href="{{ route('drjavier.events.index') }}"
+							class="flex items-center p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('drjavier.events*') ? 'active-maroon' : 'text-gray-700' }}">
+							<div class="flex items-center flex-1">
+								<i class="fas fa-calendar-alt w-5 h-5 mr-3"></i>
+								<span class="font-medium">Events</span>
+							</div>
+						</a>
+					</li>
+
 					<!-- GSU Reports -->
 					<li>
 						<a href="{{ route('drjavier.gsu-reports') }}" 

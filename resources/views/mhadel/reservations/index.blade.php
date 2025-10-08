@@ -1121,10 +1121,11 @@
         document.getElementById('discountSection').classList.add('hidden');
         document.getElementById('approvalGrid').className = 'grid grid-cols-1 gap-6';
         
+        // Trigger fee type change to set initial state
+        handleFeeTypeChange();
+        
         // Get the existing price from the reservation data
         const reservation = reservationsData.data.find(r => r.id == reservationId);
-        
-
         
         // Check for base_price first, then fallback to final_price if base_price is not available
         let userPrice = null;
@@ -1159,29 +1160,47 @@
             }
         }
         
-        // Display calculated base price
-        if (userPrice) {
-            const userPriceFormatted = userPrice.toFixed(2);
-            calculatedBasePrice.textContent = `₱${userPriceFormatted}`;
-            
-            // Show calculation details if we have both rate and duration
-            if (reservation && reservation.price_per_hour && reservation.duration_hours) {
-                const rate = parseFloat(reservation.price_per_hour);
-                const duration = parseInt(reservation.duration_hours);
-                basePriceCalculation.textContent = `Rate: ₱${rate.toFixed(2)}/hour × ${duration} hour${duration > 1 ? 's' : ''} = ₱${userPriceFormatted}`;
-            } else if (reservation && reservation.venue && reservation.venue.price_per_hour && reservation.duration_hours) {
-                // Fallback to venue rate if reservation rate is not available
-                const rate = parseFloat(reservation.venue.price_per_hour);
-                const duration = parseInt(reservation.duration_hours);
-                const calculatedPrice = rate * duration;
-                basePriceCalculation.textContent = `Rate: ₱${rate.toFixed(2)}/hour × ${duration} hour${duration > 1 ? 's' : ''} = ₱${calculatedPrice.toFixed(2)} (calculated from venue rate)`;
-            } else {
-                basePriceCalculation.textContent = `Base price from reservation data (₱${userPriceFormatted})`;
-            }
-        } else {
-            calculatedBasePrice.textContent = '₱0.00';
-            basePriceCalculation.textContent = 'Free event or no pricing data';
+        // Calculate and display base price
+        let calculatedPrice = 0;
+        let calculationText = '';
+        
+        // Calculate duration if not available
+        let duration = 0;
+        if (reservation && reservation.duration_hours) {
+            duration = parseInt(reservation.duration_hours);
+        } else if (reservation && reservation.start_date && reservation.end_date) {
+            // Calculate duration from start and end dates
+            const startDate = new Date(reservation.start_date);
+            const endDate = new Date(reservation.end_date);
+            duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60)); // Convert to hours
         }
+        
+        // Try to calculate from reservation's stored price_per_hour first
+        if (reservation && reservation.price_per_hour && parseFloat(reservation.price_per_hour) > 0 && duration > 0) {
+            const rate = parseFloat(reservation.price_per_hour);
+            calculatedPrice = rate * duration;
+            calculationText = `Rate: ₱${rate.toFixed(2)}/hour × ${duration} hour${duration > 1 ? 's' : ''} = ₱${calculatedPrice.toFixed(2)}`;
+        }
+        // Fallback to venue rate if reservation rate is not available
+        else if (reservation && reservation.venue && reservation.venue.price_per_hour && parseFloat(reservation.venue.price_per_hour) > 0 && duration > 0) {
+            const rate = parseFloat(reservation.venue.price_per_hour);
+            calculatedPrice = rate * duration;
+            calculationText = `Rate: ₱${rate.toFixed(2)}/hour × ${duration} hour${duration > 1 ? 's' : ''} = ₱${calculatedPrice.toFixed(2)} (from venue)`;
+        }
+        // Use stored base_price or final_price if available and no rate calculation possible
+        else if (userPrice) {
+            calculatedPrice = userPrice;
+            calculationText = `Base price from reservation data: ₱${calculatedPrice.toFixed(2)}`;
+        }
+        // Default to free if no pricing data available
+        else {
+            calculatedPrice = 0;
+            calculationText = 'Free event or no pricing data available';
+        }
+        
+        // Update the display
+        calculatedBasePrice.textContent = `₱${calculatedPrice.toFixed(2)}`;
+        basePriceCalculation.textContent = calculationText;
         
         // Reset the form input fields and discount selection
         document.getElementById('basePrice').value = '';
@@ -1289,6 +1308,73 @@
         document.getElementById('basePriceCalculation').textContent = '';
     }
     
+    // Fee Selection Functions
+    function handleFeeTypeChange() {
+        const freeRadio = document.getElementById('feeTypeFree');
+        const withFeeRadio = document.getElementById('feeTypeWithFee');
+        const pricingSection = document.getElementById('pricingSection');
+        const discountSection = document.getElementById('discountSection');
+        const approvalGrid = document.getElementById('approvalGrid');
+        const basePrice = document.getElementById('basePrice');
+        
+        if (freeRadio && freeRadio.checked) {
+            // Hide pricing sections for free reservation
+            if (pricingSection) pricingSection.classList.add('hidden');
+            if (discountSection) discountSection.classList.add('hidden');
+            
+            // Update grid to single column for free reservations
+            if (approvalGrid) {
+                approvalGrid.className = 'grid grid-cols-1 gap-6';
+            }
+            
+            // Set price to 0 and make it readonly
+            if (basePrice) {
+                basePrice.value = '0';
+                basePrice.readOnly = true;
+                basePrice.classList.add('bg-gray-100');
+            }
+            
+            // Reset final price display
+            document.getElementById('finalPrice').textContent = '₱0.00';
+            document.getElementById('discountInfo').classList.add('hidden');
+            
+            // Reset discount selection
+            selectedDiscount = 0;
+            document.querySelectorAll('.discount-btn').forEach(btn => {
+                btn.classList.remove('bg-green-500', 'text-white', 'border-green-500');
+                btn.classList.add('border-gray-300', 'hover:bg-gray-50');
+            });
+            document.getElementById('discount-0').classList.add('bg-green-500', 'text-white', 'border-green-500');
+            document.getElementById('discount-0').classList.remove('border-gray-300', 'hover:bg-gray-50');
+            
+        } else if (withFeeRadio && withFeeRadio.checked) {
+            // Show pricing sections for paid reservation
+            if (pricingSection) pricingSection.classList.remove('hidden');
+            if (discountSection) discountSection.classList.remove('hidden');
+            
+            // Update grid to three columns for paid reservations
+            if (approvalGrid) {
+                approvalGrid.className = 'grid grid-cols-1 lg:grid-cols-3 gap-6';
+            }
+            
+            // Make price input editable and pre-fill with calculated price
+            if (basePrice) {
+                // Get the calculated price from the display
+                const calculatedPriceText = document.getElementById('calculatedBasePrice')?.textContent || '₱0.00';
+                const calculatedValue = calculatedPriceText.replace('₱', '').replace(',', '');
+                
+                basePrice.value = calculatedValue;
+                basePrice.readOnly = false;
+                basePrice.classList.remove('bg-gray-100');
+                
+                // Trigger calculation to update final price display
+                calculateFinalPrice();
+                
+                basePrice.focus();
+            }
+        }
+    }
+    
     // Reject Modal Functions
     function openRejectModal(reservationId, eventTitle) {
         document.getElementById('rejectEventTitle').textContent = eventTitle;
@@ -1309,8 +1395,8 @@
         document.getElementById('openFilterBtn').addEventListener('click', openFilterModal);
         
         // Add event listeners for fee type radio buttons
-        document.getElementById('feeTypeFree').addEventListener('change', togglePricingSection);
-        document.getElementById('feeTypeWithFee').addEventListener('change', togglePricingSection);
+        document.getElementById('feeTypeFree').addEventListener('change', handleFeeTypeChange);
+        document.getElementById('feeTypeWithFee').addEventListener('change', handleFeeTypeChange);
         
         // Handle approve form submission
         document.getElementById('approveForm').addEventListener('submit', function(e) {
