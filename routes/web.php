@@ -150,7 +150,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('events/{event}/complete', [MhadelEventController::class, 'markAsComplete'])->name('events.complete');
         Route::post('events/update-statuses', [MhadelEventController::class, 'updateStatuses'])->name('events.update-statuses');
         Route::post('events/{event}/update-schedule', [MhadelEventController::class, 'updateSchedule'])->name('events.update-schedule');
-        Route::post('events/{event}/check-conflicts', [MhadelEventController::class, 'checkConflicts'])->name('events.check-conflicts');
+        Route::post('events/check-conflicts', [MhadelEventController::class, 'checkConflicts'])->name('events.check-conflicts');
+        Route::post('events/{event}/check-conflicts', [MhadelEventController::class, 'checkConflicts'])->name('events.check-conflicts-edit');
         
         // Reservations Routes
         Route::get('reservations/calendar', [MhadelReservationController::class, 'calendar'])->name('reservations.calendar');
