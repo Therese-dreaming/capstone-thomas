@@ -321,4 +321,58 @@ class EventController extends Controller
         $this->createReportNotifications($report, $type);
     }
 
+    /**
+     * Export events to Excel
+     */
+    public function export(Request $request)
+    {
+        $query = Event::with(['venue']);
+
+        // Apply status filter
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        // Apply search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('event_id', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('organizer', 'like', "%{$search}%")
+                  ->orWhere('department', 'like', "%{$search}%")
+                  ->orWhereHas('venue', function ($venueQuery) use ($search) {
+                      $venueQuery->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Apply date range filter
+        if ($request->filled('start_date')) {
+            $query->where('start_date', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->where('start_date', '<=', $request->end_date . ' 23:59:59');
+        }
+
+        // Get all filtered events (no pagination for export)
+        $events = $query->orderByDesc('created_at')->get();
+
+        // Generate filename with filters if applicable
+        $filename = 'GSU_Events';
+        if ($request->filled('status') && $request->status !== 'all') {
+            $filename .= '_' . ucfirst($request->status);
+        }
+        if ($request->filled('search')) {
+            $filename .= '_Search_' . str_replace(' ', '_', $request->search);
+        }
+        if ($request->filled('start_date') || $request->filled('end_date')) {
+            $filename .= '_DateFiltered';
+        }
+        $filename .= '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\GSUEventsExport($events), $filename);
+    }
+
 } 

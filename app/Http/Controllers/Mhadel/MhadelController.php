@@ -382,6 +382,22 @@ class MhadelController extends Controller
 		$department = $request->query('department');
 		$export = $request->query('export') === 'csv';
 
+		// Build base query for KPIs (without status filter)
+		$baseQuery = Reservation::query();
+		if ($start) { $baseQuery->whereDate('start_date', '>=', $start); }
+		if ($end) { $baseQuery->whereDate('end_date', '<=', $end); }
+		if ($venueId) { $baseQuery->where('venue_id', $venueId); }
+		if ($department) { $baseQuery->where('department', $department); }
+		
+		// Calculate KPIs from base query (without status filter)
+		$kpis = [
+			'total' => (clone $baseQuery)->count(),
+			'approved' => (clone $baseQuery)->whereIn('status', ['approved_mhadel','approved_OTP','approved'])->count(),
+			'rejected' => (clone $baseQuery)->whereIn('status', ['rejected_mhadel','rejected_OTP','rejected'])->count(),
+			'revenue' => (float) ((clone $baseQuery)->whereNotNull('final_price')->sum('final_price')),
+		];
+		
+		// Build filtered query for results
 		$query = Reservation::query()->with(['user', 'venue']);
 		if ($start) { $query->whereDate('start_date', '>=', $start); }
 		if ($end) { $query->whereDate('end_date', '<=', $end); }
@@ -405,14 +421,6 @@ class MhadelController extends Controller
 				  });
 			});
 		}
-
-		$cloneForAgg = (clone $query);
-		$kpis = [
-			'total' => (clone $cloneForAgg)->count(),
-			'approved' => (clone $cloneForAgg)->whereIn('status', ['approved_mhadel','approved_OTP','approved'])->count(),
-			'rejected' => (clone $cloneForAgg)->whereIn('status', ['rejected_mhadel','rejected_OTP','rejected'])->count(),
-			'revenue' => (float) ((clone $cloneForAgg)->whereNotNull('final_price')->sum('final_price')),
-		];
 
 		if ($export) {
 			$rows = $query->orderByDesc('start_date')->get();

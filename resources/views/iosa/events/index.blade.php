@@ -239,42 +239,53 @@
 	<!-- Status Tabs -->
 	<div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
 		<div class="p-6 border-b border-gray-200 bg-gray-50">
-			<div class="flex flex-wrap gap-2">
-				@php
-					$current = request('status', 'all');
-					$searchQuery = request('search');
-					$baseUrl = route('iosa.events.index');
-				@endphp
+			<div class="flex flex-wrap items-center justify-between gap-4">
+				<div class="flex flex-wrap gap-2">
+					@php
+						$current = request('status', 'all');
+						$searchQuery = request('search');
+						$baseUrl = route('iosa.events.index');
+					@endphp
+					
+					<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'all'])) }}" 
+					   class="tab-button {{ $current == 'all' ? 'active' : '' }}">
+						<i class="fas fa-list mr-2"></i>All Events
+					</a>
+					
+					<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'pending_venue'])) }}" 
+					   class="tab-button {{ $current == 'pending_venue' ? 'active' : '' }}">
+						<i class="fas fa-clock mr-2"></i>Pending Venue
+					</a>
+					
+					<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'upcoming'])) }}" 
+					   class="tab-button {{ $current == 'upcoming' ? 'active' : '' }}">
+						<i class="fas fa-calendar mr-2"></i>Upcoming
+					</a>
+					
+					<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'ongoing'])) }}" 
+					   class="tab-button {{ $current == 'ongoing' ? 'active' : '' }}">
+						<i class="fas fa-play mr-2"></i>Ongoing
+					</a>
+					
+					<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'completed'])) }}" 
+					   class="tab-button {{ $current == 'completed' ? 'active' : '' }}">
+						<i class="fas fa-check mr-2"></i>Completed
+					</a>
+					
+					<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'cancelled'])) }}" 
+					   class="tab-button {{ $current == 'cancelled' ? 'active' : '' }}">
+						<i class="fas fa-times mr-2"></i>Cancelled
+					</a>
+				</div>
 				
-				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'all'])) }}" 
-				   class="tab-button {{ $current == 'all' ? 'active' : '' }}">
-					<i class="fas fa-list mr-2"></i>All Events
-				</a>
-				
-				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'pending_venue'])) }}" 
-				   class="tab-button {{ $current == 'pending_venue' ? 'active' : '' }}">
-					<i class="fas fa-clock mr-2"></i>Pending Venue
-				</a>
-				
-				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'upcoming'])) }}" 
-				   class="tab-button {{ $current == 'upcoming' ? 'active' : '' }}">
-					<i class="fas fa-calendar mr-2"></i>Upcoming
-				</a>
-				
-				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'ongoing'])) }}" 
-				   class="tab-button {{ $current == 'ongoing' ? 'active' : '' }}">
-					<i class="fas fa-play mr-2"></i>Ongoing
-				</a>
-				
-				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'completed'])) }}" 
-				   class="tab-button {{ $current == 'completed' ? 'active' : '' }}">
-					<i class="fas fa-check mr-2"></i>Completed
-				</a>
-				
-				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'cancelled'])) }}" 
-				   class="tab-button {{ $current == 'cancelled' ? 'active' : '' }}">
-					<i class="fas fa-times mr-2"></i>Cancelled
-				</a>
+				<!-- Export Button -->
+				<div class="flex-shrink-0">
+					<a href="{{ route('iosa.events.export', request()->query()) }}" 
+					   class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg flex items-center space-x-2 text-sm font-medium">
+						<i class="fas fa-file-excel mr-2"></i>
+						<span>Export to Excel</span>
+					</a>
+				</div>
 			</div>
 			
 			<!-- Active Filters Display -->

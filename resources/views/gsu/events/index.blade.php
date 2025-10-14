@@ -48,6 +48,9 @@
 		transition: all 0.3s ease;
 		overflow: visible;
 		position: relative;
+		display: flex;
+		flex-direction: column;
+		height: 100%;
 	}
 	
 	.event-card:hover {
@@ -233,37 +236,48 @@
 	<!-- Status Tabs -->
 	<div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
 		<div class="p-6 border-b border-gray-200 bg-gray-50">
-			<div class="flex flex-wrap gap-2">
-				@php
-					$current = request('status', 'all');
-					$searchQuery = request('search');
-					$baseUrl = route('gsu.events.index');
-				@endphp
+			<div class="flex flex-wrap items-center justify-between gap-4">
+				<div class="flex flex-wrap gap-2">
+					@php
+						$current = request('status', 'all');
+						$searchQuery = request('search');
+						$baseUrl = route('gsu.events.index');
+					@endphp
+					
+					<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'all'])) }}" 
+					   class="tab-button {{ $current == 'all' ? 'active' : '' }}">
+						<i class="fas fa-list mr-2"></i>All Events
+					</a>
+					
+					<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'upcoming'])) }}" 
+					   class="tab-button {{ $current == 'upcoming' ? 'active' : '' }}">
+						<i class="fas fa-clock mr-2"></i>Upcoming
+					</a>
+					
+					<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'ongoing'])) }}" 
+					   class="tab-button {{ $current == 'ongoing' ? 'active' : '' }}">
+						<i class="fas fa-play mr-2"></i>Ongoing
+					</a>
+					
+					<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'completed'])) }}" 
+					   class="tab-button {{ $current == 'completed' ? 'active' : '' }}">
+						<i class="fas fa-check mr-2"></i>Completed
+					</a>
+					
+					<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'cancelled'])) }}" 
+					   class="tab-button {{ $current == 'cancelled' ? 'active' : '' }}">
+						<i class="fas fa-times mr-2"></i>Cancelled
+					</a>
+				</div>
 				
-				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'all'])) }}" 
-				   class="tab-button {{ $current == 'all' ? 'active' : '' }}">
-					<i class="fas fa-list mr-2"></i>All Events
-				</a>
-				
-				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'upcoming'])) }}" 
-				   class="tab-button {{ $current == 'upcoming' ? 'active' : '' }}">
-					<i class="fas fa-clock mr-2"></i>Upcoming
-				</a>
-				
-				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'ongoing'])) }}" 
-				   class="tab-button {{ $current == 'ongoing' ? 'active' : '' }}">
-					<i class="fas fa-play mr-2"></i>Ongoing
-				</a>
-				
-				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'completed'])) }}" 
-				   class="tab-button {{ $current == 'completed' ? 'active' : '' }}">
-					<i class="fas fa-check mr-2"></i>Completed
-				</a>
-				
-				<a href="{{ $baseUrl }}?{{ http_build_query(array_merge(request()->except(['page', 'status']), ['status' => 'cancelled'])) }}" 
-				   class="tab-button {{ $current == 'cancelled' ? 'active' : '' }}">
-					<i class="fas fa-times mr-2"></i>Cancelled
-				</a>
+				<!-- Export Button -->
+				<div class="flex-shrink-0">
+					<a href="{{ route('gsu.events.export', request()->query()) }}" 
+					   class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg flex items-center space-x-2 text-sm font-medium">
+						<i class="fas fa-file-excel mr-2"></i>
+						<span>Export to Excel</span>
+					</a>
+				</div>
 			</div>
 			
 			<!-- Active Filters Display -->
@@ -316,6 +330,12 @@
 									@case('cancelled')
 										<span class="status-badge bg-red-100 text-red-800 border border-red-200">Cancelled</span>
 										@break
+									@case('pending_venue')
+										<span class="status-badge bg-yellow-100 text-yellow-800 border border-yellow-200">Pending Venue</span>
+										@break
+									@case('confirmed')
+										<span class="status-badge bg-green-100 text-green-800 border border-green-200">Confirmed</span>
+										@break
 								@endswitch
 							</div>
 
@@ -338,7 +358,7 @@
 							</div>
 
 							<!-- Event Details -->
-							<div class="px-6 pb-4">
+							<div class="px-6 pb-4 flex-grow">
 								<div class="space-y-3">
 									<div class="flex items-center text-sm text-gray-700">
 										<i class="fas fa-calendar mr-3 text-maroon w-4"></i>
@@ -351,7 +371,12 @@
 									@if($event->venue)
 										<div class="flex items-center text-sm text-gray-700">
 											<i class="fas fa-map-marker-alt mr-3 text-maroon w-4"></i>
-											<span>{{ $event->venue->name }}</span>
+											<span>{{ $event->venue->name }} (Capacity: {{ $event->venue->capacity }})</span>
+										</div>
+									@else
+										<div class="flex items-center text-sm text-gray-500 italic">
+											<i class="fas fa-map-marker-alt mr-3 text-gray-400 w-4"></i>
+											<span>Venue not assigned yet</span>
 										</div>
 									@endif
 									@if($event->organizer)
@@ -377,13 +402,13 @@
 
 
 							<!-- Event Footer -->
-							<div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
+							<div class="px-6 py-4 border-t border-gray-100 bg-gray-50 mt-auto">
 								<div class="flex items-center justify-between">
-									<div class="text-xs text-gray-500">
+									<div class="text-xs text-gray-500 flex items-center">
 										<i class="far fa-clock mr-1"></i>
-										Created {{ $event->created_at->diffForHumans() }}
+										<span>Created {{ $event->created_at->diffForHumans() }}</span>
 									</div>
-									<div class="flex space-x-2">
+									<div class="flex items-center space-x-2">
 										<a href="{{ route('gsu.events.show', $event) }}" 
 										   class="action-button bg-blue-50 text-blue-600 hover:bg-blue-100" title="View Details">
 											<i class="fas fa-eye"></i>

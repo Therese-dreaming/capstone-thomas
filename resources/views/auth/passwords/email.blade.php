@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - PCC Venue Reservation System</title>
+    <title>Forgot Password - PCC Venue Reservation System</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -82,108 +82,79 @@
             <!-- Welcome Message -->
             <div class="bg-white bg-opacity-10 rounded-lg p-6 backdrop-blur-sm">
                 <p class="text-white text-lg font-medium mb-2">
-                    Welcome Back!
+                    <i class="fas fa-key mr-2"></i>Password Reset
                 </p>
                 <p class="text-white text-sm opacity-80">
-                    Please sign in to access the venue reservation system
+                    Enter your email address and we'll send you a link to reset your password
                 </p>
             </div>
         </div>
     </div>
 
-    <!-- Right Column - Login Form -->
+    <!-- Right Column - Reset Form -->
     <div class="w-1/2 login-bg flex items-center justify-center p-8">
         <div class="w-full max-w-md slide-in-right">
-            <!-- Login Card -->
+            <!-- Reset Card -->
             <div class="bg-white rounded-2xl card-shadow p-8">
                 <!-- Form Header -->
                 <div class="text-center mb-8">
                     <div class="inline-flex items-center justify-center w-16 h-16 bg-maroon rounded-full mb-4">
-                        <i class="fas fa-user text-white text-xl"></i>
+                        <i class="fas fa-lock text-white text-xl"></i>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Sign In</h3>
-                    <p class="text-gray-600">Enter your credentials to continue</p>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Forgot Password?</h3>
+                    <p class="text-gray-600">No worries, we'll send you reset instructions</p>
                 </div>
 
-                <!-- Login Form -->
-                <form action="{{ route('login.submit') }}" method="POST" class="space-y-6">
+                <!-- Success Message -->
+                @if (session('status'))
+                    <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                            <p class="text-green-700 text-sm">{{ session('status') }}</p>
+                        </div>
+                    </div>
+                @endif
+
+                <!-- Reset Form -->
+                <form action="{{ route('password.email') }}" method="POST" class="space-y-6">
                     @csrf
                     
                     <!-- Email Field -->
                     <div>
-                        <label for="username" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">
                             <i class="fas fa-envelope mr-2 text-maroon"></i>Email Address
                         </label>
                         <input 
                             type="email" 
-                            id="username" 
-                            name="username" 
+                            id="email" 
+                            name="email" 
                             required 
-                            value="{{ old('username') }}"
+                            value="{{ old('email') }}"
                             class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-maroon focus:ring-2 focus:ring-maroon focus:ring-opacity-20 input-focus transition-all duration-300"
-                            placeholder="Enter your email address"
+                            placeholder="Enter your registered email"
                         >
-                        @error('username')
+                        @error('email')
                             <p class="text-red-500 text-sm mt-2 flex items-center">
                                 <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
                             </p>
                         @enderror
-                    </div>
-                    
-                    <!-- Password Field -->
-                    <div>
-                        <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-lock mr-2 text-maroon"></i>Password
-                        </label>
-                        <div class="relative">
-                            <input 
-                                type="password" 
-                                id="password" 
-                                name="password" 
-                                required 
-                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-maroon focus:ring-2 focus:ring-maroon focus:ring-opacity-20 input-focus transition-all duration-300"
-                                placeholder="Enter your password"
-                            >
-                            <button 
-                                type="button" 
-                                onclick="togglePassword()" 
-                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-maroon transition-colors"
-                            >
-                                <i class="fas fa-eye" id="toggleIcon"></i>
-                            </button>
-                        </div>
-                        @error('password')
-                            <p class="text-red-500 text-sm mt-2 flex items-center">
-                                <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
-                            </p>
-                        @enderror
-                    </div>
-                    
-                    <!-- Forgot Password Link -->
-                    <div class="flex justify-end">
-                        <a href="{{ route('password.request') }}" class="text-sm text-maroon hover:text-red-800 font-medium transition-colors duration-200">
-                            <i class="fas fa-key mr-1"></i>Forgot Password?
-                        </a>
                     </div>
                     
                     <!-- Submit Button -->
-                    <div class="pt-2">
+                    <div class="pt-4">
                         <button 
                             type="submit" 
                             class="w-full btn-maroon py-3 px-6 rounded-lg font-semibold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-maroon focus:ring-opacity-20"
                         >
-                            <i class="fas fa-sign-in-alt mr-2"></i>Sign In
+                            <i class="fas fa-paper-plane mr-2"></i>Send Reset Link
                         </button>
                     </div>
                     
-                    <!-- Don't have an account? -->
+                    <!-- Back to Login -->
                     <div class="text-center mt-6">
-                        <p class="text-gray-600 text-sm">
-                            Don't have an account?
-                            <a href="{{ route('signup') }}" class="text-maroon font-semibold hover:underline transition-all duration-200">
-                                Sign up here
-                            </a>
-                        </p>
+                        <a href="{{ route('login') }}" class="text-gray-600 text-sm hover:text-maroon transition-colors duration-200 inline-flex items-center">
+                            <i class="fas fa-arrow-left mr-2"></i>Back to Login
+                        </a>
                     </div>
                 </form>
 
@@ -206,32 +177,17 @@
 
     <!-- JavaScript -->
     <script>
-        function togglePassword() {
-            const passwordInput = document.getElementById('password');
-            const toggleIcon = document.getElementById('toggleIcon');
-            
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                toggleIcon.classList.remove('fa-eye');
-                toggleIcon.classList.add('fa-eye-slash');
-            } else {
-                passwordInput.type = 'password';
-                toggleIcon.classList.remove('fa-eye-slash');
-                toggleIcon.classList.add('fa-eye');
-            }
-        }
-
         // Add loading animation to submit button
         document.querySelector('form').addEventListener('submit', function(e) {
             const submitBtn = this.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Signing In...';
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
             submitBtn.disabled = true;
         });
 
         // Auto-focus on email field
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('username').focus();
+            document.getElementById('email').focus();
         });
     </script>
 </body>

@@ -317,7 +317,30 @@ class IOSAController extends Controller
      */
     public function reservationReports(Request $request)
     {
-        // Get all reservations for IOSA to view
+        // Build base query for KPIs (without status filter)
+        $baseQuery = Reservation::query();
+        if ($request->filled('start_date')) {
+            $baseQuery->whereDate('start_date', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $baseQuery->whereDate('start_date', '<=', $request->end_date);
+        }
+        if ($request->filled('venue_id')) {
+            $baseQuery->where('venue_id', $request->venue_id);
+        }
+        if ($request->filled('department')) {
+            $baseQuery->where('department', $request->department);
+        }
+        
+        // Calculate KPIs from base query (without status filter)
+        $kpis = [
+            'total' => (clone $baseQuery)->count(),
+            'approved' => (clone $baseQuery)->whereIn('status', ['approved_IOSA', 'approved_mhadel', 'approved_OTP', 'completed'])->count(),
+            'rejected' => (clone $baseQuery)->whereIn('status', ['rejected_IOSA', 'rejected_mhadel', 'rejected_OTP'])->count(),
+            'revenue' => (float) ((clone $baseQuery)->where('status', 'completed')->sum('final_price') ?? 0),
+        ];
+        
+        // Build filtered query for results
         $query = Reservation::with(['user', 'venue'])
             ->orderBy('created_at', 'desc');
 
@@ -357,14 +380,6 @@ class IOSAController extends Controller
 
         // Get results
         $results = $query->paginate(15)->withQueryString();
-
-        // Calculate KPIs
-        $kpis = [
-            'total' => Reservation::count(),
-            'approved' => Reservation::whereIn('status', ['approved_IOSA', 'approved_mhadel', 'approved_OTP', 'completed'])->count(),
-            'rejected' => Reservation::whereIn('status', ['rejected_IOSA', 'rejected_mhadel', 'rejected_OTP'])->count(),
-            'revenue' => Reservation::where('status', 'completed')->sum('final_price') ?? 0,
-        ];
 
         // Revenue trend data for completed reservations only
         $startOfYear = Carbon::now()->startOfYear();

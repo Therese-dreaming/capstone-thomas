@@ -189,14 +189,17 @@
         </div>
 
         <!-- Reservations Sub Tabs -->
-        <div id="reservationsSubTabs" class="flex border-b border-gray-200">
-            <button onclick="filterByStatus('all')" class="px-6 py-3 text-gray-700 hover:text-maroon transition-colors {{ request('status') == null ? 'tab-active' : '' }}">All Reservations</button>
-            <button onclick="filterByStatus('pending')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'pending' ? 'tab-active' : '' }}">Pending Review</button>
-            <button onclick="filterByStatus('approved_IOSA')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'approved_IOSA' ? 'tab-active' : '' }}">IOSA Approved</button>
-            <button onclick="filterByStatus('approved_OTP')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'approved_OTP' ? 'tab-active' : '' }}">Approved by PPGS</button>
-            <button onclick="filterByStatus('rejected_IOSA')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'rejected_IOSA' ? 'tab-active' : '' }}">IOSA Rejected</button>
-            <button onclick="filterByStatus('rejected_OTP')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'rejected_OTP' ? 'tab-active' : '' }}">Rejected by PPGS</button>
-            <button onclick="filterByStatus('completed')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors {{ request('status') == 'completed' ? 'tab-active' : '' }}">Completed</button>
+        <div id="reservationsSubTabs" class="flex flex-wrap border-b border-gray-200">
+            <button onclick="filterByStatus('all')" class="px-6 py-3 text-gray-700 hover:text-maroon transition-colors whitespace-nowrap {{ request('status') == null ? 'tab-active' : '' }}">All Reservations</button>
+            <button onclick="filterByStatus('pending')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors whitespace-nowrap {{ request('status') == 'pending' ? 'tab-active' : '' }}">Pending Review</button>
+            <button onclick="filterByStatus('approved_IOSA')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors whitespace-nowrap {{ request('status') == 'approved_IOSA' ? 'tab-active' : '' }}">IOSA Approved</button>
+            <button onclick="filterByStatus('approved_mhadel')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors whitespace-nowrap {{ request('status') == 'approved_mhadel' ? 'tab-active' : '' }}">OTP Approved</button>
+            <button onclick="filterByStatus('approved_OTP')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors whitespace-nowrap {{ request('status') == 'approved_OTP' ? 'tab-active' : '' }}">PPGS Approved</button>
+            <button onclick="filterByStatus('rejected_IOSA')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors whitespace-nowrap {{ request('status') == 'rejected_IOSA' ? 'tab-active' : '' }}">IOSA Rejected</button>
+            <button onclick="filterByStatus('rejected_mhadel')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors whitespace-nowrap {{ request('status') == 'rejected_mhadel' ? 'tab-active' : '' }}">OTP Rejected</button>
+            <button onclick="filterByStatus('rejected_OTP')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors whitespace-nowrap {{ request('status') == 'rejected_OTP' ? 'tab-active' : '' }}">PPGS Rejected</button>
+            <button onclick="filterByStatus('completed')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors whitespace-nowrap {{ request('status') == 'completed' ? 'tab-active' : '' }}">Completed</button>
+            <button onclick="filterByStatus('cancelled')" class="px-6 py-3 text-gray-500 hover:text-maroon transition-colors whitespace-nowrap {{ request('status') == 'cancelled' ? 'tab-active' : '' }}">Cancelled</button>
         </div>
         
         <!-- View Toggle -->
@@ -377,8 +380,13 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <div class="text-sm font-medium text-gray-900">{{ optional($event->venue)->name ?? 'N/A' }}</div>
-                                        <div class="text-xs text-gray-500"><i class="fas fa-map-marker-alt mr-1"></i>{{ optional($event->venue)->capacity ?? 'N/A' }} capacity</div>
+                                        @if($event->venue)
+                                            <div class="text-sm font-medium text-gray-900">{{ $event->venue->name }}</div>
+                                            <div class="text-xs text-gray-500"><i class="fas fa-map-marker-alt mr-1"></i>{{ $event->venue->capacity }} capacity</div>
+                                        @else
+                                            <div class="text-sm font-medium text-gray-500 italic">Venue not assigned</div>
+                                            <div class="text-xs text-gray-400">Pending assignment</div>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="text-sm text-gray-900">{{ optional($event->start_date)->format('M d, Y') ?? 'N/A' }}</div>
@@ -390,18 +398,29 @@
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4">{{ $event->capacity ?? 'N/A' }}</td>
+                                    <td class="px-6 py-4">{{ $event->max_participants ?? 'Not specified' }}</td>
                                     <td class="px-6 py-4">
                                         @php
-                                            $now = now();
-                                            $status = 'Unknown';
-                                            if ($event->start_date && $event->end_date) {
-                                                if ($now->isBefore($event->start_date)) $status = 'Upcoming';
-                                                elseif ($now->isBetween($event->start_date, $event->end_date)) $status = 'Ongoing';
-                                                else $status = 'Completed';
-                                            }
+                                            $statusDisplay = match($event->status) {
+                                                'pending_venue' => 'Pending Venue',
+                                                'confirmed' => 'Confirmed',
+                                                'upcoming' => 'Upcoming',
+                                                'ongoing' => 'Ongoing',
+                                                'completed' => 'Completed',
+                                                'cancelled' => 'Cancelled',
+                                                default => ucfirst($event->status ?? 'Unknown')
+                                            };
+                                            $statusClass = match($event->status) {
+                                                'pending_venue' => 'status-pending',
+                                                'confirmed' => 'status-approved',
+                                                'upcoming' => 'status-pending',
+                                                'ongoing' => 'status-approved',
+                                                'completed' => 'status-completed',
+                                                'cancelled' => 'status-rejected',
+                                                default => 'status-pending'
+                                            };
                                         @endphp
-                                        <span class="status-badge {{ strtolower($status) === 'completed' ? 'status-completed' : (strtolower($status) === 'ongoing' ? 'status-approved' : 'status-pending') }}">{{ $status }}</span>
+                                        <span class="status-badge {{ $statusClass }}">{{ $statusDisplay }}</span>
                                     </td>
                                     <td class="px-6 py-4 text-center">
                                         <a href="{{ route('iosa.events.show', $event->id) }}" class="btn-dark-blue px-3 py-2 rounded-lg text-xs font-medium transition-colors">

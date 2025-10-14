@@ -21,6 +21,8 @@ use App\Http\Controllers\DrJavier\ReservationController as OTPReservationControl
 use App\Http\Controllers\GSU\GSUController as GSUController;
 use App\Http\Controllers\GSU\ReservationController as GSUReservationController;
 use App\Http\Controllers\GSU\EventController as GSUEventController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 use Illuminate\Support\Facades\Auth;
 
 // Redirect root to login
@@ -33,6 +35,12 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 Route::get('/signup', [AuthController::class, 'showSignup'])->name('signup');
 Route::post('/signup', [AuthController::class, 'signup'])->name('signup.submit');
+
+// Password Reset Routes
+Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Email Verification Routes
@@ -118,6 +126,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('events/{event}/edit', [IOSAEventController::class, 'edit'])->name('events.edit');
         Route::put('events/{event}', [IOSAEventController::class, 'update'])->name('events.update');
         Route::get('events-calendar', [IOSAEventController::class, 'calendar'])->name('events.calendar');
+        Route::get('events-export', [IOSAEventController::class, 'export'])->name('events.export');
         Route::post('events/check-conflicts', [IOSAEventController::class, 'checkConflicts'])->name('events.check-conflicts');
         
         // IOSA Profile Routes
@@ -208,12 +217,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // GSU Events Routes
         Route::get('events', [GSUEventController::class, 'index'])->name('events.index');
         Route::get('events/{event}', [GSUEventController::class, 'show'])->name('events.show');
+        Route::get('events-export', [GSUEventController::class, 'export'])->name('events.export');
         Route::post('events/{event}/complete', [GSUEventController::class, 'markAsComplete'])->name('events.complete');
         Route::post('events/{event}/report', [GSUEventController::class, 'reportIssue'])->name('events.report');
         Route::post('events/update-statuses', [GSUEventController::class, 'updateStatuses'])->name('events.update-statuses');
         
         // GSU Calendar Route
         Route::get('calendar', [GSUEventController::class, 'calendar'])->name('calendar');
+        
+        // GSU Reports Routes
+        Route::get('reports', [GSUController::class, 'reports'])->name('reports');
+        Route::get('reports-export', [GSUController::class, 'exportReports'])->name('reports.export');
     });
 
     // Other user routes defined here

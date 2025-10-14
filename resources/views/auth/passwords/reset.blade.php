@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - PCC Venue Reservation System</title>
+    <title>Reset Password - PCC Venue Reservation System</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -82,48 +82,50 @@
             <!-- Welcome Message -->
             <div class="bg-white bg-opacity-10 rounded-lg p-6 backdrop-blur-sm">
                 <p class="text-white text-lg font-medium mb-2">
-                    Welcome Back!
+                    <i class="fas fa-shield-alt mr-2"></i>Reset Your Password
                 </p>
                 <p class="text-white text-sm opacity-80">
-                    Please sign in to access the venue reservation system
+                    Create a new secure password for your account
                 </p>
             </div>
         </div>
     </div>
 
-    <!-- Right Column - Login Form -->
+    <!-- Right Column - Reset Form -->
     <div class="w-1/2 login-bg flex items-center justify-center p-8">
         <div class="w-full max-w-md slide-in-right">
-            <!-- Login Card -->
+            <!-- Reset Card -->
             <div class="bg-white rounded-2xl card-shadow p-8">
                 <!-- Form Header -->
                 <div class="text-center mb-8">
                     <div class="inline-flex items-center justify-center w-16 h-16 bg-maroon rounded-full mb-4">
-                        <i class="fas fa-user text-white text-xl"></i>
+                        <i class="fas fa-key text-white text-xl"></i>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Sign In</h3>
-                    <p class="text-gray-600">Enter your credentials to continue</p>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Reset Password</h3>
+                    <p class="text-gray-600">Enter your new password below</p>
                 </div>
 
-                <!-- Login Form -->
-                <form action="{{ route('login.submit') }}" method="POST" class="space-y-6">
+                <!-- Reset Form -->
+                <form action="{{ route('password.update') }}" method="POST" class="space-y-6">
                     @csrf
+                    
+                    <input type="hidden" name="token" value="{{ $token }}">
                     
                     <!-- Email Field -->
                     <div>
-                        <label for="username" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">
                             <i class="fas fa-envelope mr-2 text-maroon"></i>Email Address
                         </label>
                         <input 
                             type="email" 
-                            id="username" 
-                            name="username" 
+                            id="email" 
+                            name="email" 
                             required 
-                            value="{{ old('username') }}"
-                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-maroon focus:ring-2 focus:ring-maroon focus:ring-opacity-20 input-focus transition-all duration-300"
-                            placeholder="Enter your email address"
+                            value="{{ $email ?? old('email') }}"
+                            readonly
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-gray-600"
                         >
-                        @error('username')
+                        @error('email')
                             <p class="text-red-500 text-sm mt-2 flex items-center">
                                 <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
                             </p>
@@ -133,7 +135,7 @@
                     <!-- Password Field -->
                     <div>
                         <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-lock mr-2 text-maroon"></i>Password
+                            <i class="fas fa-lock mr-2 text-maroon"></i>New Password
                         </label>
                         <div class="relative">
                             <input 
@@ -142,14 +144,14 @@
                                 name="password" 
                                 required 
                                 class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-maroon focus:ring-2 focus:ring-maroon focus:ring-opacity-20 input-focus transition-all duration-300"
-                                placeholder="Enter your password"
+                                placeholder="Enter new password"
                             >
                             <button 
                                 type="button" 
-                                onclick="togglePassword()" 
+                                onclick="togglePassword('password')" 
                                 class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-maroon transition-colors"
                             >
-                                <i class="fas fa-eye" id="toggleIcon"></i>
+                                <i class="fas fa-eye" id="toggleIconPassword"></i>
                             </button>
                         </div>
                         @error('password')
@@ -157,33 +159,50 @@
                                 <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
                             </p>
                         @enderror
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>Password must be at least 8 characters
+                        </p>
                     </div>
                     
-                    <!-- Forgot Password Link -->
-                    <div class="flex justify-end">
-                        <a href="{{ route('password.request') }}" class="text-sm text-maroon hover:text-red-800 font-medium transition-colors duration-200">
-                            <i class="fas fa-key mr-1"></i>Forgot Password?
-                        </a>
+                    <!-- Confirm Password Field -->
+                    <div>
+                        <label for="password_confirmation" class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-lock mr-2 text-maroon"></i>Confirm New Password
+                        </label>
+                        <div class="relative">
+                            <input 
+                                type="password" 
+                                id="password_confirmation" 
+                                name="password_confirmation" 
+                                required 
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-maroon focus:ring-2 focus:ring-maroon focus:ring-opacity-20 input-focus transition-all duration-300"
+                                placeholder="Confirm new password"
+                            >
+                            <button 
+                                type="button" 
+                                onclick="togglePassword('password_confirmation')" 
+                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-maroon transition-colors"
+                            >
+                                <i class="fas fa-eye" id="toggleIconPasswordConfirmation"></i>
+                            </button>
+                        </div>
                     </div>
                     
                     <!-- Submit Button -->
-                    <div class="pt-2">
+                    <div class="pt-4">
                         <button 
                             type="submit" 
                             class="w-full btn-maroon py-3 px-6 rounded-lg font-semibold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-maroon focus:ring-opacity-20"
                         >
-                            <i class="fas fa-sign-in-alt mr-2"></i>Sign In
+                            <i class="fas fa-check-circle mr-2"></i>Reset Password
                         </button>
                     </div>
                     
-                    <!-- Don't have an account? -->
+                    <!-- Back to Login -->
                     <div class="text-center mt-6">
-                        <p class="text-gray-600 text-sm">
-                            Don't have an account?
-                            <a href="{{ route('signup') }}" class="text-maroon font-semibold hover:underline transition-all duration-200">
-                                Sign up here
-                            </a>
-                        </p>
+                        <a href="{{ route('login') }}" class="text-gray-600 text-sm hover:text-maroon transition-colors duration-200 inline-flex items-center">
+                            <i class="fas fa-arrow-left mr-2"></i>Back to Login
+                        </a>
                     </div>
                 </form>
 
@@ -206,9 +225,9 @@
 
     <!-- JavaScript -->
     <script>
-        function togglePassword() {
-            const passwordInput = document.getElementById('password');
-            const toggleIcon = document.getElementById('toggleIcon');
+        function togglePassword(fieldId) {
+            const passwordInput = document.getElementById(fieldId);
+            const toggleIcon = document.getElementById('toggleIcon' + fieldId.charAt(0).toUpperCase() + fieldId.slice(1).replace('_', ''));
             
             if (passwordInput.type === 'password') {
                 passwordInput.type = 'text';
@@ -225,13 +244,13 @@
         document.querySelector('form').addEventListener('submit', function(e) {
             const submitBtn = this.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Signing In...';
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Resetting Password...';
             submitBtn.disabled = true;
         });
 
-        // Auto-focus on email field
+        // Auto-focus on password field
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('username').focus();
+            document.getElementById('password').focus();
         });
     </script>
 </body>

@@ -1,6 +1,6 @@
-@extends('layouts.mhadel')
+@extends('layouts.gsu')
 
-@section('title', 'Reports & Analytics - OTP')
+@section('title', 'Reports & Analytics - GSU')
 @section('page-title', 'Reports & Analytics')
 
 @section('header-actions')
@@ -163,7 +163,7 @@
             <div class="flex items-center justify-between">
                 <h2 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
                     <i class="fas fa-chart-bar text-maroon mr-3"></i>
-                    Reports & Analytics - OTP
+                    Reports & Analytics - GSU
                 </h2>
                 <div class="flex items-center space-x-2">
                     <div class="relative">
@@ -323,7 +323,7 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 text-center">
-                                        <a href="{{ route('mhadel.reservations.show', $r->id) }}" class="btn-dark-blue px-3 py-2 rounded-lg text-xs font-medium transition-colors">
+                                        <a href="{{ route('gsu.reservations.show', $r->id) }}" class="btn-dark-blue px-3 py-2 rounded-lg text-xs font-medium transition-colors">
                                             <i class="fas fa-eye mr-1"></i>
                                         </a>
                                     </td>
@@ -423,7 +423,7 @@
                                         <span class="status-badge {{ $statusClass }}">{{ $statusDisplay }}</span>
                                     </td>
                                     <td class="px-6 py-4 text-center">
-                                        <a href="{{ route('mhadel.events.show', $event->id) }}" class="btn-dark-blue px-3 py-2 rounded-lg text-xs font-medium transition-colors">
+                                        <a href="{{ route('gsu.events.show', $event->id) }}" class="btn-dark-blue px-3 py-2 rounded-lg text-xs font-medium transition-colors">
                                             <i class="fas fa-eye mr-1"></i>
                                         </a>
                                     </td>
@@ -986,7 +986,7 @@
         }
         
         // Build export URL
-        let exportUrl = '{{ route("mhadel.reports.export") }}?';
+        let exportUrl = '{{ route("gsu.reports.export") }}?';
         const params = new URLSearchParams();
         
         // Add export type

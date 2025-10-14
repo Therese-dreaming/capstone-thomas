@@ -157,7 +157,7 @@
 
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
 	const events = @json($events ?? []);
 	const reservations = @json($reservations ?? []);
@@ -530,6 +530,20 @@
 					textColor: 'text-green-800',
 					borderColor: 'border-green-300'
 				};
+			case 'pending_venue':
+				return {
+					label: 'Pending Venue',
+					bgColor: 'bg-yellow-100',
+					textColor: 'text-yellow-800',
+					borderColor: 'border-yellow-300'
+				};
+			case 'confirmed':
+				return {
+					label: 'Confirmed',
+					bgColor: 'bg-green-100',
+					textColor: 'text-green-800',
+					borderColor: 'border-green-300'
+				};
 			default:
 				return {
 					label: 'Unknown',
@@ -698,4 +712,4 @@
 	
 
 </script>
-@endsection 
+@endpush 

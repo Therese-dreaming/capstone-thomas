@@ -17,7 +17,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Font;
 
-class IOSAEventsExport implements WithMultipleSheets
+class GSUEventsExport implements WithMultipleSheets
 {
     protected $events;
 
@@ -29,15 +29,15 @@ class IOSAEventsExport implements WithMultipleSheets
     public function sheets(): array
     {
         return [
-            new IOSAEventsDataSheet($this->events),
-            new IOSAEventsSummarySheet($this->events),
+            new GSUEventsDataSheet($this->events),
+            new GSUEventsSummarySheet($this->events),
         ];
     }
 
 }
 
 // Data Sheet Class
-class IOSAEventsDataSheet implements FromCollection, WithHeadings, WithMapping, WithColumnWidths, WithStyles, WithEvents, WithTitle
+class GSUEventsDataSheet implements FromCollection, WithHeadings, WithMapping, WithColumnWidths, WithStyles, WithEvents, WithTitle
 {
     protected $events;
 
@@ -177,7 +177,7 @@ class IOSAEventsDataSheet implements FromCollection, WithHeadings, WithMapping, 
                 $sheet->mergeCells('A3:' . $highestColumn . '3');
 
                 // Set title
-                $sheet->setCellValue('A1', 'IOSA EVENTS MANAGEMENT SYSTEM - DATA');
+                $sheet->setCellValue('A1', 'GSU EVENTS MANAGEMENT SYSTEM - DATA');
                 $sheet->getStyle('A1')->applyFromArray([
                     'font' => [
                         'bold' => true, 
@@ -322,7 +322,7 @@ class IOSAEventsDataSheet implements FromCollection, WithHeadings, WithMapping, 
 }
 
 // Summary Sheet Class
-class IOSAEventsSummarySheet implements FromCollection, WithHeadings, WithColumnWidths, WithStyles, WithEvents, WithTitle
+class GSUEventsSummarySheet implements FromCollection, WithHeadings, WithColumnWidths, WithStyles, WithEvents, WithTitle
 {
     protected $events;
 
@@ -481,7 +481,7 @@ class IOSAEventsSummarySheet implements FromCollection, WithHeadings, WithColumn
                 $sheet->mergeCells('A3:C3');
 
                 // Set title
-                $sheet->setCellValue('A1', 'IOSA EVENTS - SUMMARY REPORT');
+                $sheet->setCellValue('A1', 'GSU EVENTS - SUMMARY REPORT');
                 $sheet->getStyle('A1')->applyFromArray([
                     'font' => [
                         'bold' => true, 

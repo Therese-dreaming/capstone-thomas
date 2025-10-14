@@ -26,7 +26,13 @@
 						<i class="fas fa-user text-white text-sm"></i>
 					</div>
 					<div class="flex-1 min-w-0">
-						<h1 class="text-sm font-bold text-gray-800 truncate">{{ Auth::user()->name ?? 'GSU Staff' }}</h1>
+						<h1 class="text-sm font-bold text-gray-800 truncate">
+							@if(Auth::user()->first_name || Auth::user()->last_name)
+								{{ trim((Auth::user()->first_name ?? '') . ' ' . (Auth::user()->last_name ?? '')) }}
+							@else
+								{{ Auth::user()->name ?? 'GSU Staff' }}
+							@endif
+						</h1>
 						<p class="text-xs text-gray-500 truncate">{{ Auth::user()->email ?? 'gsu@pcc.edu.ph' }}</p>
 					</div>
 				</div>
@@ -67,6 +73,12 @@
 							<span class="font-medium">Calendar</span>
 						</a>
 					</li>
+					<li>
+						<a href="{{ route('gsu.reports') }}" class="flex items-center space-x-3 p-3 rounded-lg sidebar-transition hover-bg-maroon {{ request()->routeIs('gsu.reports*') ? 'active-maroon' : 'text-gray-700' }}">
+							<i class="fas fa-chart-bar w-5 h-5"></i>
+							<span class="font-medium">Reports</span>
+						</a>
+					</li>
 				</ul>
 			</nav>
 			<div class="border-t border-gray-200 p-4">
@@ -100,7 +112,13 @@
 						@endif
 						<div class="flex items-center space-x-3 border-l pl-4">
 							<div class="text-right">
-								<p class="text-sm font-semibold text-gray-800">{{ Auth::user()->name ?? 'GSU Staff' }}</p>
+								<p class="text-sm font-semibold text-gray-800">
+									@if(Auth::user()->first_name || Auth::user()->last_name)
+										{{ trim((Auth::user()->first_name ?? '') . ' ' . (Auth::user()->last_name ?? '')) }}
+									@else
+										{{ Auth::user()->name ?? 'GSU Staff' }}
+									@endif
+								</p>
 								<p class="text-xs text-gray-500">General Services Unit</p>
 							</div>
 							<div class="w-10 h-10 bg-maroon rounded-full flex items-center justify-center">
