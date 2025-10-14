@@ -641,10 +641,10 @@
 <!-- Approve Modal -->
 <div id="approveModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-7xl w-full font-poppins animate-fadeIn">
-            <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-white">
+        <div class="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[85vh] flex flex-col font-poppins animate-fadeIn">
+            <div class="p-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-white flex-shrink-0">
                 <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
+                    <h3 class="text-lg font-bold text-gray-800 flex items-center font-poppins">
                         <i class="fas fa-check-circle text-green-500 mr-2"></i>
                         Approve Reservation
                     </h3>
@@ -654,20 +654,20 @@
                 </div>
             </div>
             
-            <div class="p-6">
-                <div id="approvalGrid" class="grid grid-cols-1 gap-6">
+            <div class="p-4 overflow-y-auto flex-1">
+                <div id="approvalGrid" class="grid grid-cols-1 gap-4">
                     <!-- Left Column: Reservation Details -->
                     <div id="reservationDetailsColumn">
-                        <h4 class="font-medium text-gray-800 mb-3 text-lg">Reservation Details</h4>
-                        <div class="bg-gray-50 p-4 rounded-lg mb-4">
-                            <h4 class="font-semibold text-gray-800" id="approveEventTitle"></h4>
-                            <p class="text-sm text-gray-600 mt-1">This reservation will be forwarded to OTP for final approval.</p>
-                            <div class="mt-3 pt-3 border-t border-gray-200">
-                                <div class="flex items-center text-sm text-gray-600">
+                        <h4 class="font-medium text-gray-800 mb-2 text-base">Reservation Details</h4>
+                        <div class="bg-gray-50 p-3 rounded-lg mb-3">
+                            <h4 class="font-semibold text-gray-800 text-sm" id="approveEventTitle"></h4>
+                            <p class="text-xs text-gray-600 mt-1">This reservation will be forwarded to OTP for final approval.</p>
+                            <div class="mt-2 pt-2 border-t border-gray-200">
+                                <div class="flex items-center text-xs text-gray-600">
                                     <i class="fas fa-info-circle text-blue-500 mr-2"></i>
                                     <span>Current Status: <span class="font-medium text-blue-600">IOSA Approved</span></span>
                                 </div>
-                                <div class="flex items-center text-sm text-gray-600 mt-1">
+                                <div class="flex items-center text-xs text-gray-600 mt-1">
                                     <i class="fas fa-arrow-right text-green-500 mr-2"></i>
                                     <span>Next Step: <span class="font-medium text-green-600">Ms. Mhadel Review</span></span>
                                 </div>
@@ -675,9 +675,9 @@
                         </div>
                         
                         <!-- Fee Selection -->
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-3">Fee Selection <span class="text-red-500">*</span></label>
-                            <div class="space-y-3">
+                        <div class="mb-3">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Fee Selection <span class="text-red-500">*</span></label>
+                            <div class="space-y-2">
                                 <div>
                                     <input type="radio" id="feeTypeFree" name="feeType" value="free" class="fee-selection-radio h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300" checked>
                                     <label for="feeTypeFree" class="fee-selection-label block text-sm font-medium text-gray-700 ml-6">
@@ -701,20 +701,20 @@
                             </div>
                         </div>
                         
-                        <div class="mb-4">
+                        <div class="mb-3">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Additional Notes (Optional)</label>
-                            <textarea id="approveNotes" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Add any additional notes for this approval..."></textarea>
+                            <textarea id="approveNotes" rows="3" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Add any additional notes for this approval..."></textarea>
                         </div>
                     </div>
                     
                     <!-- Middle Column: Pricing Information -->
                     <div id="pricingSection" class="hidden">
-                        <h4 class="font-medium text-gray-800 mb-3 text-lg">Pricing Information</h4>
+                        <h4 class="font-medium text-gray-800 mb-2 text-base">Pricing Information</h4>
                         
                         <!-- Venue Rate and Base Price Display -->
-                        <div class="mb-4">
+                        <div class="mb-3">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Venue Pricing Information</label>
-                            <div class="space-y-3">
+                            <div class="space-y-2">
                                 <!-- Venue Rate per Hour -->
                                 <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                                     <div class="flex items-center justify-between">
@@ -738,19 +738,19 @@
                         </div>
                         
                         <!-- Final Price Setting -->
-                        <div class="mb-4">
+                        <div class="mb-3">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Final Price (₱) <span class="text-red-500">*</span></label>
                             <p class="text-xs text-gray-600 mb-2">Set the final price for this reservation. Enter 0 for free events.</p>
-                            <input type="number" id="basePrice" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Enter final price or 0 for free events" required>
+                            <input type="number" id="basePrice" step="0.01" min="0" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Enter final price or 0 for free events" required>
                         </div>
                         
                         <!-- Summary -->
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-2">
                             <div class="flex items-start">  
-                                <i class="fas fa-save text-blue-500 mr-2"></i>
+                                <i class="fas fa-save text-blue-500 mr-2 text-sm mt-0.5"></i>
                                 <div class="text-xs text-blue-700">
                                     <p class="font-medium">This information will be saved:</p>
-                                    <ul class="mt-1 space-y-1">
+                                    <ul class="mt-1 space-y-0.5">
                                         <li>• Final price set by Ms. Mhadel</li>
                                         <li>• Discount percentage (if applied)</li>
                                         <li>• Approval notes and timestamp</li>
@@ -763,10 +763,10 @@
                     
                     <!-- Right Column: Discount & Final Price -->
                     <div id="discountSection" class="hidden">
-                        <h4 class="font-medium text-gray-800 mb-3 text-lg">Discount & Final Price</h4>
+                        <h4 class="font-medium text-gray-800 mb-2 text-base">Discount & Final Price</h4>
                         
                         <!-- Discount Selection -->
-                        <div class="mb-4">
+                        <div class="mb-3">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Discount Selection</label>
                             <p class="text-xs text-gray-600 mb-2">Select a discount percentage to apply to the final price.</p>
                             <div class="grid grid-cols-2 gap-2">
@@ -786,22 +786,22 @@
                         </div>
                         
                         <!-- Final Price Display -->
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                            <div class="flex items-center justify-between mb-2">
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                            <div class="flex items-center justify-between mb-1">
                                 <span class="text-sm font-medium text-green-800">Price After Discount:</span>
-                                <span id="finalPrice" class="text-xl font-bold text-green-800">₱0.00</span>
+                                <span id="finalPrice" class="text-lg font-bold text-green-800">₱0.00</span>
                             </div>
                             <div id="discountInfo" class="text-xs text-green-600 hidden">
                                 <span id="discountAmount"></span> discount applied
                             </div>
                         </div>
                         
-                        <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div class="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
                             <div class="flex items-start">
-                                <i class="fas fa-info-circle text-yellow-500 mr-2"></i>
+                                <i class="fas fa-info-circle text-yellow-500 mr-2 text-sm mt-0.5"></i>
                                 <div class="text-xs text-yellow-700">
                                     <p class="font-medium">Discount Information:</p>
-                                    <ul class="mt-1 space-y-1">
+                                    <ul class="mt-1 space-y-0.5">
                                         <li>• Discounts are applied to the final price</li>
                                         <li>• Cannot be combined with other discounts</li>
                                         <li>• Applied immediately upon selection</li>
@@ -813,7 +813,7 @@
                 </div>
             </div>
             
-            <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+            <div class="p-4 border-t border-gray-200 flex justify-end space-x-3 flex-shrink-0 bg-white">
                 <button onclick="closeApproveModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
                     Cancel
                 </button>

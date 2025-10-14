@@ -22,12 +22,12 @@
 		<div class="w-64 bg-white shadow-lg flex flex-col">
 			<div class="p-6 border-b border-gray-200">
 				<div class="flex items-center space-x-3">
-					<div class="w-8 h-8 bg-maroon rounded flex items-center justify-center">
-						<i class="fas fa-warehouse text-white text-sm"></i>
+					<div class="w-10 h-10 bg-maroon rounded-full flex items-center justify-center">
+						<i class="fas fa-user text-white text-sm"></i>
 					</div>
-					<div>
-						<h1 class="text-lg font-bold text-gray-800">GSU</h1>
-						<p class="text-xs text-gray-500">General Services Unit</p>
+					<div class="flex-1 min-w-0">
+						<h1 class="text-sm font-bold text-gray-800 truncate">{{ Auth::user()->name ?? 'GSU Staff' }}</h1>
+						<p class="text-xs text-gray-500 truncate">{{ Auth::user()->email ?? 'gsu@pcc.edu.ph' }}</p>
 					</div>
 				</div>
 			</div>
@@ -94,11 +94,20 @@
 							<p class="text-gray-600">@yield('page-subtitle')</p>
 						@endif
 					</div>
-					@hasSection('header-actions')
-						<div class="flex items-center space-x-3">
+					<div class="flex items-center space-x-4">
+						@hasSection('header-actions')
 							@yield('header-actions')
+						@endif
+						<div class="flex items-center space-x-3 border-l pl-4">
+							<div class="text-right">
+								<p class="text-sm font-semibold text-gray-800">{{ Auth::user()->name ?? 'GSU Staff' }}</p>
+								<p class="text-xs text-gray-500">General Services Unit</p>
+							</div>
+							<div class="w-10 h-10 bg-maroon rounded-full flex items-center justify-center">
+								<i class="fas fa-warehouse text-white"></i>
+							</div>
 						</div>
-					@endif
+					</div>
 				</div>
 			</header>
 			<main class="flex-1 overflow-y-auto p-6">
@@ -106,6 +115,6 @@
 			</main>
 		</div>
 	</div>
-	@yield('scripts')
+	@stack('scripts')
 </body>
 </html> 

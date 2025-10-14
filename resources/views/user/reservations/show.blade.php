@@ -805,14 +805,30 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({
                 rating: currentRating,
                 comment: comment
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            // Check if response is OK before parsing JSON
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.message || `Server error: ${response.status}`);
+                }).catch(err => {
+                    // If JSON parsing fails, throw a generic error
+                    if (err instanceof Error && err.message.includes('Server error')) {
+                        throw err;
+                    }
+                    throw new Error(`Server error: ${response.status}`);
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 showNotification('Rating submitted successfully!', 'success');
@@ -827,7 +843,7 @@
         })
         .catch(error => {
             console.error('Error:', error);
-            showNotification('Error submitting rating. Please try again.', 'error');
+            showNotification(error.message || 'Error submitting rating. Please try again.', 'error');
         });
     }
 

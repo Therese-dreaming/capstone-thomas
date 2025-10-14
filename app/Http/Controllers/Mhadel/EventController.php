@@ -484,29 +484,34 @@ class EventController extends Controller
     /**
      * Check for schedule conflicts without updating.
      */
-    public function checkConflicts(Request $request, Event $event)
+    public function checkConflicts(Request $request, Event $event = null)
     {
         $request->validate([
             'venue_id' => 'required|exists:venues,id',
-            'start_datetime' => 'required|date',
-            'end_datetime' => 'required|date|after:start_datetime',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date',
         ]);
         
-        $newStartDate = $request->start_datetime;
-        $newEndDate = $request->end_datetime;
+        $newStartDate = $request->start_date;
+        $newEndDate = $request->end_date;
         $newVenueId = $request->venue_id;
         
         // Check for conflicts with other events at the same venue
-        $eventConflicts = Event::where('id', '!=', $event->id)
-            ->where('venue_id', $newVenueId)
+        $eventQuery = Event::where('venue_id', $newVenueId)
             ->where('status', '!=', 'cancelled')
             ->where(function($query) use ($newStartDate, $newEndDate) {
                 $query->where(function($q) use ($newStartDate, $newEndDate) {
                     $q->where('start_date', '<', $newEndDate)
                       ->where('end_date', '>', $newStartDate);
                 });
-            })
-            ->get();
+            });
+        
+        // Exclude current event if editing
+        if ($event) {
+            $eventQuery->where('id', '!=', $event->id);
+        }
+        
+        $eventConflicts = $eventQuery->get();
         
         // Check for conflicts with reservations at the same venue
         $reservationConflicts = Reservation::where('venue_id', $newVenueId)
@@ -525,8 +530,8 @@ class EventController extends Controller
             $allConflicts[] = [
                 'type' => 'Event',
                 'title' => $conflict->title,
-                'start' => $conflict->start_date->format('M d, Y g:i A'),
-                'end' => $conflict->end_date->format('M d, Y g:i A'),
+                'start_date' => $conflict->start_date->format('M d, Y g:i A'),
+                'end_date' => $conflict->end_date->format('M d, Y g:i A'),
                 'user' => $conflict->organizer ?? 'Official Event'
             ];
         }
@@ -535,14 +540,15 @@ class EventController extends Controller
             $allConflicts[] = [
                 'type' => 'Reservation',
                 'title' => $conflict->event_title,
-                'start' => $conflict->start_date->format('M d, Y g:i A'),
-                'end' => $conflict->end_date->format('M d, Y g:i A'),
+                'start_date' => $conflict->start_date->format('M d, Y g:i A'),
+                'end_date' => $conflict->end_date->format('M d, Y g:i A'),
                 'user' => $conflict->user->name ?? 'Unknown'
             ];
         }
         
         return response()->json([
             'success' => true,
+            'hasConflicts' => count($allConflicts) > 0,
             'conflicts' => $allConflicts
         ]);
     }

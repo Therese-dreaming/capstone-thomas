@@ -16,18 +16,11 @@
     .text-maroon { color: var(--maroon); }
     .border-maroon { border-color: var(--maroon); }
     .tab-content { 
-        display: none !important; 
+        display: none; 
     }
     .tab-content.active { 
-        display: block !important; 
+        display: block; 
         animation: fadeIn 0.3s ease-in-out; 
-    }
-    /* Ensure only the first tab is visible on page load */
-    #content-account { 
-        display: block !important; 
-    }
-    #content-security, #content-activity { 
-        display: none !important; 
     }
     @keyframes fadeIn { 
         from { opacity: 0; transform: translateY(10px); } 

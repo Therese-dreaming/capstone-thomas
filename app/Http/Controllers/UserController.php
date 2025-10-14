@@ -133,7 +133,7 @@ class UserController extends Controller
 
 	public function calendar()
 	{
-		$venues = Venue::where('is_available', true)->get();
+		$venues = Venue::active()->available()->get();
 		return view('user.reservations', compact('venues'));
 	}
 
@@ -413,7 +413,7 @@ class UserController extends Controller
 				->with('error', 'This reservation cannot be edited. You can only edit reservations that have not been reviewed by IOSA yet.');
 		}
 
-		$venues = Venue::where('is_available', true)->get();
+		$venues = Venue::active()->available()->get();
 		
 		return view('user.reservations.edit', compact('reservation', 'venues'));
 	}
