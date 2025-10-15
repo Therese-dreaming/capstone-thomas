@@ -5,13 +5,6 @@
 @section('page-subtitle', 'View and track reservations approved by OTP')
 
 @section('header-actions')
-<div class="flex items-center space-x-3">
-                        <a href="{{ route('gsu.reservations.export', request()->query()) }}" 
-                       class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg flex items-center space-x-2 text-sm">
-                        <i class="fas fa-file-excel mr-2"></i>
-                        <span>Export to Excel</span>
-                    </a>
-</div>
 @endsection
 
 @section('content')
@@ -212,13 +205,6 @@
                             </a>
                         @endif
                     </form>
-                    
-                    <a href="{{ route('gsu.reservations.export', request()->query()) }}" 
-                       id="exportBtn"
-                       class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg flex items-center space-x-2 text-sm">
-                        <i class="fas fa-file-excel mr-2"></i>
-                        <span>Export</span>
-                    </a>
                 </div>
             </div>
         </div>

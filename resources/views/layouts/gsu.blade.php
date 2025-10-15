@@ -110,21 +110,6 @@
 						@hasSection('header-actions')
 							@yield('header-actions')
 						@endif
-						<div class="flex items-center space-x-3 border-l pl-4">
-							<div class="text-right">
-								<p class="text-sm font-semibold text-gray-800">
-									@if(Auth::user()->first_name || Auth::user()->last_name)
-										{{ trim((Auth::user()->first_name ?? '') . ' ' . (Auth::user()->last_name ?? '')) }}
-									@else
-										{{ Auth::user()->name ?? 'GSU Staff' }}
-									@endif
-								</p>
-								<p class="text-xs text-gray-500">General Services Unit</p>
-							</div>
-							<div class="w-10 h-10 bg-maroon rounded-full flex items-center justify-center">
-								<i class="fas fa-warehouse text-white"></i>
-							</div>
-						</div>
 					</div>
 				</div>
 			</header>
