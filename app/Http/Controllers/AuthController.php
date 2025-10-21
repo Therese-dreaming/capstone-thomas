@@ -101,6 +101,29 @@ class AuthController extends Controller
         return redirect()->route('verification.notice')->with('message', 'Account created! Check your email for a verification link.');
     }
 
+    public function showResendVerification(Request $request)
+    {
+        $email = $request->query('email');
+        return view('auth.resend-verification', compact('email'));
+    }
+
+    public function resendVerification(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if ($user->email_verified_at) {
+            return back()->with('error', 'This email is already verified. You can log in now.');
+        }
+
+        $user->sendEmailVerificationNotification();
+
+        return back()->with('success', 'Verification email has been sent! Please check your inbox.');
+    }
+
     private function redirectBasedOnRole($user)
     {
         switch ($user->role) {

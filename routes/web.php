@@ -48,12 +48,28 @@ Route::get('/email/verify', function () {
     return view('auth.verify-email');
 })->middleware('auth')->name('verification.notice');
 
-Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-    $request->fulfill();
-    $userName = $request->user()->name;
-    Auth::logout();
-    return redirect()->route('verification.success')->with('verified_name', $userName);
-})->middleware(['auth', 'signed'])->name('verification.verify');
+Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
+    // Find the user by ID
+    $user = \App\Models\User::findOrFail($id);
+    
+    // Verify the hash matches
+    if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+        abort(403, 'Invalid verification link.');
+    }
+    
+    // Check if already verified
+    if ($user->hasVerifiedEmail()) {
+        return redirect()->route('login')->with('message', 'Email already verified. Please log in.');
+    }
+    
+    // Mark email as verified
+    $user->markEmailAsVerified();
+    
+    // Fire the verified event
+    event(new \Illuminate\Auth\Events\Verified($user));
+    
+    return redirect()->route('verification.success')->with('verified_name', $user->name);
+})->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
 
 Route::view('/email/verified-success', 'auth.verified-success')->name('verification.success');
 
@@ -61,6 +77,10 @@ Route::post('/email/verification-notification', function (Request $request) {
     $request->user()->sendEmailVerificationNotification();
     return back()->with('message', 'Verification link sent!');
 })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
+
+// Resend Verification Routes (without auth)
+Route::get('/email/resend-verification', [AuthController::class, 'showResendVerification'])->name('verification.resend.form');
+Route::post('/email/resend-verification', [AuthController::class, 'resendVerification'])->middleware('throttle:6,1')->name('verification.resend.send');
 
 // Protected Routes
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -110,6 +130,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/reports/export/excel', [IOSAController::class, 'exportGsuReports'])->name('reports.export');
         Route::get('/reservation-reports', [IOSAController::class, 'reservationReports'])->name('reservation-reports');
         Route::get('/reservation-reports-export', [IOSAController::class, 'exportReservationReports'])->name('reservation-reports.export');
+        Route::get('/reservation-reports-export-pdf', [IOSAController::class, 'exportReservationReportsPdf'])->name('reservation-reports.exportPdf');
         
         // Reservations Routes
         Route::get('reservations/calendar', [IOSAReservationController::class, 'calendar'])->name('reservations.calendar');
@@ -144,6 +165,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/reports', [MhadelController::class, 'reports'])->name('reports');
         Route::get('/reports/{report}', [MhadelController::class, 'showReport'])->name('reports.show');
         Route::get('/reports-export', [MhadelController::class, 'exportReports'])->name('reports.export');
+        Route::get('/reports-export-pdf', [MhadelController::class, 'exportReportsPdf'])->name('reports.exportPdf');
         Route::get('/gsu-reports', [MhadelController::class, 'gsuReports'])->name('gsu-reports');
         Route::get('/gsu-reports/{report}', [MhadelController::class, 'showGsuReport'])->name('gsu-reports.show');
         Route::post('/gsu-reports/{report}/status', [MhadelController::class, 'updateGsuReportStatus'])->name('gsu-reports.update-status');
@@ -184,6 +206,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/gsu-reports/export/excel', [DrJavierController::class, 'exportGsuReports'])->name('gsu-reports.export');
         Route::get('/reports/reservation-reports', [DrJavierController::class, 'reservationReports'])->name('reports.reservation-reports');
         Route::get('/reports/reservation-reports/export', [DrJavierController::class, 'exportReports'])->name('reports.reservation-reports.export');
+        Route::get('/reports/reservation-reports/export-pdf', [DrJavierController::class, 'exportReportsPdf'])->name('reports.reservation-reports.exportPdf');
         Route::get('/profile', [DrJavierController::class, 'profile'])->name('profile');
         Route::post('/profile', [DrJavierController::class, 'updateProfile'])->name('profile.update');
         Route::post('/profile/password', [DrJavierController::class, 'updatePassword'])->name('profile.password');
@@ -228,6 +251,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // GSU Reports Routes
         Route::get('reports', [GSUController::class, 'reports'])->name('reports');
         Route::get('reports-export', [GSUController::class, 'exportReports'])->name('reports.export');
+        Route::get('reports-export-pdf', [GSUController::class, 'exportReportsPdf'])->name('reports.exportPdf');
     });
 
     // Other user routes defined here

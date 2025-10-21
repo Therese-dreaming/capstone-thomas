@@ -105,6 +105,16 @@
                     <p class="text-gray-600">Enter your credentials to continue</p>
                 </div>
 
+                <!-- Success Message -->
+                @if(session('message'))
+                    <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                            <p class="text-green-700 text-sm">{{ session('message') }}</p>
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Login Form -->
                 <form action="{{ route('login.submit') }}" method="POST" class="space-y-6">
                     @csrf
@@ -127,6 +137,11 @@
                             <p class="text-red-500 text-sm mt-2 flex items-center">
                                 <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
                             </p>
+                            @if(str_contains($message, 'Only verified accounts'))
+                                <a href="{{ route('verification.resend.form') }}?email={{ old('username') }}" class="text-maroon text-sm mt-2 inline-flex items-center hover:underline font-medium">
+                                    <i class="fas fa-paper-plane mr-1"></i>Request New Verification Email
+                                </a>
+                            @endif
                         @enderror
                     </div>
                     

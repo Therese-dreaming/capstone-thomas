@@ -530,6 +530,63 @@ class DrJavierController extends Controller
     }
 
     /**
+     * Export reservation and event reports to PDF with charts support.
+     */
+    public function exportReportsPdf(Request $request)
+    {
+        $exportType = $request->query('export_type', 'both');
+        $startDate = $request->query('export_start_date');
+        $endDate = $request->query('export_end_date');
+        $includeFilters = $request->query('include_filters', false);
+        $includeSummary = $request->query('include_summary', true);
+        $chartOption = $request->query('chart_option', 'none'); // none, include, only
+        $exportStatuses = $request->query('export_statuses');
+
+        if ($includeFilters) {
+            $startDate = $startDate ?: $request->query('start_date');
+            $endDate = $endDate ?: $request->query('end_date');
+        }
+
+        // Fetch data based on export type
+        $reservations = collect();
+        $events = collect();
+
+        if ($exportType === 'reservations' || $exportType === 'both') {
+            $query = Reservation::with(['user', 'venue']);
+            if ($startDate) { $query->whereDate('start_date', '>=', $startDate); }
+            if ($endDate) { $query->whereDate('end_date', '<=', $endDate); }
+            if ($exportStatuses) { $query->whereIn('status', explode(',', $exportStatuses)); }
+            $reservations = $query->orderBy('start_date')->get();
+        }
+
+        if ($exportType === 'events' || $exportType === 'both') {
+            $query = Event::with(['venue']);
+            if ($startDate) { $query->whereDate('start_date', '>=', $startDate); }
+            if ($endDate) { $query->whereDate('end_date', '<=', $endDate); }
+            $events = $query->orderBy('start_date')->get();
+        }
+
+        $fileName = 'ppgs_reports_' . now()->format('Y-m-d_H-i-s') . '.pdf';
+
+        // Generate PDF
+        $pdf = \PDF::loadView('drjavier.reports.pdf-export', [
+            'exportType' => $exportType,
+            'reservations' => $reservations,
+            'events' => $events,
+            'includeSummary' => $includeSummary,
+            'chartOption' => $chartOption,
+            'dateRange' => [
+                'start' => $startDate,
+                'end' => $endDate
+            ]
+        ]);
+
+        $pdf->setPaper('a4', 'portrait');
+        
+        return $pdf->download($fileName);
+    }
+
+    /**
      * Export GSU reports to Excel.
      */
     public function exportGsuReports(Request $request)

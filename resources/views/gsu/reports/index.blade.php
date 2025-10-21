@@ -220,6 +220,9 @@
                     <button onclick="openExportModal()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
                         <i class="fas fa-file-excel mr-2"></i>Export to Excel
                     </button>
+                    <button onclick="openPdfExportModal()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium">
+                        <i class="fas fa-file-pdf mr-2"></i>Export to PDF
+                    </button>
                 </div>
             </div>
         </div>
@@ -768,6 +771,173 @@
                 </button>
                 <button onclick="executeExport()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-300 shadow-md">
                     <i class="fas fa-download mr-2"></i>Export Now
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PDF Export Modal -->
+<div id="pdfExportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-screen overflow-y-auto font-poppins animate-fadeIn">
+            <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white sticky top-0 z-10">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center font-poppins">
+                        <i class="fas fa-file-pdf text-red-600 mr-2"></i>
+                        Export to PDF
+                    </h3>
+                    <button onclick="closePdfExportModal()" class="text-gray-400 hover:text-gray-600 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <!-- Date Range + Quick Ranges -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Export Date Range</label>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">From</label>
+                            <input type="date" id="pdfExportDateFrom" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">To</label>
+                            <input type="date" id="pdfExportDateTo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon">
+                        </div>
+                    </div>
+                    <div class="mt-3 grid grid-cols-2 gap-2">
+                        <button type="button" onclick="setPdfExportQuickRange('this_week')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">This Week</button>
+                        <button type="button" onclick="setPdfExportQuickRange('this_month')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">This Month</button>
+                        <button type="button" onclick="setPdfExportQuickRange('ytd')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">YTD</button>
+                        <button type="button" onclick="setPdfExportQuickRange('clear')" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Clear</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Left Column: Export Type + Options -->
+                    <div class="space-y-6">
+                        <!-- Export Type Selection -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-3">Export Data Type</label>
+                            <div class="space-y-3">
+                                <div class="bg-gray-50 rounded-lg p-3">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="pdfExportType" value="both" class="mr-3 text-maroon focus:ring-maroon" checked>
+                                        <div class="flex items-center space-x-2">
+                                            <i class="fas fa-clipboard-list text-blue-500"></i>
+                                            <i class="fas fa-plus text-gray-400"></i>
+                                            <i class="fas fa-calendar-alt text-green-500"></i>
+                                            <span class="text-sm text-gray-700 font-medium">Both Reservations & Events</span>
+                                        </div>
+                                    </label>
+                                    <p class="text-xs text-gray-500 ml-6 mt-1">Export all reservations and events data</p>
+                                </div>
+                                <div class="bg-blue-50 rounded-lg p-3">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="pdfExportType" value="reservations" class="mr-3 text-maroon focus:ring-maroon">
+                                        <div class="flex items-center space-x-2">
+                                            <i class="fas fa-clipboard-list text-blue-500"></i>
+                                            <span class="text-sm text-gray-700 font-medium">Reservations Only</span>
+                                        </div>
+                                    </label>
+                                    <p class="text-xs text-gray-500 ml-6 mt-1">Includes status filtering and financial details</p>
+                                </div>
+                                <div class="bg-green-50 rounded-lg p-3">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="pdfExportType" value="events" class="mr-3 text-maroon focus:ring-maroon">
+                                        <div class="flex items-center space-x-2">
+                                            <i class="fas fa-calendar-alt text-green-500"></i>
+                                            <span class="text-sm text-gray-700 font-medium">Events Only</span>
+                                        </div>
+                                    </label>
+                                    <p class="text-xs text-gray-500 ml-6 mt-1">Standalone events with scheduling details</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PDF Export Options -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">PDF Options</label>
+                            <div class="space-y-3">
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="pdfIncludeFilters" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                    <span class="text-sm text-gray-700">Include current page filters</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="pdfIncludeSummary" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                    <span class="text-sm text-gray-700">Include summary page</span>
+                                </label>
+                                <div class="border-t border-gray-200 pt-3 mt-3">
+                                    <label class="block text-xs font-medium text-gray-700 mb-2">Chart Options</label>
+                                    <div class="space-y-2">
+                                        <label class="flex items-center">
+                                            <input type="radio" name="pdfChartOption" value="none" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                            <span class="text-sm text-gray-700">No charts</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="radio" name="pdfChartOption" value="include" class="mr-2 text-maroon focus:ring-maroon">
+                                            <span class="text-sm text-gray-700">Include charts with data</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="radio" name="pdfChartOption" value="only" class="mr-2 text-maroon focus:ring-maroon">
+                                            <span class="text-sm text-gray-700">Charts only (no data tables)</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Statuses -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Include Statuses</label>
+                        <div class="mb-3">
+                            <button type="button" onclick="setPdfStatusPreset('active')" class="px-3 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors mr-2" title="Pending + Approved IOSA + Approved OTP + Approved PPGS + Completed">Active Only</button>
+                            <button type="button" onclick="setPdfStatusPreset('all')" class="px-3 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors mr-2">All Statuses</button>
+                            <button type="button" onclick="setPdfStatusPreset('clear')" class="px-3 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Clear All</button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="pdfExportStatusPending" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                <span class="text-sm text-gray-700">Pending</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="pdfExportStatusApprovedIOSA" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                <span class="text-sm text-gray-700">IOSA Approved</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="pdfExportStatusApprovedMhadel" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                <span class="text-sm text-gray-700">Approved by OTP</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="pdfExportStatusApprovedOTP" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                <span class="text-sm text-gray-700">Approved by PPGS</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="pdfExportStatusRejectedMhadel" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                <span class="text-sm text-gray-700">Rejected by OTP</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="pdfExportStatusRejectedOTP" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                <span class="text-sm text-gray-700">Rejected by PPGS</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="pdfExportStatusCompleted" class="mr-2 text-maroon focus:ring-maroon" checked>
+                                <span class="text-sm text-gray-700">Completed</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+                <button onclick="closePdfExportModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    Cancel
+                </button>
+                <button onclick="executePdfExport()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 shadow-md">
+                    <i class="fas fa-download mr-2"></i>Export PDF
                 </button>
             </div>
         </div>
@@ -1391,6 +1561,161 @@
         document.getElementById('chartViewBtn').addEventListener('click', function() {
             setTimeout(updateCharts, 100);
         });
+        
+        // Close PDF modal when clicking outside
+        document.getElementById('pdfExportModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePdfExportModal();
+            }
+        });
     });
+    
+    // PDF Export Modal Functions
+    function openPdfExportModal() {
+        document.getElementById('pdfExportModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        // Pre-fill with current filter dates if available
+        const currentFrom = document.getElementById('filterDateFrom')?.value;
+        const currentTo = document.getElementById('filterDateTo')?.value;
+        if (currentFrom) document.getElementById('pdfExportDateFrom').value = currentFrom;
+        if (currentTo) document.getElementById('pdfExportDateTo').value = currentTo;
+    }
+    
+    function closePdfExportModal() {
+        document.getElementById('pdfExportModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+    
+    function setPdfExportQuickRange(type) {
+        const dateFrom = document.getElementById('pdfExportDateFrom');
+        const dateTo = document.getElementById('pdfExportDateTo');
+        const now = new Date();
+        
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        switch(type) {
+            case 'this_week':
+                const monday = new Date(now);
+                monday.setDate(now.getDate() - now.getDay() + 1);
+                const sunday = new Date(monday);
+                sunday.setDate(monday.getDate() + 6);
+                dateFrom.value = formatDate(monday);
+                dateTo.value = formatDate(sunday);
+                break;
+            case 'this_month':
+                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                dateFrom.value = formatDate(firstDay);
+                dateTo.value = formatDate(lastDay);
+                break;
+            case 'ytd':
+                const yearStart = new Date(now.getFullYear(), 0, 1);
+                dateFrom.value = formatDate(yearStart);
+                dateTo.value = formatDate(now);
+                break;
+            case 'clear':
+                dateFrom.value = '';
+                dateTo.value = '';
+                break;
+        }
+    }
+    
+    function executePdfExport() {
+        const dateFrom = document.getElementById('pdfExportDateFrom').value;
+        const dateTo = document.getElementById('pdfExportDateTo').value;
+        const includeFilters = document.getElementById('pdfIncludeFilters').checked;
+        const includeSummary = document.getElementById('pdfIncludeSummary').checked;
+        const exportType = document.querySelector('input[name="pdfExportType"]:checked').value;
+        const chartOption = document.querySelector('input[name="pdfChartOption"]:checked').value;
+        
+        // Collect selected statuses (only relevant for reservations or both)
+        const selectedStatuses = [];
+        if (exportType === 'reservations' || exportType === 'both') {
+            if (document.getElementById('pdfExportStatusPending').checked) selectedStatuses.push('pending');
+            if (document.getElementById('pdfExportStatusApprovedIOSA').checked) selectedStatuses.push('approved_IOSA');
+            if (document.getElementById('pdfExportStatusApprovedMhadel').checked) selectedStatuses.push('approved_mhadel');
+            if (document.getElementById('pdfExportStatusApprovedOTP').checked) selectedStatuses.push('approved_OTP');
+            if (document.getElementById('pdfExportStatusRejectedMhadel').checked) selectedStatuses.push('rejected_mhadel');
+            if (document.getElementById('pdfExportStatusRejectedOTP').checked) selectedStatuses.push('rejected_OTP');
+            if (document.getElementById('pdfExportStatusCompleted').checked) selectedStatuses.push('completed');
+        }
+        
+        // Build export URL
+        let exportUrl = '{{ route("gsu.reports.exportPdf") }}?';
+        const params = new URLSearchParams();
+        
+        // Add export type
+        params.append('export_type', exportType);
+        
+        // Add chart option
+        params.append('chart_option', chartOption);
+        
+        // Add export date range
+        if (dateFrom) params.append('export_start_date', dateFrom);
+        if (dateTo) params.append('export_end_date', dateTo);
+        
+        // Add selected statuses
+        if (selectedStatuses.length > 0) {
+            params.append('export_statuses', selectedStatuses.join(','));
+        }
+        
+        // Add current page filters if requested
+        if (includeFilters) {
+            const currentParams = new URLSearchParams(window.location.search);
+            params.append('include_filters', '1');
+            // Copy current filters
+            ['start_date', 'end_date', 'status', 'venue_id', 'department'].forEach(key => {
+                if (currentParams.has(key)) {
+                    params.append(key, currentParams.get(key));
+                }
+            });
+        }
+        
+        // Add export options
+        params.append('include_summary', includeSummary ? '1' : '0');
+        
+        // Execute export
+        window.location.href = exportUrl + params.toString();
+        closePdfExportModal();
+    }
+    
+    function setPdfStatusPreset(type) {
+        const checkboxes = {
+            pending: document.getElementById('pdfExportStatusPending'),
+            approved_IOSA: document.getElementById('pdfExportStatusApprovedIOSA'),
+            approved_mhadel: document.getElementById('pdfExportStatusApprovedMhadel'),
+            approved_OTP: document.getElementById('pdfExportStatusApprovedOTP'),
+            rejected_mhadel: document.getElementById('pdfExportStatusRejectedMhadel'),
+            rejected_OTP: document.getElementById('pdfExportStatusRejectedOTP'),
+            completed: document.getElementById('pdfExportStatusCompleted')
+        };
+        
+        switch(type) {
+            case 'active':
+                // Active selection: approved OTP, approved mhadel, pending, completed
+                checkboxes.pending.checked = true;
+                checkboxes.approved_IOSA.checked = true;
+                checkboxes.approved_mhadel.checked = true;
+                checkboxes.approved_OTP.checked = true;
+                checkboxes.rejected_mhadel.checked = false;
+                checkboxes.rejected_OTP.checked = false;
+                checkboxes.completed.checked = true;
+                break;
+            case 'all':
+                // Check all statuses
+                Object.values(checkboxes).forEach(cb => cb.checked = true);
+                break;
+            case 'clear':
+                // Uncheck all statuses
+                Object.values(checkboxes).forEach(cb => cb.checked = false);
+                break;
+        }
+    }
 </script>
 @endsection 

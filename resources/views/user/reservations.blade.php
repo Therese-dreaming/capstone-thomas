@@ -168,7 +168,123 @@
     <!-- Toast Container -->
     <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col items-end"></div>
     
-    <!-- Activity Grid Modal (Step 1) -->
+    <!-- Step 1: Date and Venue Selection Modal -->
+    <div id="dateVenueModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-screen overflow-y-auto font-poppins">
+                <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white sticky top-0 z-10">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-gray-800 flex items-center font-montserrat">
+                            <i class="fas fa-calendar-check text-maroon mr-2"></i>
+                            Step 1: Select Date and Venue
+                        </h3>
+                        <button onclick="closeDateVenueModal()" class="text-gray-400 hover:text-gray-600 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <form id="dateVenueForm" class="p-6">
+                    @csrf
+                    
+                    <div class="space-y-6">
+                        <!-- Capacity -->
+                        <div>
+                            <label for="step1_capacity" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                <i class="fas fa-users text-maroon mr-2"></i>
+                                Expected Capacity <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number" id="step1_capacity" name="capacity" min="1" required
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
+                            <p class="text-xs text-gray-500 mt-1">Enter the number of expected attendees</p>
+                        </div>
+
+                        <!-- Venue Selection -->
+                        <div>
+                            <label for="step1_venue_id" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                <i class="fas fa-map-marker-alt text-maroon mr-2"></i>
+                                Venue <span class="text-red-500">*</span>
+                            </label>
+                            <select id="step1_venue_id" name="venue_id" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
+                                <option value="">Select a venue</option>
+                                @foreach($venues as $venue)
+                                    <option value="{{ $venue->id }}" 
+                                            data-price="{{ $venue->price_per_hour }}"
+                                            data-capacity="{{ $venue->capacity }}">
+                                        {{ $venue->name }} - ₱{{ number_format($venue->price_per_hour, 2) }}/hr ({{ $venue->capacity }} capacity)
+                                    </option>
+                                @endforeach
+                            </select>
+                            
+                            <!-- Venue Suggestions -->
+                            <div id="step1_venueSuggestions" class="hidden mt-2 p-3 bg-green-50 border border-green-200 rounded-lg venue-suggestions">
+                                <div class="flex items-start">
+                                    <i class="fas fa-lightbulb text-green-600 mr-2 mt-0.5"></i>
+                                    <div class="text-sm text-green-800">
+                                        <p class="font-medium mb-1">💡 Recommended Venues</p>
+                                        <p class="text-xs mb-2">Based on your expected capacity:</p>
+                                        <div id="step1_suggestedVenuesList" class="space-y-1">
+                                            <!-- Suggested venues will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Capacity Warning -->
+                            <div id="step1_capacityWarning" class="hidden mt-2 p-3 bg-red-50 border border-red-200 rounded-lg capacity-warning">
+                                <div class="flex items-start">
+                                    <i class="fas fa-exclamation-triangle text-red-600 mr-2 mt-0.5"></i>
+                                    <div class="text-sm text-red-800">
+                                        <p class="font-medium mb-1">⚠️ Capacity Exceeded!</p>
+                                        <p id="step1_capacityWarningText" class="text-xs"><!-- Warning text will be populated here --></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date and Time -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="step1_start_date" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                    <i class="fas fa-hourglass-start text-maroon mr-2"></i>
+                                    Start Date & Time <span class="text-red-500">*</span>
+                                </label>
+                                <input type="datetime-local" id="step1_start_date" name="start_date" required
+                                       min="{{ now()->addDays(3)->format('Y-m-d\T00:00') }}"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
+                            </div>
+                            <div>
+                                <label for="step1_end_date" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                    <i class="fas fa-hourglass-end text-maroon mr-2"></i>
+                                    End Date & Time <span class="text-red-500">*</span>
+                                </label>
+                                <input type="datetime-local" id="step1_end_date" name="end_date" required
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
+                            </div>
+                        </div>
+
+                        <!-- Conflict Check Display -->
+                        <div id="step1_conflictCheck" class="hidden"></div>
+                    </div>
+    
+                    <!-- Form Actions -->
+                    <div class="flex items-center justify-end space-x-3 pt-6 mt-6 border-t border-gray-200">
+                        <button type="button" onclick="closeDateVenueModal()"
+                                class="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
+                            <i class="fas fa-times mr-2"></i> Cancel
+                        </button>
+                        <button type="button" onclick="submitDateVenue()"
+                                class="px-6 py-3 bg-maroon text-white rounded-lg hover:bg-red-700 transition-all duration-300 shadow-md flex items-center">
+                            <i class="fas fa-arrow-right mr-2"></i> Next: Upload Activity Grid
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 2: Activity Grid Modal -->
     <div id="activityGridModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
         <div class="flex items-center justify-center min-h-screen p-4">
             <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-screen overflow-y-auto font-poppins">
@@ -176,11 +292,17 @@
                     <div class="flex items-center justify-between">
                         <h3 class="text-xl font-bold text-gray-800 flex items-center font-montserrat">
                             <i class="fas fa-file-upload text-maroon mr-2"></i>
-                            Step 1: Upload Activity Grid
+                            Step 2: Upload Activity Grid
                         </h3>
                         <button onclick="closeActivityGridModal()" class="text-gray-400 hover:text-gray-600 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
                             <i class="fas fa-times text-xl"></i>
                         </button>
+                    </div>
+                    <div class="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div class="flex items-center text-green-800">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            <span class="text-sm">Date and venue selected successfully. Please upload your activity grid.</span>
+                        </div>
                     </div>
                 </div>
                 
@@ -190,53 +312,53 @@
                     <div class="space-y-6">
                         <!-- Event Title -->
                         <div>
-                            <label for="step1_event_title" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                            <label for="step2_event_title" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
                                 <i class="fas fa-heading text-maroon mr-2"></i>
                                 Event Title <span class="text-red-500">*</span>
                             </label>
-                            <input type="text" id="step1_event_title" name="event_title" required
+                            <input type="text" id="step2_event_title" name="event_title" required
                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
                         </div>
 
                         <!-- Purpose -->
                         <div>
-                            <label for="step1_purpose" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                            <label for="step2_purpose" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
                                 <i class="fas fa-align-left text-maroon mr-2"></i>
                                 Purpose <span class="text-red-500">*</span>
                             </label>
-                            <textarea id="step1_purpose" name="purpose" rows="3" required
+                            <textarea id="step2_purpose" name="purpose" rows="3" required
                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors"></textarea>
                         </div>
 
                         <!-- Activity Grid -->
                         <div>
-                            <label for="step1_activity_grid" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                            <label for="step2_activity_grid" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
                                 <i class="fas fa-file-upload text-maroon mr-2"></i>
                                 Activity Grid <span class="text-red-500">*</span>
                             </label>
                             <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-maroon transition-colors">
-                                <input type="file" id="step1_activity_grid" name="activity_grid" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required
+                                <input type="file" id="step2_activity_grid" name="activity_grid" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required
                                        class="hidden">
-                                <label for="step1_activity_grid" class="cursor-pointer">
+                                <label for="step2_activity_grid" class="cursor-pointer">
                                     <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
                                     <p class="text-sm text-gray-500">Click to upload or drag and drop</p>
                                     <p class="text-xs text-gray-400 mt-1">PDF, DOC, DOCX, JPG, JPEG, PNG (Max: 10MB)</p>
                                 </label>
-                                <div id="step1_file_name" class="mt-2 text-sm text-gray-600 hidden"></div>
+                                <div id="step2_file_name" class="mt-2 text-sm text-gray-600 hidden"></div>
                             </div>
-                            <p class="text-xs text-gray-500 mt-2">Activity Grid is required before proceeding to reservation details</p>
+                            <p class="text-xs text-gray-500 mt-2">Activity Grid is required before proceeding to final details</p>
                         </div>
                     </div>
     
                     <!-- Form Actions -->
                     <div class="flex items-center justify-end space-x-3 pt-6 mt-6 border-t border-gray-200">
-                        <button type="button" onclick="closeActivityGridModal()"
+                        <button type="button" onclick="goBackToStep1()"
                                 class="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
-                            <i class="fas fa-times mr-2"></i> Cancel
+                            <i class="fas fa-arrow-left mr-2"></i> Back to Step 1
                         </button>
                         <button type="button" onclick="submitActivityGrid()"
-                                class="px-6 py-3 bg-maroon text-white rounded-lg hover:from-red-700 hover:to-maroon transition-all duration-300 shadow-md flex items-center">
-                            <i class="fas fa-arrow-right mr-2"></i> Next: Reservation Details
+                                class="px-6 py-3 bg-maroon text-white rounded-lg hover:bg-red-700 transition-all duration-300 shadow-md flex items-center">
+                            <i class="fas fa-arrow-right mr-2"></i> Next: Equipment & Details
                         </button>
                     </div>
                 </form>
@@ -244,69 +366,112 @@
         </div>
     </div>
 
-    <!-- Reservation Modal (Step 2) -->
-    <div id="reservationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
+    <!-- Step 3: Final Details Modal -->
+    <div id="finalDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-screen overflow-y-auto font-poppins">
-                <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white sticky top-0 z-10">
+            <div class="bg-white rounded-xl shadow-2xl max-w-7xl w-full max-h-[85vh] overflow-y-auto font-poppins">
+                <div class="p-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white sticky top-0 z-10">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-xl font-bold text-gray-800 flex items-center font-montserrat">
-                            <i class="fas fa-calendar-plus text-maroon mr-2"></i>
-                            Step 2: Reservation Details
+                        <h3 class="text-lg font-bold text-gray-800 flex items-center font-montserrat">
+                            <i class="fas fa-clipboard-list text-maroon mr-2"></i>
+                            Step 3: Equipment, Department & Final Details
                         </h3>
-                        <button onclick="closeReservationModal()" class="text-gray-400 hover:text-gray-600 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
+                        <button onclick="closeFinalDetailsModal()" class="text-gray-400 hover:text-gray-600 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
                             <i class="fas fa-times text-xl"></i>
                         </button>
                     </div>
-                    <div class="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div class="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
                         <div class="flex items-center text-green-800">
-                            <i class="fas fa-check-circle mr-2"></i>
-                            <span class="text-sm">Activity Grid uploaded successfully. You can now proceed with reservation details.</span>
+                            <i class="fas fa-check-circle mr-2 text-sm"></i>
+                            <span class="text-xs">Activity Grid uploaded successfully. Complete the final details to submit your reservation.</span>
                         </div>
                     </div>
                 </div>
                 
-                <form action="{{ route('user.reservations.store') }}" method="POST" enctype="multipart/form-data" class="p-6">
+                <form action="{{ route('user.reservations.store') }}" method="POST" enctype="multipart/form-data" class="p-4">
                     @csrf
                     
-                    <!-- Hidden fields for activity grid data -->
+                    <!-- Hidden fields from previous steps -->
                     <input type="hidden" id="final_event_title" name="event_title" value="">
                     <input type="hidden" id="final_purpose" name="purpose" value="">
                     <input type="hidden" id="final_activity_grid" name="activity_grid" value="">
+                    <input type="hidden" id="final_capacity" name="capacity" value="">
+                    <input type="hidden" id="final_venue_id" name="venue_id" value="">
+                    <input type="hidden" id="final_start_date" name="start_date" value="">
+                    <input type="hidden" id="final_end_date" name="end_date" value="">
+                    <input type="hidden" id="final_price_per_hour" name="price_per_hour" value="">
+                    <input type="hidden" id="final_base_price" name="base_price" value="">
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <!-- Left Column -->
-                        <div class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Column 1: Summary Info (Read-only) -->
+                        <div class="space-y-3">
                             <!-- Event Title Display (Read-only) -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                                    <i class="fas fa-heading text-maroon mr-2"></i>
+                                <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                    <i class="fas fa-heading text-maroon mr-1 text-xs"></i>
                                     Event Title
                                 </label>
-                                <div id="display_event_title" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
-                                    <!-- Will be populated from step 1 -->
+                                <div id="display_event_title" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                                    <!-- Will be populated from step 2 -->
                                 </div>
                             </div>
     
                             <!-- Purpose Display (Read-only) -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                                    <i class="fas fa-align-left text-maroon mr-2"></i>
+                                <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                    <i class="fas fa-align-left text-maroon mr-1 text-xs"></i>
                                     Purpose
                                 </label>
-                                <div id="display_purpose" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                                <div id="display_purpose" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-700 max-h-20 overflow-y-auto">
+                                    <!-- Will be populated from step 2 -->
+                                </div>
+                            </div>
+
+                            <!-- Venue Display (Read-only) -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                    <i class="fas fa-map-marker-alt text-maroon mr-1 text-xs"></i>
+                                    Venue
+                                </label>
+                                <div id="display_venue" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
                                     <!-- Will be populated from step 1 -->
                                 </div>
                             </div>
+
+                            <!-- Date/Time Display (Read-only) -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                    <i class="fas fa-calendar text-maroon mr-1 text-xs"></i>
+                                    Date & Time
+                                </label>
+                                <div id="display_datetime" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                                    <!-- Will be populated from step 1 -->
+                                </div>
+                            </div>
+
+                            <!-- Capacity Display (Read-only) -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                    <i class="fas fa-users text-maroon mr-1 text-xs"></i>
+                                    Capacity
+                                </label>
+                                <div id="display_capacity" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                                    <!-- Will be populated from step 1 -->
+                                </div>
+                            </div>
+                        </div>
+    
+                        <!-- Column 2: Department & Pricing -->
+                        <div class="space-y-3">
     
                             <!-- Department -->
                             <div>
-                                <label for="department" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                                    <i class="fas fa-building text-maroon mr-2"></i>
+                                <label for="department" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                    <i class="fas fa-building text-maroon mr-1 text-xs"></i>
                                     Department <span class="text-red-500">*</span>
                                 </label>
                                 <select id="department" name="department" required onchange="toggleOtherDepartment()"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
+                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
                                     <option value="">Select Department</option>
                                     <option value="ECE">ECE</option>
                                     <option value="JHS">JHS</option>
@@ -321,219 +486,106 @@
                                 </select>
                                 
                                 <!-- Other Department Input (Hidden by default) -->
-                                <div id="other_department_container" class="mt-3 hidden">
-                                    <label for="other_department" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                                        <i class="fas fa-edit text-maroon mr-2"></i>
-                                        Specify Other Department <span class="text-red-500">*</span>
-                                    </label>
+                                <div id="other_department_container" class="mt-2 hidden">
                                     <input type="text" id="other_department" name="other_department" 
                                            placeholder="Enter department name"
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
+                                           class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
                                 </div>
                             </div>
 
-                            <!-- Capacity -->
+                            <!-- Price Rate Display (Read-only) -->
                             <div>
-                                <label for="capacity" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                                    <i class="fas fa-users text-maroon mr-2"></i>
-                                    Expected Capacity <span class="text-red-500">*</span>
+                                <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                    <i class="fas fa-tag text-maroon mr-1 text-xs"></i>
+                                    Rate per Hour
                                 </label>
-                                <input type="number" id="capacity" name="capacity" min="1" required
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
-                                
-                                <!-- Capacity Warning -->
-                                <div id="capacityWarning" class="hidden mt-2 p-3 bg-red-50 border border-red-200 rounded-lg capacity-warning">
-                                    <div class="flex items-start">
-                                        <i class="fas fa-exclamation-triangle text-red-600 mr-2 mt-0.5"></i>
-                                        <div class="text-sm text-red-800">
-                                            <p class="font-medium mb-1">⚠️ Capacity Exceeded!</p>
-                                            <p id="capacityWarningText" class="text-xs"><!-- Warning text will be populated here --></p>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Capacity Info -->
-                                <div id="capacityInfo" class="hidden mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg capacity-info">
-                                    <div class="flex items-start">
-                                        <i class="fas fa-info-circle text-blue-600 mr-2 mt-0.5"></i>
-                                        <div class="text-sm text-blue-800">
-                                            <p id="capacityInfoText" class="text-xs"><!-- Capacity info will be populated here --></p>
-                                        </div>
-                                    </div>
+                                <div id="display_price_rate" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                                    <!-- Will be populated from step 1 -->
                                 </div>
                             </div>
-    
-                            <!-- Date and Time -->
-                            <div class="grid grid-cols-1 gap-4">
-                                <div>
-                                    <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                                        <i class="fas fa-hourglass-start text-maroon mr-2"></i>
-                                        Start Date & Time <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="datetime-local" id="start_date" name="start_date" required
-                                           min="{{ now()->addDays(3)->format('Y-m-d\T00:00') }}"
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
-                                </div>
-                                <div>
-                                    <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                                        <i class="fas fa-hourglass-end text-maroon mr-2"></i>
-                                        End Date & Time <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="datetime-local" id="end_date" name="end_date" required
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
+
+                            <!-- Base Price Display (Read-only) -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                    <i class="fas fa-calculator text-maroon mr-1 text-xs"></i>
+                                    Total Base Price
+                                </label>
+                                <div id="display_base_price" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-700 font-semibold">
+                                    <!-- Will be populated from step 1 -->
                                 </div>
                             </div>
                         </div>
     
-                        <!-- Right Column -->
-                        <div class="space-y-6">
-    
-                            <!-- Venue Selection -->
-                            <div>
-                                <label for="venue_id" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                                    <i class="fas fa-map-marker-alt text-maroon mr-2"></i>
-                                    Venue <span class="text-red-500">*</span>
-                                </label>
-                                <select id="venue_id" name="venue_id" required
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon focus:border-maroon transition-colors">
-                                    <option value="">Select a venue</option>
-                                    @foreach($venues as $venue)
-                                        <option value="{{ $venue->id }}" 
-                                                data-price="{{ $venue->price_per_hour }}"
-                                                data-capacity="{{ $venue->capacity }}">
-                                            {{ $venue->name }} - ₱{{ number_format($venue->price_per_hour, 2) }}/hour ({{ $venue->capacity }} capacity)
-                                        </option>
-                                    @endforeach
-                                </select>
-                                
-                                <!-- Venue Suggestions -->
-                                <div id="venueSuggestions" class="hidden mt-2 p-3 bg-green-50 border border-green-200 rounded-lg venue-suggestions">
-                                    <div class="flex items-start">
-                                        <i class="fas fa-lightbulb text-green-600 mr-2 mt-0.5"></i>
-                                        <div class="text-sm text-green-800">
-                                            <p class="font-medium mb-1">💡 Recommended Venues</p>
-                                            <p class="text-xs mb-2">Based on your expected capacity, these venues are suitable:</p>
-                                            <div id="suggestedVenuesList" class="space-y-1">
-                                                <!-- Suggested venues will be populated here -->
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <p class="text-xs text-gray-500 mt-1">Select a venue that can accommodate your expected capacity</p>
-                            </div>
-
-                            <!-- Price Rate (Auto-calculated) -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                                    <i class="fas fa-tag text-maroon mr-2"></i>
-                                    Rate per Hour <span class="text-red-500">*</span>
-                                </label>
-                                <div id="price_display" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
-                                    <i class="fas fa-info-circle mr-2 text-blue-500"></i> Select a venue first
-                                </div>
-                                <input type="hidden" id="price_per_hour" name="price_per_hour" value="" required>
-                                <p class="text-xs text-gray-500 mt-1">Rate will be automatically calculated based on venue selection</p>
-                            </div>
+                        <!-- Column 3: Equipment -->
+                        <div class="space-y-3">
 
                             <!-- Equipment Selection -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                                    <i class="fas fa-tools text-maroon mr-2"></i>
+                                <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                    <i class="fas fa-tools text-maroon mr-1 text-xs"></i>
                                     Equipment to Borrow
                                 </label>
-                                <div id="equipment_container" class="space-y-4">
+                                <div id="equipment_container" class="space-y-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2">
                                     <!-- Equipment will be dynamically generated here -->
                                 </div>
                                 
                                 <!-- No Equipment Needed -->
-                                <div class="border border-gray-200 rounded-lg p-3 mt-4">
+                                <div class="border border-gray-200 rounded-lg p-2 mt-2">
                                     <div class="flex items-center">
-                                        <input type="checkbox" id="equipment_none" name="equipment[]" value="none" class="w-4 h-4 text-maroon border-gray-300 rounded focus:ring-maroon">
-                                        <label for="equipment_none" class="ml-2 text-sm font-medium text-gray-700">No Equipment Needed</label>
+                                        <input type="checkbox" id="equipment_none" name="equipment[]" value="none" class="w-3 h-3 text-maroon border-gray-300 rounded focus:ring-maroon">
+                                        <label for="equipment_none" class="ml-2 text-xs font-medium text-gray-700">No Equipment Needed</label>
                                     </div>
                                 </div>
-                                
-                                <p class="text-xs text-gray-500 mt-2">Select equipment and specify quantities. Quantities cannot exceed available amounts.</p>
 
                                 <!-- Selected Equipment Summary -->
-                                <div id="selected_equipment_summary" class="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3">
-                                    <div class="flex items-center text-gray-700 text-sm">
-                                        <i class="fas fa-list-ul text-maroon mr-2"></i>
+                                <div id="selected_equipment_summary" class="mt-2 bg-gray-50 border border-gray-200 rounded-lg p-2">
+                                    <div class="flex items-center text-gray-700 text-xs">
+                                        <i class="fas fa-list-ul text-maroon mr-1 text-xs"></i>
                                         <span class="font-medium">Selected:</span>
-                                        <span id="selected_equipment_text" class="ml-2 text-gray-600">None</span>
+                                        <span id="selected_equipment_text" class="ml-1 text-gray-600">None</span>
                                     </div>
                                 </div>
 
                                 <!-- Custom Equipment Section -->
-                                <div class="mt-6 border-t border-gray-200 pt-6">
-                                    <div class="flex items-center justify-between mb-4">
-                                        <label class="block text-sm font-medium text-gray-700 flex items-center">
-                                            <i class="fas fa-plus-circle text-maroon mr-2"></i>
-                                            Request Additional Equipment
+                                <div class="mt-3 border-t border-gray-200 pt-3">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <label class="block text-xs font-medium text-gray-700 flex items-center">
+                                            <i class="fas fa-plus-circle text-maroon mr-1 text-xs"></i>
+                                            Additional Equipment
                                         </label>
                                         <button type="button" onclick="addCustomEquipment()" 
-                                                class="px-3 py-1 bg-maroon text-white text-sm rounded-lg hover:bg-red-700 transition-colors flex items-center">
-                                            <i class="fas fa-plus mr-1"></i> Add Item
+                                                class="px-2 py-1 bg-maroon text-white text-xs rounded-lg hover:bg-red-700 transition-colors flex items-center">
+                                            <i class="fas fa-plus mr-1"></i> Add
                                         </button>
                                     </div>
-                                    
-                                    <div class="text-xs text-gray-500 mb-3">
-                                        <i class="fas fa-info-circle mr-1"></i>
-                                        Can't find the equipment you need? Add custom equipment requests below. These will be reviewed by the admin.
-                                    </div>
 
-                                    <div id="custom_equipment_list" class="space-y-3">
+                                    <div id="custom_equipment_list" class="space-y-2 max-h-32 overflow-y-auto">
                                         <!-- Custom equipment items will be added here dynamically -->
                                     </div>
 
                                     <!-- Template for custom equipment item (hidden) -->
                                     <div id="custom_equipment_template" class="hidden">
-                                        <div class="custom-equipment-item bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                            <div class="flex items-center justify-between mb-2">
-                                                <div class="flex items-center">
-                                                    <i class="fas fa-wrench text-blue-600 mr-2"></i>
-                                                    <span class="text-sm font-medium text-blue-800">Custom Equipment Request</span>
-                                                </div>
+                                        <div class="custom-equipment-item bg-blue-50 border border-blue-200 rounded-lg p-2">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <span class="text-xs font-medium text-blue-800">Custom Request</span>
                                                 <button type="button" onclick="removeCustomEquipment(this)" 
                                                         class="text-red-500 hover:text-red-700 transition-colors">
-                                                    <i class="fas fa-times"></i>
+                                                    <i class="fas fa-times text-xs"></i>
                                                 </button>
                                             </div>
-                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <div class="grid grid-cols-2 gap-2">
                                                 <div>
-                                                    <label class="block text-xs font-medium text-gray-700 mb-1">Equipment Name *</label>
                                                     <input type="text" name="custom_equipment_name[]" 
-                                                           placeholder="e.g., Projector Screen"
-                                                           class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                                           placeholder="Equipment Name"
+                                                           class="w-full px-2 py-1 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                                 </div>
                                                 <div>
-                                                    <label class="block text-xs font-medium text-gray-700 mb-1">Quantity *</label>
                                                     <input type="number" name="custom_equipment_quantity[]" 
-                                                           min="1" value="1"
-                                                           class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                                           min="1" value="1" placeholder="Qty"
+                                                           class="w-full px-2 py-1 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Base Price Calculation -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                                    <i class="fas fa-calculator text-maroon mr-2"></i>
-                                    Base Price <span class="text-red-500">*</span>
-                                </label>
-                                <div id="base_price_display" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
-                                    <i class="fas fa-info-circle mr-2 text-blue-500"></i> Select venue and dates first
-                                </div>
-                                <input type="hidden" id="base_price" name="base_price" value="" required>
-                                <div id="price_breakdown" class="mt-2 text-xs text-gray-500 hidden">
-                                    <div class="space-y-1">
-                                        <div id="duration_info"></div>
-                                        <div id="rate_info"></div>
-                                        <div id="total_info"></div>
                                     </div>
                                 </div>
                             </div>
@@ -542,18 +594,18 @@
                     </div>
     
                     <!-- Form Actions -->
-                    <div class="flex items-center justify-end space-x-3 pt-6 mt-6 border-t border-gray-200">
-                        <button type="button" onclick="goBackToStep1()"
-                                class="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
-                            <i class="fas fa-arrow-left mr-2"></i> Back to Step 1
+                    <div class="flex items-center justify-end space-x-2 pt-3 mt-3 border-t border-gray-200">
+                        <button type="button" onclick="goBackToStep2()"
+                                class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
+                            <i class="fas fa-arrow-left mr-1 text-xs"></i> Back to Step 2
                         </button>
                         <button type="submit" id="submitReservationBtn"
-                                class="px-6 py-3 bg-maroon text-white rounded-lg hover:from-red-700 hover:to-maroon transition-all duration-300 shadow-md flex items-center">
+                                class="px-6 py-2 text-sm bg-maroon text-white rounded-lg hover:bg-red-700 transition-all duration-300 shadow-md flex items-center">
                             <span id="submitBtnContent">
-                                <i class="fas fa-check mr-2"></i> Submit Reservation
+                                <i class="fas fa-check mr-1 text-xs"></i> Submit Reservation
                             </span>
                             <span id="submitBtnLoading" class="hidden">
-                                <div class="loading-spinner mr-2"></div> Submitting Reservation...
+                                <div class="loading-spinner mr-1"></div> Submitting...
                             </span>
                         </button>
                     </div>
@@ -626,6 +678,21 @@ let unavailableDates = [
     new Date(new Date().setDate(new Date().getDate() + 5)).toISOString().split('T')[0] // Today + 5 days
 ];
 
+// Venue data for capacity validation and suggestions - MUST BE DEFINED BEFORE USE
+const venuesData = [
+    @foreach($venues as $venue)
+        @if($venue && is_object($venue) && isset($venue->id))
+            {
+                id: {{ $venue->id }}, 
+                name: "{{ addslashes($venue->name) }}", 
+                capacity: {{ $venue->capacity }}, 
+                price_per_hour: {{ $venue->price_per_hour ?? 0 }},
+                available_equipment: @json($venue->available_equipment ?? [])
+            },
+        @endif
+    @endforeach
+];
+
 // Initialize calendar
 document.addEventListener('DOMContentLoaded', function() {
     renderCalendar();
@@ -639,25 +706,55 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.appendChild(toastContainer);
     }
     
-    // File upload preview for step 1
-    const step1FileInput = document.getElementById('step1_activity_grid');
-    const step1FileNameDisplay = document.getElementById('step1_file_name');
+    // File upload preview for step 2
+    const step2FileInput = document.getElementById('step2_activity_grid');
+    const step2FileNameDisplay = document.getElementById('step2_file_name');
     
-    step1FileInput.addEventListener('change', function() {
-        if (this.files.length > 0) {
-            step1FileNameDisplay.textContent = this.files[0].name;
-            step1FileNameDisplay.classList.remove('hidden');
-        } else {
-            step1FileNameDisplay.classList.add('hidden');
-        }
-    });
+    if (step2FileInput) {
+        step2FileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                step2FileNameDisplay.textContent = this.files[0].name;
+                step2FileNameDisplay.classList.remove('hidden');
+            } else {
+                step2FileNameDisplay.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Step 1: Capacity and venue suggestions
+    const step1Capacity = document.getElementById('step1_capacity');
+    const step1VenueId = document.getElementById('step1_venue_id');
+    const step1StartDate = document.getElementById('step1_start_date');
+    const step1EndDate = document.getElementById('step1_end_date');
+    
+    if (step1Capacity) {
+        step1Capacity.addEventListener('input', function() {
+            showStep1VenueSuggestions();
+            validateStep1Capacity();
+        });
+    }
+    
+    if (step1VenueId) {
+        step1VenueId.addEventListener('change', function() {
+            validateStep1Capacity();
+            checkStep1Conflicts();
+        });
+    }
+    
+    if (step1StartDate) {
+        step1StartDate.addEventListener('change', function() {
+            checkStep1Conflicts();
+        });
+    }
+    
+    if (step1EndDate) {
+        step1EndDate.addEventListener('change', function() {
+            checkStep1Conflicts();
+        });
+    }
     
     // Initial attachment of event listeners
     attachEquipmentEventListeners();
-
-    // Add event listeners for date inputs to recalculate base price
-    document.getElementById('start_date').addEventListener('change', calculateBasePrice);
-    document.getElementById('end_date').addEventListener('change', calculateBasePrice);
 
 });
 
@@ -753,17 +850,49 @@ function nextMonth() {
 
 function selectDate(dateString) {
     selectedDate = new Date(dateString);
-    openActivityGridModal();
+    openDateVenueModal();
+    
+    // Set the selected date in Step 1 form
+    const startDateInput = document.getElementById('step1_start_date');
+    const endDateInput = document.getElementById('step1_end_date');
+    
+    function fmt(d){
+        const y=d.getFullYear();
+        const m=String(d.getMonth()+1).padStart(2,'0');
+        const day=String(d.getDate()).padStart(2,'0');
+        const hh=String(d.getHours()).padStart(2,'0');
+        const mm=String(d.getMinutes()).padStart(2,'0');
+        return `${y}-${m}-${day}T${hh}:${mm}`;
+    }
+    
+    startDateInput.value = fmt(selectedDate);
+    const endDate = new Date(selectedDate);
+    endDate.setHours(endDate.getHours() + 1);
+    endDateInput.value = fmt(endDate);
     
     // Show a toast notification
-    showToast(`Selected date: ${selectedDate.toLocaleDateString()}. Please upload your Activity Grid first.`, 'info');
+    showToast(`Selected date: ${selectedDate.toLocaleDateString()}. Please select venue and time.`, 'info');
 }
 
+// Step 1: Date & Venue Modal Functions
+function openDateVenueModal() {
+    document.getElementById('dateVenueModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    
+    const modalContent = document.querySelector('#dateVenueModal > div > div');
+    modalContent.classList.add('animate-fadeIn');
+}
+
+function closeDateVenueModal() {
+    document.getElementById('dateVenueModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Step 2: Activity Grid Modal Functions
 function openActivityGridModal() {
     document.getElementById('activityGridModal').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
     
-    // Add animation
     const modalContent = document.querySelector('#activityGridModal > div > div');
     modalContent.classList.add('animate-fadeIn');
 }
@@ -773,29 +902,132 @@ function closeActivityGridModal() {
     document.body.style.overflow = 'auto';
 }
 
-function openReservationModal() {
-    document.getElementById('reservationModal').classList.remove('hidden');
+// Step 3: Final Details Modal Functions
+function openFinalDetailsModal() {
+    document.getElementById('finalDetailsModal').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
     
-    // Add animation
-    const modalContent = document.querySelector('#reservationModal > div > div');
+    const modalContent = document.querySelector('#finalDetailsModal > div > div');
     modalContent.classList.add('animate-fadeIn');
 }
 
-function closeReservationModal() {
-    document.getElementById('reservationModal').classList.add('hidden');
+function closeFinalDetailsModal() {
+    document.getElementById('finalDetailsModal').classList.add('hidden');
     document.body.style.overflow = 'auto';
 }
 
+// Navigation Functions
 function goBackToStep1() {
-    closeReservationModal();
+    closeActivityGridModal();
+    openDateVenueModal();
+}
+
+function goBackToStep2() {
+    closeFinalDetailsModal();
     openActivityGridModal();
 }
 
+// Submit Step 1: Date & Venue
+async function submitDateVenue() {
+    const capacity = document.getElementById('step1_capacity').value;
+    const venueId = document.getElementById('step1_venue_id').value;
+    const startDate = document.getElementById('step1_start_date').value;
+    const endDate = document.getElementById('step1_end_date').value;
+    
+    // Validation
+    if (!capacity || capacity < 1) {
+        showToast('Please enter expected capacity.', 'error');
+        return;
+    }
+    
+    if (!venueId) {
+        showToast('Please select a venue.', 'error');
+        return;
+    }
+    
+    if (!startDate) {
+        showToast('Please select start date and time.', 'error');
+        return;
+    }
+    
+    if (!endDate) {
+        showToast('Please select end date and time.', 'error');
+        return;
+    }
+    
+    // Validate dates
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (end <= start) {
+        showToast('End time must be after start time.', 'error');
+        return;
+    }
+    
+    // Check for conflicts
+    const dateOnly = startDate.slice(0,10);
+    const slots = await fetchUnavailableSlots(venueId, dateOnly);
+    
+    if(slots.length > 0) {
+        for(const s of slots){
+            const [sh, sm] = s.start.split(':').map(Number);
+            const [eh, em] = s.end.split(':').map(Number);
+            const blockStart = new Date(dateOnly+'T00:00'); 
+            blockStart.setHours(sh, sm||0, 0, 0);
+            const blockEnd = new Date(dateOnly+'T00:00'); 
+            blockEnd.setHours(eh, em||0, 0, 0);
+            
+            // Check overlap
+            if(start < blockEnd && end > blockStart){
+                showToast(`Time conflict detected! Your selected time overlaps with ${s.start}–${s.end}. Please select a different time.`, 'error');
+                return;
+            }
+        }
+    }
+    
+    // Validate capacity against venue
+    const venueSelect = document.getElementById('step1_venue_id');
+    const selectedOption = venueSelect.options[venueSelect.selectedIndex];
+    const venueCapacity = parseInt(selectedOption.dataset.capacity) || 0;
+    
+    if (parseInt(capacity) > venueCapacity) {
+        showToast('Warning: The requested capacity exceeds the venue capacity. This will be flagged for admin review.', 'info');
+    }
+    
+    // Store Step 1 data
+    window.step1Data = {
+        capacity: capacity,
+        venueId: venueId,
+        startDate: startDate,
+        endDate: endDate
+    };
+    
+    // Get venue details
+    const venueName = selectedOption.text.split(' - ')[0];
+    const pricePerHour = parseFloat(selectedOption.dataset.price);
+    
+    // Calculate base price
+    const durationMs = end - start;
+    const durationHours = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60)));
+    const basePrice = durationHours * pricePerHour;
+    
+    window.step1Data.venueName = venueName;
+    window.step1Data.pricePerHour = pricePerHour;
+    window.step1Data.basePrice = basePrice;
+    window.step1Data.durationHours = durationHours;
+    
+    // Close Step 1 and open Step 2
+    closeDateVenueModal();
+    openActivityGridModal();
+    
+    showToast('Date and venue selected successfully! Please upload your activity grid.', 'success');
+}
+
+// Submit Step 2: Activity Grid
 function submitActivityGrid() {
-    const eventTitle = document.getElementById('step1_event_title').value.trim();
-    const purpose = document.getElementById('step1_purpose').value.trim();
-    const activityGrid = document.getElementById('step1_activity_grid').files[0];
+    const eventTitle = document.getElementById('step2_event_title').value.trim();
+    const purpose = document.getElementById('step2_purpose').value.trim();
+    const activityGrid = document.getElementById('step2_activity_grid').files[0];
     
     // Validation
     if (!eventTitle) {
@@ -813,10 +1045,6 @@ function submitActivityGrid() {
         return;
     }
     
-    // Store the data for step 2
-    document.getElementById('final_event_title').value = eventTitle;
-    document.getElementById('final_purpose').value = purpose;
-    
     // Store the file for later submission
     window.storedActivityGrid = activityGrid;
     console.log('Storing activity grid file:', {
@@ -826,41 +1054,41 @@ function submitActivityGrid() {
         lastModified: activityGrid.lastModified
     });
     
-    // Update display fields in step 2
+    // Store Step 2 data
+    window.step2Data = {
+        eventTitle: eventTitle,
+        purpose: purpose
+    };
+    
+    // Update display fields in Step 3
     document.getElementById('display_event_title').textContent = eventTitle;
     document.getElementById('display_purpose').textContent = purpose;
+    document.getElementById('display_venue').textContent = window.step1Data.venueName;
+    document.getElementById('display_capacity').textContent = window.step1Data.capacity + ' people';
+    document.getElementById('display_price_rate').textContent = '₱' + window.step1Data.pricePerHour.toLocaleString() + '/hour';
+    document.getElementById('display_base_price').textContent = '₱' + window.step1Data.basePrice.toLocaleString();
     
-    // Close step 1 and open step 2
+    // Format datetime display
+    const startDate = new Date(window.step1Data.startDate);
+    const endDate = new Date(window.step1Data.endDate);
+    const dateTimeStr = startDate.toLocaleString() + ' - ' + endDate.toLocaleTimeString();
+    document.getElementById('display_datetime').textContent = dateTimeStr;
+    
+    // Populate hidden fields
+    document.getElementById('final_event_title').value = eventTitle;
+    document.getElementById('final_purpose').value = purpose;
+    document.getElementById('final_capacity').value = window.step1Data.capacity;
+    document.getElementById('final_venue_id').value = window.step1Data.venueId;
+    document.getElementById('final_start_date').value = window.step1Data.startDate;
+    document.getElementById('final_end_date').value = window.step1Data.endDate;
+    document.getElementById('final_price_per_hour').value = window.step1Data.pricePerHour;
+    document.getElementById('final_base_price').value = window.step1Data.basePrice;
+    
+    // Close Step 2 and open Step 3
     closeActivityGridModal();
-    openReservationModal();
+    openFinalDetailsModal();
     
-    // Set the selected date in the form using local time (avoid UTC shift)
-    const startDateInput = document.getElementById('start_date');
-    const endDateInput = document.getElementById('end_date');
-
-    function fmt(d){
-        const y=d.getFullYear();
-        const m=String(d.getMonth()+1).padStart(2,'0');
-        const day=String(d.getDate()).padStart(2,'0');
-        const hh=String(d.getHours()).padStart(2,'0');
-        const mm=String(d.getMinutes()).padStart(2,'0');
-        return `${y}-${m}-${day}T${hh}:${mm}`;
-    }
-
-    // default start at 00:00; you can adjust to a preferred default hour if needed
-    startDateInput.value = fmt(selectedDate);
-
-    // Set end time to 1 hour later (local)
-    const endDate = new Date(selectedDate);
-    endDate.setHours(endDate.getHours() + 1);
-    endDateInput.value = fmt(endDate);
-    
-    // Fetch and display unavailable times for this date/venue
-    if (typeof showUnavailableTimes === 'function') {
-        showUnavailableTimes();
-    }
-    
-    showToast('Activity Grid uploaded successfully! You can now proceed with reservation details.', 'success');
+    showToast('Activity Grid uploaded successfully! Complete the final details.', 'success');
 }
 
 // Function to toggle the "Other Department" input field
@@ -881,11 +1109,14 @@ function toggleOtherDepartment() {
 }
 
 // Close modal when clicking outside
-document.getElementById('reservationModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeReservationModal();
-    }
-});
+const finalDetailsModalEl = document.getElementById('finalDetailsModal');
+if (finalDetailsModalEl) {
+    finalDetailsModalEl.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeFinalDetailsModal();
+        }
+    });
+}
 
 // Toast helper
 function showToast(message, type = 'error') {
@@ -939,65 +1170,27 @@ function showToast(message, type = 'error') {
     }, 5000);
 }
 
-// Venue data for capacity validation and suggestions
-const venuesData = [
-    @foreach($venues as $venue)
-        @if($venue && is_object($venue) && isset($venue->id))
-            {
-                id: {{ $venue->id }}, 
-                name: "{{ addslashes($venue->name) }}", 
-                capacity: {{ $venue->capacity }}, 
-                price_per_hour: {{ $venue->price_per_hour ?? 0 }},
-                available_equipment: @json($venue->available_equipment ?? [])
-            },
-        @endif
-    @endforeach
-];
-
-// Capacity validation and venue suggestions
-document.getElementById('capacity').addEventListener('input', function() {
-    validateCapacity();
-    showVenueSuggestions();
-});
-
-// Venue selection change handler
-document.getElementById('venue_id').addEventListener('change', function() {
-    validateCapacity();
-    updatePriceDisplay();
-    
-    // Generate equipment options for the selected venue
-    const selectedVenueId = parseInt(this.value);
-    const selectedVenue = venuesData.find(venue => venue.id === selectedVenueId);
-    if (selectedVenue) {
-        generateEquipmentOptions(selectedVenue);
-        calculateBasePrice();
-    }
-});
-
-// Show venue suggestions based on capacity
-function showVenueSuggestions() {
-    const capacityInput = document.getElementById('capacity');
-    const venueSuggestions = document.getElementById('venueSuggestions');
-    const suggestedVenuesList = document.getElementById('suggestedVenuesList');
+// Step 1: Show venue suggestions based on capacity
+function showStep1VenueSuggestions() {
+    const capacityInput = document.getElementById('step1_capacity');
+    const venueSuggestions = document.getElementById('step1_venueSuggestions');
+    const suggestedVenuesList = document.getElementById('step1_suggestedVenuesList');
     
     const requestedCapacity = parseInt(capacityInput.value) || 0;
     
     if (requestedCapacity > 0) {
-        // Get suitable venues
         const suitableVenues = venuesData.filter(venue => venue.capacity >= requestedCapacity);
         
         if (suitableVenues.length > 0) {
-            // Sort by capacity (ascending) to show most appropriate venues first
             suitableVenues.sort((a, b) => a.capacity - b.capacity);
             
-            // Generate suggestion list
             let suggestionsHtml = '';
-            suitableVenues.slice(0, 3).forEach(venue => { // Show top 3 suggestions
+            suitableVenues.slice(0, 3).forEach(venue => {
                 const remainingCapacity = venue.capacity - requestedCapacity;
                 
                 suggestionsHtml += `
                     <div class="suggestion-item flex items-center justify-between p-2 bg-white rounded border border-green-200 transition-all duration-200 cursor-pointer" 
-                         onclick="selectSuggestedVenue('${venue.id}')">
+                         onclick="selectStep1SuggestedVenue('${venue.id}')">
                         <div class="flex-1">
                             <div class="font-medium text-green-800 text-xs">${venue.name}</div>
                             <div class="text-xs text-green-600">
@@ -1014,109 +1207,149 @@ function showVenueSuggestions() {
             suggestedVenuesList.innerHTML = suggestionsHtml;
             venueSuggestions.classList.remove('hidden');
         } else {
-            // No suitable venues found
             suggestedVenuesList.innerHTML = `
                 <div class="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
                     <i class="fas fa-exclamation-triangle mr-1"></i>
-                    No venues can accommodate ${requestedCapacity} attendees. Consider reducing the number of attendees.
+                    No venues can accommodate ${requestedCapacity} attendees.
                 </div>
             `;
             venueSuggestions.classList.remove('hidden');
         }
     } else {
-        // Hide suggestions when no capacity entered
         venueSuggestions.classList.add('hidden');
     }
 }
 
-// Select a suggested venue
-function selectSuggestedVenue(venueId) {
-    const venueSelect = document.getElementById('venue_id');
+// Select a suggested venue in Step 1
+function selectStep1SuggestedVenue(venueId) {
+    const venueSelect = document.getElementById('step1_venue_id');
     venueSelect.value = venueId;
-    
-    // Trigger change events
     venueSelect.dispatchEvent(new Event('change'));
-    
-    // Hide suggestions after selection
-    document.getElementById('venueSuggestions').classList.add('hidden');
-    
-    // Show success feedback
+    document.getElementById('step1_venueSuggestions').classList.add('hidden');
     showToast('Venue selected from suggestions!', 'success');
 }
 
-// Validate capacity against selected venue
-function validateCapacity() {
-    const venueSelect = document.getElementById('venue_id');
-    const capacityInput = document.getElementById('capacity');
-    const capacityWarning = document.getElementById('capacityWarning');
-    const capacityWarningText = document.getElementById('capacityWarningText');
-    const capacityInfo = document.getElementById('capacityInfo');
-    const capacityInfoText = document.getElementById('capacityInfoText');
+// Validate capacity against selected venue in Step 1
+function validateStep1Capacity() {
+    const venueSelect = document.getElementById('step1_venue_id');
+    const capacityInput = document.getElementById('step1_capacity');
+    const capacityWarning = document.getElementById('step1_capacityWarning');
+    const capacityWarningText = document.getElementById('step1_capacityWarningText');
     
     const requestedCapacity = parseInt(capacityInput.value) || 0;
     
     if (venueSelect.value && requestedCapacity > 0) {
         const selectedOption = venueSelect.options[venueSelect.selectedIndex];
         const venueCapacity = parseInt(selectedOption.dataset.capacity) || 0;
-        const venueName = selectedOption.text.split(' - ')[0]; // Extract venue name
+        const venueName = selectedOption.text.split(' - ')[0];
         
-        // Hide both info boxes first
         capacityWarning.classList.add('hidden');
-        capacityInfo.classList.add('hidden');
         
         if (requestedCapacity > venueCapacity) {
-            // Show warning for overcapacity
             capacityWarningText.textContent = `You are requesting ${requestedCapacity} attendees, but ${venueName} can only accommodate ${venueCapacity} people. Please reduce the number of attendees or select a larger venue.`;
             capacityWarning.classList.remove('hidden');
-            
-            // Add red border to capacity input
-            capacityInput.classList.add('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
-            capacityInput.classList.remove('border-gray-300', 'focus:ring-maroon', 'focus:border-maroon');
+            capacityInput.classList.add('border-red-500');
         } else {
-            // Show info for acceptable capacity
-            const remainingCapacity = venueCapacity - requestedCapacity;
-            capacityInfoText.textContent = `${venueName} can accommodate ${venueCapacity} people. You have ${remainingCapacity} additional spaces available.`;
-            capacityInfo.classList.remove('hidden');
-            
-            // Reset input styling
-            capacityInput.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
-            capacityInput.classList.add('border-gray-300', 'focus:ring-maroon', 'focus:border-maroon');
+            capacityInput.classList.remove('border-red-500');
         }
     } else {
-        // Hide both info boxes when no venue selected or no capacity entered
         capacityWarning.classList.add('hidden');
-        capacityInfo.classList.add('hidden');
-        
-        // Reset input styling
-        capacityInput.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
-        capacityInput.classList.add('border-gray-300', 'focus:ring-maroon', 'focus:border-maroon');
+        capacityInput.classList.remove('border-red-500');
     }
 }
 
-// Update price display when venue is selected
-function updatePriceDisplay() {
-    const venueSelect = document.getElementById('venue_id');
-    const priceDisplay = document.getElementById('price_display');
-    const priceInput = document.getElementById('price_per_hour');
-    
-    if (venueSelect.value) {
-        const selectedOption = venueSelect.options[venueSelect.selectedIndex];
-        const price = parseFloat(selectedOption.dataset.price) || 0;
-        
-        priceDisplay.innerHTML = `<i class="fas fa-check-circle mr-2 text-green-500"></i> ₱${price.toLocaleString()} <span class="text-sm text-gray-500">per hour</span>`;
-        priceInput.value = price;
-        
-        // Also calculate base price when venue is selected
-        calculateBasePrice();
-    } else {
-        priceDisplay.innerHTML = '<i class="fas fa-info-circle mr-2 text-blue-500"></i> Select a venue first';
-        priceInput.value = '';
-        
-        // Clear base price when no venue selected
-        document.getElementById('base_price').value = '';
-        document.getElementById('base_price_display').innerHTML = '<i class="fas fa-info-circle mr-2 text-blue-500"></i> Select venue and dates first';
-    }
+// Fetch unavailable timeslots for Step 1
+async function fetchUnavailableSlots(venueId, dateStr){
+    if(!venueId || !dateStr) return [];
+    try{
+        const params = new URLSearchParams({ venue_id: venueId, date: dateStr });
+        const res = await fetch(`/user/reservations/unavailable?${params.toString()}`);
+        if(!res.ok) return [];
+        const data = await res.json();
+        return data.slots || [];
+    }catch{ return []; }
 }
+
+// Check for conflicts in Step 1
+async function checkStep1Conflicts(){
+    const venueId = document.getElementById('step1_venue_id').value;
+    const startVal = document.getElementById('step1_start_date').value;
+    const endVal = document.getElementById('step1_end_date').value;
+    const container = document.getElementById('step1_conflictCheck');
+    
+    if(!venueId || !startVal) {
+        container.classList.add('hidden');
+        return;
+    }
+    
+    const dateOnly = startVal.slice(0,10);
+    const slots = await fetchUnavailableSlots(venueId, dateOnly);
+    
+    if(slots.length === 0){
+        container.innerHTML = '<div class="bg-green-50 border border-green-200 text-green-800 rounded-lg p-3"><i class="fas fa-check-circle mr-2"></i>No conflicts found for this date and venue.</div>';
+        container.classList.remove('hidden');
+        return;
+    }
+    
+    // Check if selected time overlaps with any unavailable slot
+    if(endVal) {
+        const start = new Date(startVal);
+        const end = new Date(endVal);
+        let hasConflict = false;
+        let conflictSlot = null;
+        
+        for(const s of slots){
+            const [sh, sm] = s.start.split(':').map(Number);
+            const [eh, em] = s.end.split(':').map(Number);
+            const blockStart = new Date(dateOnly+'T00:00'); 
+            blockStart.setHours(sh, sm||0, 0, 0);
+            const blockEnd = new Date(dateOnly+'T00:00'); 
+            blockEnd.setHours(eh, em||0, 0, 0);
+            
+            // Check overlap
+            if(start < blockEnd && end > blockStart){
+                hasConflict = true;
+                conflictSlot = s;
+                break;
+            }
+        }
+        
+        if(hasConflict) {
+            container.innerHTML = `
+                <div class="bg-red-50 border border-red-200 text-red-800 rounded-lg p-3">
+                    <div class="flex items-start">
+                        <i class="fas fa-exclamation-triangle text-red-600 mr-2 mt-0.5"></i>
+                        <div>
+                            <p class="font-medium mb-1">⚠️ Time Conflict Detected!</p>
+                            <p class="text-sm">Your selected time overlaps with: <strong>${conflictSlot.start} – ${conflictSlot.end}</strong> (${conflictSlot.title})</p>
+                            <p class="text-xs mt-1">Please select a different time slot.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            const list = slots.map(s=>`<li class="flex items-center text-xs"><i class="fas fa-ban text-red-500 mr-2"></i>${s.start} – ${s.end} <span class="text-gray-500 ml-2">(${s.title})</span></li>`).join('');
+            container.innerHTML = `
+                <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg p-3">
+                    <div class="font-medium mb-1 text-sm">Unavailable timeslots for this day:</div>
+                    <ul class="space-y-1 ml-4">${list}</ul>
+                    <p class="text-xs mt-2 text-green-700"><i class="fas fa-check-circle mr-1"></i>Your selected time does not conflict.</p>
+                </div>
+            `;
+        }
+    } else {
+        const list = slots.map(s=>`<li class="flex items-center text-xs"><i class="fas fa-ban text-red-500 mr-2"></i>${s.start} – ${s.end} <span class="text-gray-500 ml-2">(${s.title})</span></li>`).join('');
+        container.innerHTML = `
+            <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg p-3">
+                <div class="font-medium mb-1 text-sm">Unavailable timeslots for this day:</div>
+                <ul class="space-y-1 ml-4">${list}</ul>
+            </div>
+        `;
+    }
+    
+    container.classList.remove('hidden');
+}
+
 
 // Function to attach event listeners to equipment checkboxes
 function attachEquipmentEventListeners() {
@@ -1183,7 +1416,7 @@ function generateEquipmentOptions(venue) {
     const availableEquipment = venue.available_equipment || [];
     
     if (availableEquipment.length === 0) {
-        equipmentContainer.innerHTML = '<div class="text-center text-gray-500 py-4">No equipment available for this venue</div>';
+        equipmentContainer.innerHTML = '<div class="text-center text-gray-500 py-2 text-xs">No equipment available for this venue</div>';
         return;
     }
     
@@ -1194,18 +1427,18 @@ function generateEquipmentOptions(venue) {
         const maxQuantity = equipment.quantity || 1;
         
         equipmentHTML += `
-            <div class="border border-gray-200 rounded-lg p-3">
-                <div class="flex items-center justify-between mb-2">
+            <div class="border border-gray-200 rounded-lg p-2">
+                <div class="flex items-center justify-between mb-1">
                     <div class="flex items-center">
-                        <input type="checkbox" id="equipment_${equipmentId}" name="equipment[]" value="${equipment.name}" class="w-4 h-4 text-maroon border-gray-300 rounded focus:ring-maroon">
-                        <label for="equipment_${equipmentId}" class="ml-2 text-sm font-medium text-gray-700">${equipment.name}</label>
+                        <input type="checkbox" id="equipment_${equipmentId}" name="equipment[]" value="${equipment.name}" class="w-3 h-3 text-maroon border-gray-300 rounded focus:ring-maroon">
+                        <label for="equipment_${equipmentId}" class="ml-1 text-xs font-medium text-gray-700">${equipment.name}</label>
                     </div>
-                    <span class="text-xs text-gray-500">Available: <span id="available_${equipmentId}">${maxQuantity}</span></span>
+                    <span class="text-xs text-gray-500">Avail: ${maxQuantity}</span>
                 </div>
-                <div id="${equipmentId}_quantity_container" class="hidden ml-6">
-                    <div class="flex items-center space-x-2">
-                        <label class="text-xs text-gray-600">Quantity:</label>
-                        <input type="number" id="${equipmentId}_quantity" name="equipment_quantity[${equipment.name}]" min="1" max="${maxQuantity}" value="1" class="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-maroon focus:border-maroon">
+                <div id="${equipmentId}_quantity_container" class="hidden ml-4">
+                    <div class="flex items-center space-x-1">
+                        <label class="text-xs text-gray-600">Qty:</label>
+                        <input type="number" id="${equipmentId}_quantity" name="equipment_quantity[${equipment.name}]" min="1" max="${maxQuantity}" value="1" class="w-12 px-1 py-0.5 text-xs border border-gray-300 rounded focus:ring-maroon focus:border-maroon">
                         <span class="text-xs text-gray-500">/ ${maxQuantity}</span>
                     </div>
                 </div>
@@ -1373,60 +1606,6 @@ async function fetchUnavailableSlots(venueId, dateStr){
 		return data.slots || [];
 	}catch{ return []; }
 }
-
-// Display unavailable timeslots below the date inputs
-async function showUnavailableTimes(){
-	const venueId = document.getElementById('venue_id').value;
-	const startVal = document.getElementById('start_date').value;
-	if(!venueId || !startVal) return;
-	const dateOnly = startVal.slice(0,10);
-	const slots = await fetchUnavailableSlots(venueId, dateOnly);
-	let container = document.getElementById('unavailable_container');
-	if(!container){
-		container = document.createElement('div');
-		container.id = 'unavailable_container';
-		container.className = 'mt-3 text-sm';
-		document.getElementById('end_date').closest('.grid').after(container);
-	}
-	if(slots.length === 0){
-		container.innerHTML = '<div class="bg-green-50 border border-green-200 text-green-800 rounded-lg p-3"><i class="fas fa-check-circle mr-2"></i>No unavailable times for this day.</div>';
-		return;
-	}
-	const list = slots.map(s=>`<li class="flex items-center"><i class="fas fa-ban text-red-500 mr-2"></i>${s.start} – ${s.end} <span class="text-gray-500 ml-2">(${s.title})</span></li>`).join('');
-	container.innerHTML = `<div class="bg-red-50 border border-red-200 text-red-800 rounded-lg p-3"><div class="font-medium mb-1">Unavailable timeslots:</div><ul class="space-y-1">${list}</ul></div>`;
-}
-
-document.getElementById('start_date').addEventListener('change', showUnavailableTimes);
-// When venue gets selected automatically, also refresh
-const venueHiddenInput = document.getElementById('venue_id');
-const observer = new MutationObserver(showUnavailableTimes);
-observer.observe(venueHiddenInput, { attributes: true, attributeFilter: ['value'] });
-
-// Prevent overlap on submit using fetched slots
-function overlaps(aStart, aEnd, bStart, bEnd){ return aStart < bEnd && aEnd > bStart; }
-
-document.querySelector('form[action*="reservations"]').addEventListener('submit', async function(e){
-	const venueId = document.getElementById('venue_id').value;
-	const startVal = document.getElementById('start_date').value;
-	const endVal = document.getElementById('end_date').value;
-	if(!venueId || !startVal || !endVal) return; // other validators will handle
-	const slots = await fetchUnavailableSlots(venueId, startVal.slice(0,10));
-	if(slots.length){
-		const start = new Date(startVal);
-		const end = new Date(endVal);
-		for(const s of slots){
-			const [sh, sm] = s.start.split(':').map(Number);
-			const [eh, em] = s.end.split(':').map(Number);
-			const blockStart = new Date(startVal.slice(0,10)+'T00:00'); blockStart.setHours(sh, sm||0, 0, 0);
-			const blockEnd = new Date(startVal.slice(0,10)+'T00:00'); blockEnd.setHours(eh, em||0, 0, 0);
-			if(overlaps(start, end, blockStart, blockEnd)){
-				e.preventDefault();
-				showToast(`Selected time overlaps with ${s.start}–${s.end}. Please pick a different time.`, 'error');
-				return;
-			}
-		}
-	}
-});
 
 // Form validation - only for the reservation form
 document.querySelector('form[action*="reservations"]').addEventListener('submit', function(e) {
