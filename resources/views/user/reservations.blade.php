@@ -394,7 +394,7 @@
                     <!-- Hidden fields from previous steps -->
                     <input type="hidden" id="final_event_title" name="event_title" value="">
                     <input type="hidden" id="final_purpose" name="purpose" value="">
-                    <input type="hidden" id="final_activity_grid" name="activity_grid" value="">
+                    <!-- Activity grid file is handled via JavaScript, not as hidden input -->
                     <input type="hidden" id="final_capacity" name="capacity" value="">
                     <input type="hidden" id="final_venue_id" name="venue_id" value="">
                     <input type="hidden" id="final_start_date" name="start_date" value="">
@@ -457,6 +457,18 @@
                                 </label>
                                 <div id="display_capacity" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
                                     <!-- Will be populated from step 1 -->
+                                </div>
+                            </div>
+                            
+                            <!-- Activity Grid File Display (Read-only) -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                    <i class="fas fa-file-alt text-maroon mr-1 text-xs"></i>
+                                    Activity Grid File
+                                </label>
+                                <div id="display_activity_grid" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-green-50 text-green-700 flex items-center">
+                                    <i class="fas fa-check-circle mr-2 text-green-600"></i>
+                                    <span id="display_activity_grid_name" class="truncate">No file attached</span>
                                 </div>
                             </div>
                         </div>
@@ -590,6 +602,24 @@
                                 </div>
                             </div>
 
+                        </div>
+                    </div>
+                    
+                    <!-- Activity Grid Missing Warning (Hidden by default, shown via JS if file is missing) -->
+                    <div id="activity_grid_missing_warning" class="hidden mt-4 p-4 bg-red-50 border-2 border-red-300 rounded-lg">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                            </div>
+                            <div class="ml-3 flex-1">
+                                <h3 class="text-sm font-bold text-red-800">Activity Grid File Missing!</h3>
+                                <p class="text-sm text-red-700 mt-1">
+                                    The activity grid file is not attached. Please go back to Step 2 and re-upload the file before submitting.
+                                </p>
+                                <button type="button" onclick="goBackToStep2()" class="mt-2 px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors">
+                                    <i class="fas fa-arrow-left mr-1"></i> Go Back to Step 2
+                                </button>
+                            </div>
                         </div>
                     </div>
     
@@ -909,6 +939,11 @@ function openFinalDetailsModal() {
     
     const modalContent = document.querySelector('#finalDetailsModal > div > div');
     modalContent.classList.add('animate-fadeIn');
+    
+    // Verify activity grid file whenever modal opens
+    setTimeout(() => {
+        verifyActivityGridFile();
+    }, 100);
 }
 
 function closeFinalDetailsModal() {
@@ -987,8 +1022,8 @@ async function submitDateVenue() {
     
     // Validate capacity against venue
     const venueSelect = document.getElementById('step1_venue_id');
-    const selectedOption = venueSelect.options[venueSelect.selectedIndex];
-    const venueCapacity = parseInt(selectedOption.dataset.capacity) || 0;
+    const selectedOption = venueSelect?.options?.[venueSelect.selectedIndex];
+    const venueCapacity = parseInt(selectedOption?.dataset?.capacity) || 0;
     
     if (parseInt(capacity) > venueCapacity) {
         showToast('Warning: The requested capacity exceeds the venue capacity. This will be flagged for admin review.', 'info');
@@ -1027,7 +1062,8 @@ async function submitDateVenue() {
 function submitActivityGrid() {
     const eventTitle = document.getElementById('step2_event_title').value.trim();
     const purpose = document.getElementById('step2_purpose').value.trim();
-    const activityGrid = document.getElementById('step2_activity_grid').files[0];
+    const activityGridInput = document.getElementById('step2_activity_grid');
+    const activityGrid = activityGridInput.files[0];
     
     // Validation
     if (!eventTitle) {
@@ -1045,19 +1081,32 @@ function submitActivityGrid() {
         return;
     }
     
-    // Store the file for later submission
+    // CRITICAL: Store the actual File object, not just a reference
     window.storedActivityGrid = activityGrid;
-    console.log('Storing activity grid file:', {
+    
+    // Comprehensive logging
+    console.log('📄 Activity Grid File Captured:', {
         name: activityGrid.name,
-        size: activityGrid.size,
+        size: activityGrid.size + ' bytes',
         type: activityGrid.type,
-        lastModified: activityGrid.lastModified
+        lastModified: new Date(activityGrid.lastModified).toISOString(),
+        isFile: activityGrid instanceof File,
+        fileObject: activityGrid
     });
+    
+    // Verify storage immediately
+    if (!window.storedActivityGrid) {
+        console.error('❌ ERROR: File was not stored in window.storedActivityGrid!');
+        showToast('Error storing file. Please try again.', 'error');
+        return;
+    }
+    console.log('✅ File successfully stored in window.storedActivityGrid');
     
     // Store Step 2 data
     window.step2Data = {
         eventTitle: eventTitle,
-        purpose: purpose
+        purpose: purpose,
+        activityGridFileName: activityGrid.name
     };
     
     // Update display fields in Step 3
@@ -1067,6 +1116,19 @@ function submitActivityGrid() {
     document.getElementById('display_capacity').textContent = window.step1Data.capacity + ' people';
     document.getElementById('display_price_rate').textContent = '₱' + window.step1Data.pricePerHour.toLocaleString() + '/hour';
     document.getElementById('display_base_price').textContent = '₱' + window.step1Data.basePrice.toLocaleString();
+    
+    // Display activity grid file name
+    if (window.storedActivityGrid && window.storedActivityGrid.name) {
+        document.getElementById('display_activity_grid_name').textContent = window.storedActivityGrid.name;
+        document.getElementById('display_activity_grid').classList.remove('bg-red-50', 'text-red-700');
+        document.getElementById('display_activity_grid').classList.add('bg-green-50', 'text-green-700');
+        console.log('✅ Activity Grid displayed in Step 3:', window.storedActivityGrid.name);
+    } else {
+        document.getElementById('display_activity_grid_name').textContent = 'No file attached (ERROR!)';
+        document.getElementById('display_activity_grid').classList.remove('bg-green-50', 'text-green-700');
+        document.getElementById('display_activity_grid').classList.add('bg-red-50', 'text-red-700');
+        console.error('❌ No activity grid file found in window.storedActivityGrid!');
+    }
     
     // Format datetime display
     const startDate = new Date(window.step1Data.startDate);
@@ -1084,11 +1146,46 @@ function submitActivityGrid() {
     document.getElementById('final_price_per_hour').value = window.step1Data.pricePerHour;
     document.getElementById('final_base_price').value = window.step1Data.basePrice;
     
+    // Generate equipment options based on selected venue
+    const selectedVenue = venuesData.find(v => v.id == window.step1Data.venueId);
+    if (selectedVenue) {
+        generateEquipmentOptions(selectedVenue);
+    } else {
+        // If venue not found, show a message
+        const equipmentContainer = document.getElementById('equipment_container');
+        equipmentContainer.innerHTML = '<div class="text-center text-gray-500 py-2 text-xs">No equipment data available for this venue</div>';
+    }
+    
     // Close Step 2 and open Step 3
     closeActivityGridModal();
     openFinalDetailsModal();
     
+    // Verify file is still present and update UI accordingly
+    verifyActivityGridFile();
+    
     showToast('Activity Grid uploaded successfully! Complete the final details.', 'success');
+}
+
+// Verify activity grid file is present and update UI
+function verifyActivityGridFile() {
+    const warningBanner = document.getElementById('activity_grid_missing_warning');
+    const submitBtn = document.getElementById('submitReservationBtn');
+    
+    if (!window.storedActivityGrid || !(window.storedActivityGrid instanceof File)) {
+        // File is missing - show warning and disable submit
+        warningBanner.classList.remove('hidden');
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        console.error('⚠️ WARNING: Activity grid file is missing in Step 3!');
+        return false;
+    } else {
+        // File is present - hide warning and enable submit
+        warningBanner.classList.add('hidden');
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        console.log('✅ Activity grid file verified in Step 3');
+        return true;
+    }
 }
 
 // Function to toggle the "Other Department" input field
@@ -1239,9 +1336,9 @@ function validateStep1Capacity() {
     const requestedCapacity = parseInt(capacityInput.value) || 0;
     
     if (venueSelect.value && requestedCapacity > 0) {
-        const selectedOption = venueSelect.options[venueSelect.selectedIndex];
-        const venueCapacity = parseInt(selectedOption.dataset.capacity) || 0;
-        const venueName = selectedOption.text.split(' - ')[0];
+        const selectedOption = venueSelect?.options?.[venueSelect.selectedIndex];
+        const venueCapacity = parseInt(selectedOption?.dataset?.capacity) || 0;
+        const venueName = selectedOption?.text?.split(' - ')?.[0] || 'Selected venue';
         
         capacityWarning.classList.add('hidden');
         
@@ -1608,23 +1705,17 @@ async function fetchUnavailableSlots(venueId, dateStr){
 }
 
 // Form validation - only for the reservation form
-document.querySelector('form[action*="reservations"]').addEventListener('submit', function(e) {
-    // Check if activity grid was uploaded in step 1
-    if (!window.storedActivityGrid) {
-        e.preventDefault();
-        showToast('Please complete Step 1 (Activity Grid) before submitting the reservation.', 'error');
-        return;
-    }
-    
+document.querySelector('form[action*="reservations"]').addEventListener('submit', async function(e) {
+    try {
     // Check capacity validation
-    const venueSelect = document.getElementById('venue_id');
-    const capacityInput = document.getElementById('capacity');
-    const requestedCapacity = parseInt(capacityInput.value) || 0;
+    const venueSelect = document.getElementById('final_venue_id');
+    const capacityInput = document.getElementById('final_capacity');
+    const requestedCapacity = parseInt(capacityInput?.value) || 0;
     
-    if (venueSelect.value && requestedCapacity > 0) {
+    if (venueSelect?.value && venueSelect?.options && requestedCapacity > 0) {
         const selectedOption = venueSelect.options[venueSelect.selectedIndex];
-        const venueCapacity = parseInt(selectedOption.dataset.capacity) || 0;
-        const venueName = selectedOption.text.split(' - ')[0];
+        const venueCapacity = parseInt(selectedOption?.dataset?.capacity) || 0;
+        const venueName = selectedOption?.text?.split(' - ')?.[0] || 'Selected venue';
         
         if (requestedCapacity > venueCapacity) {
             // Show warning but allow submission
@@ -1632,10 +1723,10 @@ document.querySelector('form[action*="reservations"]').addEventListener('submit'
         }
     }
     
-    const startDate = new Date(document.getElementById('start_date').value);
-    const endDate = new Date(document.getElementById('end_date').value);
-    const capacity = parseInt(document.getElementById('capacity').value);
-    const venueIdInput = document.getElementById('venue_id');
+    const startDate = new Date(document.getElementById('final_start_date')?.value || '');
+    const endDate = new Date(document.getElementById('final_end_date')?.value || '');
+    const capacity = parseInt(document.getElementById('final_capacity')?.value) || 0;
+    const venueIdInput = document.getElementById('final_venue_id');
     
     // 3 days in advance restriction (must be at least 3 calendar days from today at midnight)
     const now = new Date();
@@ -1661,14 +1752,14 @@ document.querySelector('form[action*="reservations"]').addEventListener('submit'
         return;
     }
     
-    if (!venueIdInput.value) {
+    if (!venueIdInput?.value) {
         e.preventDefault();
         showToast('Please enter a capacity to automatically select a venue.', 'error');
         return;
     }
     
     // Check if department is selected
-    const department = document.getElementById('department').value;
+    const department = document.getElementById('department')?.value;
     if (!department) {
         e.preventDefault();
         showToast('Please select a department.', 'error');
@@ -1677,7 +1768,7 @@ document.querySelector('form[action*="reservations"]').addEventListener('submit'
     
     // If "Other" is selected, check if other department is specified
     if (department === 'Other') {
-        const otherDepartment = document.getElementById('other_department').value.trim();
+        const otherDepartment = document.getElementById('other_department')?.value?.trim();
         if (!otherDepartment) {
             e.preventDefault();
             showToast('Please specify the other department name.', 'error');
@@ -1685,8 +1776,8 @@ document.querySelector('form[action*="reservations"]').addEventListener('submit'
         }
     }
     
-    const basePrice = document.getElementById('base_price').value;
-    if (!basePrice || basePrice <= 0) {
+    const basePrice = document.getElementById('final_base_price')?.value;
+    if (!basePrice || parseFloat(basePrice) <= 0) {
         e.preventDefault();
         showToast('Please ensure all dates and capacity are selected to calculate the base price.', 'error');
         return;
@@ -1697,18 +1788,29 @@ document.querySelector('form[action*="reservations"]').addEventListener('submit'
     let hasEquipmentError = false;
     
     selectedEquipment.forEach(equipment => {
-        if (equipment.value !== 'none') {
-            const equipmentId = equipment.value.toLowerCase().replace(/\s+/g, '_');
-            const quantityInput = document.querySelector(`input[name="equipment_quantity[${equipment.value}]"]`);
-            if (quantityInput && (!quantityInput.value || parseInt(quantityInput.value) < 1)) {
+        // Safety check: ensure equipment and value exist and are valid
+        if (!equipment || !equipment.value || typeof equipment.value !== 'string' || equipment.value.trim() === '') {
+            return; // Skip invalid equipment
+        }
+        
+        const equipmentValue = equipment.value.trim();
+        if (equipmentValue !== 'none') {
+            try {
+                const quantityInput = document.querySelector(`input[name="equipment_quantity[${equipmentValue}]"]`);
+                if (quantityInput && (!quantityInput.value || parseInt(quantityInput.value) < 1)) {
+                    hasEquipmentError = true;
+                    showToast(`Please specify quantity for ${equipmentValue}`, 'error');
+                }
+            } catch (err) {
+                console.error('❌ Error validating equipment quantity:', err, 'for equipment:', equipmentValue);
                 hasEquipmentError = true;
-                showToast(`Please specify quantity for ${equipment.value}`, 'error');
+                showToast('Error validating equipment. Please check your selections.', 'error');
             }
         }
     });
     
     // Custom equipment validation
-    const customEquipmentItems = document.querySelectorAll('#custom_equipment_list .custom-equipment-item');
+    let customEquipmentItems = document.querySelectorAll('#custom_equipment_list .custom-equipment-item');
     customEquipmentItems.forEach((item, index) => {
         const nameInput = item.querySelector('input[name="custom_equipment_name[]"]');
         const qtyInput = item.querySelector('input[name="custom_equipment_quantity[]"]');
@@ -1733,41 +1835,151 @@ document.querySelector('form[action*="reservations"]').addEventListener('submit'
         return;
     }
     
-    // Attach the stored activity grid file to the form
-    const formData = new FormData(this);
-    formData.delete('activity_grid'); // Remove the hidden input
+    // VALIDATE ACTIVITY GRID FILE (comprehensive check before FormData construction)
+    if (!window.storedActivityGrid || !(window.storedActivityGrid instanceof File)) {
+        e.preventDefault();
+        console.error('❌ SUBMISSION BLOCKED: Activity grid file missing or invalid:', {
+            exists: !!window.storedActivityGrid,
+            type: typeof window.storedActivityGrid,
+            isFile: window.storedActivityGrid instanceof File
+        });
+        showToast('Activity Grid file is missing or invalid. Please go back to Step 2 and re-upload.', 'error');
+        return;
+    }
+    
+    // Check file size (max 50MB)
+    const maxFileSize = 50 * 1024 * 1024;
+    if (window.storedActivityGrid.size > maxFileSize) {
+        e.preventDefault();
+        const fileSizeMB = (window.storedActivityGrid.size / (1024 * 1024)).toFixed(2);
+        showToast(`File too large: ${fileSizeMB}MB. Maximum is 50MB.`, 'error');
+        console.error('❌ File too large:', fileSizeMB + 'MB');
+        return;
+    }
+    
+    console.log('✅ File validation passed:', (window.storedActivityGrid.size / (1024 * 1024)).toFixed(2) + 'MB');
+    
+    // Build FormData manually instead of from the form element
+    // because the form doesn't contain the file input (it was in Step 2)
+    const formData = new FormData();
+    
+    // CRITICAL: Add the activity grid file FIRST before any other fields
+    console.log('📤 Adding activity grid file to FormData (FIRST entry):', {
+        name: window.storedActivityGrid.name,
+        size: window.storedActivityGrid.size + ' bytes',
+        type: window.storedActivityGrid.type
+    });
+    
+    formData.set('activity_grid', window.storedActivityGrid, window.storedActivityGrid.name);
+    
+    // Verify immediately
+    const testFile = formData.get('activity_grid');
+    if (!testFile || !(testFile instanceof File)) {
+        e.preventDefault();
+        console.error('❌ CRITICAL: File verification failed immediately after .set()!');
+        console.error('testFile:', testFile);
+        showToast('Critical error: Unable to attach file to form. Please try again.', 'error');
+        return;
+    }
+    console.log('✅ File successfully added to FormData as FIRST entry');
+    
+    // Add CSRF token
+    const csrfToken = document.querySelector('input[name="_token"]');
+    if (csrfToken) {
+        formData.append('_token', csrfToken.value);
+    }
+    
+    // Add all form fields manually
+    const formFields = [
+        'event_title', 'purpose', 'capacity', 'venue_id', 
+        'start_date', 'end_date', 'price_per_hour', 'base_price',
+        'department', 'other_department'
+    ];
+    
+    formFields.forEach(fieldName => {
+        const field = document.getElementById(fieldName) || document.getElementById('final_' + fieldName);
+        if (field && field.value !== null && field.value !== undefined && String(field.value).trim() !== '') {
+            formData.append(fieldName, field.value);
+        }
+    });
+    
+    // Add equipment selections
+    const equipmentCheckboxes = document.querySelectorAll('input[name="equipment[]"]:checked');
+    equipmentCheckboxes.forEach(checkbox => {
+        // Safety check: ensure checkbox and value exist and are valid
+        if (!checkbox || !checkbox.value || typeof checkbox.value !== 'string' || checkbox.value.trim() === '') {
+            console.warn('⚠️ Skipping invalid equipment checkbox:', checkbox);
+            return; // Skip this iteration
+        }
+        
+        const equipmentValue = checkbox.value.trim();
+        formData.append('equipment[]', equipmentValue);
+        
+        // Add equipment quantities
+        if (equipmentValue !== 'none') {
+            try {
+                const quantityInput = document.querySelector(`input[name="equipment_quantity[${equipmentValue}]"]`);
+                if (quantityInput && quantityInput.value && String(quantityInput.value).trim() !== '') {
+                    formData.append(`equipment_quantity[${equipmentValue}]`, quantityInput.value);
+                }
+            } catch (err) {
+                console.error('❌ Error processing equipment quantity:', err, 'for equipment:', equipmentValue);
+            }
+        }
+    });
+    
+    // Add custom equipment
+    customEquipmentItems = document.querySelectorAll('#custom_equipment_list .custom-equipment-item:not(#custom_equipment_template)');
+    customEquipmentItems.forEach(item => {
+        const nameInput = item.querySelector('input[name="custom_equipment_name[]"]');
+        const qtyInput = item.querySelector('input[name="custom_equipment_quantity[]"]');
+        
+        if (nameInput && nameInput.value && nameInput.value.trim() !== '') {
+            formData.append('custom_equipment_name[]', nameInput.value.trim());
+            const quantity = qtyInput && qtyInput.value && String(qtyInput.value).trim() !== '' ? qtyInput.value : '1';
+            formData.append('custom_equipment_quantity[]', quantity);
+        }
+    });
     
     // Add explicit JSON request flag
     formData.append('ajax', '1');
     
-    // Check if activity grid file exists
-    if (!window.storedActivityGrid) {
-        e.preventDefault();
-        showToast('Activity Grid file is missing. Please go back to Step 1 and re-upload the file.', 'error');
-        return;
-    }
-    
-    try {
-        console.log('Retrieving stored activity grid file:', {
-            exists: !!window.storedActivityGrid,
-            name: window.storedActivityGrid?.name,
-            size: window.storedActivityGrid?.size,
-            type: window.storedActivityGrid?.type,
-            isFile: window.storedActivityGrid instanceof File
-        });
-        
-        formData.append('activity_grid', window.storedActivityGrid);
-        console.log('Activity grid file attached successfully:', window.storedActivityGrid.name, window.storedActivityGrid.size + ' bytes');
-    } catch (error) {
-        e.preventDefault();
-        console.error('Error attaching activity grid file:', error);
-        showToast('Error preparing the activity grid file. Please try uploading it again.', 'error');
-        return;
-    }
-    
     // Submit the form with the file
     e.preventDefault();
-    submitReservationWithFile(formData);
+    
+    // Final verification - log all FormData entries
+    console.log('📋 FINAL FormData contents before submission:');
+    let hasFile = false;
+    for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+            console.log(`  ${key}:`, `[FILE: ${value.name}, ${value.size} bytes, ${value.type}]`);
+            if (key === 'activity_grid') {
+                hasFile = true;
+            }
+        } else {
+            console.log(`  ${key}:`, value);
+        }
+    }
+    
+    if (!hasFile) {
+        console.error('❌ CRITICAL: activity_grid file NOT found in final FormData!');
+        showToast('Critical error: Activity grid file lost. Please go back to Step 2.', 'error');
+        return;
+    }
+    
+    console.log('✅ All validations passed, submitting FormData with activity_grid file...');
+    await submitReservationWithFile(formData);
+    } catch (error) {
+        e.preventDefault();
+        console.error('❌ UNCAUGHT ERROR in form submit handler:', error);
+        console.error('Error details:', {
+            message: error.message,
+            name: error.name,
+            stack: error.stack
+        });
+        showToast('Error preparing reservation: ' + error.message, 'error');
+        hideLoadingState();
+    }
 });
 
 // Function to show loading state
@@ -1846,39 +2058,66 @@ async function submitReservationWithFile(formData) {
     showLoadingState();
     
     try {
-        console.log('Submitting reservation...');
+        console.log('🚀 ===== STARTING RESERVATION SUBMISSION =====');
         console.log('Submitting to URL:', '{{ route("user.reservations.store") }}');
+        
+        // Log all FormData entries one more time before sending
+        console.log('📦 FormData being sent:');
+        for (let [key, value] of formData.entries()) {
+            if (value instanceof File) {
+                console.log(`  ✓ ${key}: [FILE] ${value.name} (${value.size} bytes, ${value.type})`);
+            } else {
+                console.log(`  ✓ ${key}: ${value}`);
+            }
+        }
         
         // Check CSRF token
         const csrfToken = document.querySelector('input[name="_token"]');
         if (!csrfToken || !csrfToken.value) {
             throw new Error('CSRF token is missing. Please refresh the page and try again.');
         }
-        console.log('CSRF token found:', csrfToken.value.substring(0, 10) + '...');
+        console.log('✓ CSRF token found:', csrfToken.value.substring(0, 10) + '...');
         
-        // Log form data for debugging
-        console.log('Form data entries:');
-        let hasActivityGrid = false;
+        // CRITICAL: Final verification that activity_grid file is in FormData
+        const activityGridFile = formData.get('activity_grid');
+        if (!activityGridFile || !(activityGridFile instanceof File)) {
+            throw new Error('CRITICAL: activity_grid file not found in FormData before fetch! This should never happen.');
+        }
+        console.log('✅ FINAL VERIFICATION PASSED: activity_grid file is in FormData:', {
+            name: activityGridFile.name,
+            size: activityGridFile.size,
+            type: activityGridFile.type
+        });
+        
+        // Calculate estimated request size
+        let estimatedSize = 0;
         for (let [key, value] of formData.entries()) {
             if (value instanceof File) {
-                console.log(key + ':', value.name, value.size + ' bytes', value.type);
-                if (key === 'activity_grid') {
-                    hasActivityGrid = true;
-                }
+                estimatedSize += value.size;
             } else {
-                console.log(key + ':', value);
+                estimatedSize += String(value).length;
             }
         }
+        const estimatedSizeMB = (estimatedSize / (1024 * 1024)).toFixed(2);
+        console.log(`📊 Estimated request size: ${estimatedSizeMB} MB`);
         
-        if (!hasActivityGrid) {
-            console.log('⚠️ WARNING: No activity_grid file found in form data!');
-        } else {
-            console.log('✅ Activity grid file is included in form data');
+        if (estimatedSize > 50 * 1024 * 1024) {
+            throw new Error(`Request too large: ${estimatedSizeMB}MB. Maximum is 50MB. Please use a smaller file.`);
         }
+        
+        console.log('🚀 Sending POST request with FormData...');
+        
+        // Create an AbortController for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+            controller.abort();
+            console.error('❌ Request timed out after 120 seconds');
+        }, 120000); // 120 second timeout for large files
         
         const response = await fetch('{{ route("user.reservations.store") }}?ajax=1', {
             method: 'POST',
             body: formData,
+            signal: controller.signal,
             headers: {
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
@@ -1886,13 +2125,17 @@ async function submitReservationWithFile(formData) {
             }
         });
         
-        console.log('Response status:', response.status);
-        console.log('Response ok:', response.ok);
-        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+        clearTimeout(timeoutId); // Clear the timeout since request completed
+        
+        console.log('📡 Response received:', {
+            status: response.status,
+            ok: response.ok,
+            statusText: response.statusText,
+            headers: Object.fromEntries(response.headers.entries())
+        });
         
         // Check what type of response we got
         const contentType = response.headers.get('content-type');
-        console.log('Content-Type:', contentType);
         
         // Hide loading state
         hideLoadingState();
@@ -2070,8 +2313,8 @@ async function submitReservationWithFile(formData) {
                 }
             }
             
-            // Close reservation modal first
-            closeReservationModal();
+            // Close final details modal first
+            closeFinalDetailsModal();
             
             // Show success modal
             showSuccessModal();
@@ -2094,12 +2337,21 @@ async function submitReservationWithFile(formData) {
                         const errorFields = Object.keys(errorData.errors || {});
                         console.log('Fields with errors:', errorFields);
                         
-                        // Create detailed error message
-                        const errorMessages = Object.entries(errorData.errors || {}).map(([field, messages]) => {
-                            return `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`;
-                        });
-                        
-                        errorMessage = `Validation failed:\n${errorMessages.join('\n')}`;
+                        // Check specifically for activity_grid error
+                        if (errorData.errors && errorData.errors.activity_grid) {
+                            const activityGridErrors = Array.isArray(errorData.errors.activity_grid) 
+                                ? errorData.errors.activity_grid.join(', ') 
+                                : errorData.errors.activity_grid;
+                            errorMessage = `Activity Grid Upload Error: ${activityGridErrors}\n\nPlease go back to Step 2 and re-upload the file.`;
+                            console.error('❌ Activity Grid validation failed:', activityGridErrors);
+                        } else {
+                            // Create detailed error message for other fields
+                            const errorMessages = Object.entries(errorData.errors || {}).map(([field, messages]) => {
+                                return `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`;
+                            });
+                            
+                            errorMessage = `Validation failed:\n${errorMessages.join('\n')}`;
+                        }
                         console.log('Detailed error message:', errorMessage);
                     } else {
                         errorMessage = errorData.message || errorMessage;
@@ -2128,16 +2380,21 @@ async function submitReservationWithFile(formData) {
         }
     } catch (error) {
         console.error('Exception occurred:', error);
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
         hideLoadingState();
         
         let errorMessage = 'An error occurred while submitting the reservation.';
         
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        if (error.name === 'AbortError') {
+            errorMessage = 'Request timed out: The file upload took too long (>120 seconds). This usually happens with very large files or slow connections. Please try with a smaller file or check your internet connection.';
+        } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
             errorMessage = 'Network error: Unable to connect to the server. Please check your internet connection and try again.';
         } else if (error.name === 'TypeError') {
             errorMessage = 'Data processing error: There was an issue with the form data. Please refresh the page and try again.';
         } else if (error.message) {
-            errorMessage = `Error: ${error.message}. Please try again.`;
+            errorMessage = `Error: ${error.message}`;
         }
         
         showErrorModal(errorMessage);

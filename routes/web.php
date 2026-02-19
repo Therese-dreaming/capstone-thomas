@@ -87,6 +87,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // User Routes
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('user.dashboard');
+    
+    // Diagnostic route (outside user.role middleware so it's always accessible)
+    Route::get('/user/diagnostic', function() {
+        return view('user.diagnostic');
+    })->name('user.diagnostic');
+    
     Route::middleware(['auth', 'user.role'])->prefix('user')->name('user.')->group(function () {
         Route::get('reservations', [UserController::class, 'index'])->name('reservations.index');
         Route::get('reservations/calendar', [UserController::class, 'calendar'])->name('reservations.calendar');

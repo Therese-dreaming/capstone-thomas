@@ -123,10 +123,23 @@ class UserController extends Controller
 
 	public function show($id)
 	{
-		$reservation = Reservation::where('id', $id)
-			->where('user_id', Auth::id())
-			->with(['venue'])
-			->firstOrFail();
+		// Find the reservation
+		$reservation = Reservation::with(['venue'])->find($id);
+		
+		// Check if reservation exists
+		if (!$reservation) {
+			abort(404, 'Reservation not found.');
+		}
+		
+		// Check if the user owns this reservation
+		if ($reservation->user_id != Auth::id()) {
+			\Log::warning('Unauthorized reservation access attempt', [
+				'user_id' => Auth::id(),
+				'reservation_id' => $id,
+				'reservation_owner' => $reservation->user_id
+			]);
+			abort(403, 'You do not have permission to view this reservation. You can only view your own reservations.');
+		}
 
 		return view('user.reservations.show', compact('reservation'));
 	}
@@ -139,27 +152,60 @@ class UserController extends Controller
 
 	public function storeReservation(Request $request)
 	{
-		$request->validate([
-				'event_title' => 'required|string|max:255',
-				'capacity' => 'required|integer|min:1',
-				'venue_id' => 'required|exists:venues,id',
-				'purpose' => 'required|string',
-				'start_date' => 'required|date|after:now',
-				'end_date' => 'required|date|after:start_date',
-				'activity_grid' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
-				'equipment' => 'nullable|array',
-				'equipment.*' => 'string',
-				'equipment_quantity' => 'nullable|array',
-				'equipment_quantity.*' => 'integer|min:1',
-				'custom_equipment_name' => 'nullable|array',
-				'custom_equipment_name.*' => 'nullable|string|max:255',
-				'custom_equipment_quantity' => 'nullable|array',
-				'custom_equipment_quantity.*' => 'nullable|integer|min:1',
-				'price_per_hour' => 'required|numeric|min:0',
-				'base_price' => 'required|numeric|min:0',
-				'department' => 'required|string|max:255',
-				'other_department' => 'nullable|string|max:255',
-		]);
+		// Enhanced debugging - log ALL request data
+		\Log::info('=== RESERVATION SUBMISSION RECEIVED ===');
+		\Log::info('Request Method: ' . $request->method());
+		\Log::info('Content-Type: ' . $request->header('Content-Type'));
+		\Log::info('All Input Keys: ' . json_encode(array_keys($request->all())));
+		\Log::info('Has File activity_grid: ' . ($request->hasFile('activity_grid') ? 'YES' : 'NO'));
+		\Log::info('All Files: ' . json_encode(array_keys($request->allFiles())));
+		
+		if ($request->hasFile('activity_grid')) {
+			$file = $request->file('activity_grid');
+			\Log::info('Activity Grid File Found!', [
+				'original_name' => $file->getClientOriginalName(),
+				'size' => $file->getSize(),
+				'mime_type' => $file->getMimeType(),
+				'extension' => $file->getClientOriginalExtension(),
+				'is_valid' => $file->isValid(),
+				'error' => $file->getError()
+			]);
+		} else {
+			\Log::error('Activity Grid File NOT FOUND in request!');
+			\Log::info('Request input activity_grid value: ' . json_encode($request->input('activity_grid')));
+		}
+		
+		// Validate with detailed error logging
+		try {
+			$request->validate([
+					'event_title' => 'required|string|max:255',
+					'capacity' => 'required|integer|min:1',
+					'venue_id' => 'required|exists:venues,id',
+					'purpose' => 'required|string',
+					'start_date' => 'required|date|after:now',
+					'end_date' => 'required|date|after:start_date',
+					'activity_grid' => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:51200', // Max 50MB
+					'equipment' => 'nullable|array',
+					'equipment.*' => 'string',
+					'equipment_quantity' => 'nullable|array',
+					'equipment_quantity.*' => 'integer|min:1',
+					'custom_equipment_name' => 'nullable|array',
+					'custom_equipment_name.*' => 'nullable|string|max:255',
+					'custom_equipment_quantity' => 'nullable|array',
+					'custom_equipment_quantity.*' => 'nullable|integer|min:1',
+					'price_per_hour' => 'required|numeric|min:0',
+					'base_price' => 'required|numeric|min:0',
+					'department' => 'required|string|max:255',
+					'other_department' => 'nullable|string|max:255',
+			]);
+			\Log::info('✅ Validation passed successfully');
+		} catch (\Illuminate\Validation\ValidationException $e) {
+			\Log::error('❌ Validation failed:', [
+				'errors' => $e->errors(),
+				'failed_rules' => $e->validator->failed()
+			]);
+			throw $e;
+		}
 
 		$venue = Venue::find($request->venue_id);
 		if (!$venue) {
@@ -257,11 +303,33 @@ class UserController extends Controller
 		]);
 		$data['duration_hours'] = max(1, $durationHours);
 
+		// Log incoming request for debugging
+		\Log::info('Activity Grid Upload Debug', [
+			'has_file' => $request->hasFile('activity_grid'),
+			'all_files' => array_keys($request->allFiles()),
+			'request_method' => $request->method(),
+			'content_type' => $request->header('Content-Type')
+		]);
+
 		if ($request->hasFile('activity_grid')) {
 			$file = $request->file('activity_grid');
+			\Log::info('Activity Grid File Details', [
+				'original_name' => $file->getClientOriginalName(),
+				'size' => $file->getSize(),
+				'mime_type' => $file->getMimeType(),
+				'is_valid' => $file->isValid()
+			]);
+			
 			$fileName = time() . '_' . $file->getClientOriginalName();
 			$filePath = $file->storeAs('activity_grids', $fileName, 'public');
 			$data['activity_grid'] = $filePath;
+			
+			\Log::info('Activity Grid Stored Successfully', [
+				'file_path' => $filePath,
+				'full_path' => storage_path('app/public/' . $filePath)
+			]);
+		} else {
+			\Log::warning('Activity Grid file not found in request');
 		}
 
 		$reservation = Reservation::create($data);
